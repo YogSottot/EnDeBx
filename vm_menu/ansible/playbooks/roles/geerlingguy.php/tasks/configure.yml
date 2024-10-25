@@ -71,6 +71,7 @@
       [PATH={{ document_root }}]
       session.save_path = {{ php_session_save_path }}
       upload_tmp_dir = {{ php_upload_tmp_dir }}
+      sendmail_path = /usr/local/bin/msmtp_wrapper.sh {{ domain }}
     create: true
     owner: root
     group: root

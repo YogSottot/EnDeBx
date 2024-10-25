@@ -17,7 +17,7 @@
       vars:
         sysctl_file: /etc/sysctl.d/50-vmmenu.conf
         sysctl_items:
-          - name: net.ipv4.ip_forward
+          - name: net.ipv4.ip_forward # docker not support this
             value: 0
           - name: net.ipv4.conf.all.rp_filter
             value: 1

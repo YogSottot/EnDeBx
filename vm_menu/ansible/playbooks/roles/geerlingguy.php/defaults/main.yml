@@ -134,7 +134,8 @@ php_post_max_size: "1024M"
 php_date_timezone: "{{ server_timezone }}"
 php_allow_url_fopen: "On"
 
-php_sendmail_path: "sendmail -t -i"
+# php_sendmail_path: "/usr/sbin/sendmail -t -i"
+php_sendmail_path: "/usr/local/bin/msmtp_wrapper.sh {{ domain }}"
 php_output_buffering: "4096"
 php_short_open_tag: "On"
 php_disable_functions: []

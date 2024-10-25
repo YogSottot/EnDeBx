@@ -26,7 +26,7 @@
     day: "*"
     month: "*"
     weekday: "*"
-    job: "/usr/bin/test -f {{ path_file_run_cron }} && /usr/bin/{{ php_cron }} -f {{ path_file_run_cron }} > {{ logs_path_dir }}/site_{{ domain }}_{{ logs_path_file }} 2>&1"
+    job: '/usr/bin/test -f {{ path_file_run_cron }} && /usr/bin/{{ php_cron }} -d sendmail_path="/usr/local/bin/msmtp_wrapper.sh {{ domain }}" -f {{ path_file_run_cron }} > {{ logs_path_dir }}/site_{{ domain }}_{{ logs_path_file }} 2>&1'
     user: "{{ user_site }}"
     cron_file: "bx_agent_{{ db_name }}"
 

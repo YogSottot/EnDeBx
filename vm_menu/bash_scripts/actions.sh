@@ -252,7 +252,7 @@ function action_change_php_version(){
 function action_settings_smtp_sites() {
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}")
-    ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
       -e "is_actions_account=Y \
       account_name=${site} \
       email_from=${email_from} \
@@ -270,7 +270,8 @@ function action_settings_smtp_sites() {
       smtp_file_permissions_config=${BS_SMTP_FILE_PERMISSIONS_CONFIG} \
       smtp_file_user_log=${BS_SMTP_FILE_USER_LOG} \
       smtp_file_group_user_log=${BS_SMTP_FILE_GROUP_USER_LOG} \
-      smtp_path_wrapp_script_sh=${BS_SMTP_PATH_WRAPP_SCRIPT_SH}"
+      smtp_path_wrapp_script_sh=${BS_SMTP_PATH_WRAPP_SCRIPT_SH} \
+      path_sites=${BS_PATH_SITES}"
 
     press_any_key_to_return_menu;
 }

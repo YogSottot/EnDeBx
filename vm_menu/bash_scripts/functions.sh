@@ -809,7 +809,8 @@ function settings_smtp_sites() {
       smtp_file_permissions_config=${BS_SMTP_FILE_PERMISSIONS_CONFIG} \
       smtp_file_user_log=${BS_SMTP_FILE_USER_LOG} \
       smtp_file_group_user_log=${BS_SMTP_FILE_GROUP_USER_LOG} \
-      smtp_path_wrapp_script_sh=${BS_SMTP_PATH_WRAPP_SCRIPT_SH}")
+      smtp_path_wrapp_script_sh=${BS_SMTP_PATH_WRAPP_SCRIPT_SH} \
+      path_sites=${BS_PATH_SITES}")
 
     res=$(echo "$res" | grep -oP '(?<=start_parse).*?(?=end_parse)' | sed 's/\\n/\n/g')
 
