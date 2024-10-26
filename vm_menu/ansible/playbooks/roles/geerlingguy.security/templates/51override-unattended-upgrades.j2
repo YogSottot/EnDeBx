@@ -1,0 +1,51 @@
+Unattended-Upgrade::Automatic-Reboot "{{ security_autoupdate_reboot }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ security_autoupdate_reboot_time }}";
+
+{% if security_autoupdate_mail_to %}
+Unattended-Upgrade::Mail "{{ security_autoupdate_mail_to }}";
+{% if security_autoupdate_mail_on_error %}
+Unattended-Upgrade::MailOnlyOnError "true";
+{% endif %}
+{% endif %}
+
+{% if ansible_distribution == 'Debian' %}
+Unattended-Upgrade::Origins-Pattern {
+        // Codename based matching:
+        // This will follow the migration of a release through different
+        // archives (e.g. from testing to stable and later oldstable).
+        // Software will be the latest available for the named release,
+        // but the Debian release itself will not be automatically upgraded.
+//      "origin=Debian,codename=${distro_codename}-updates";
+//      "origin=Debian,codename=${distro_codename}-proposed-updates";
+        "origin=Debian,codename=${distro_codename},label=Debian";
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+{% for origin in security_autoupdate_additional_origins %}
+        "{{ origin }}";
+{% endfor %}
+};
+{% endif %}
+
+{% if ansible_distribution == 'Ubuntu' %}
+Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}";
+        "${distro_id}:${distro_codename}-security";
+        // Extended Security Maintenance; doesn't necessarily exist for
+        // every release and this system may not have it installed, but if
+        // available, the policy for updates is such that unattended-upgrades
+        // should also install from here by default.
+        "${distro_id}ESMApps:${distro_codename}-apps-security";
+        "${distro_id}ESM:${distro_codename}-infra-security";
+
+{% for origin in security_autoupdate_additional_origins %}
+        "{{ origin }}";
+{% endfor %}
+};
+{% endif %}
+
+
+Unattended-Upgrade::Package-Blacklist{
+{% for package in security_autoupdate_blacklist %}
+        "{{package}}";
+{% endfor %}
+}

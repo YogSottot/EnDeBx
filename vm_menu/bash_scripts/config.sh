@@ -84,6 +84,7 @@ BS_ANSIBLE_PB_EDIT_SITE="edit_site.yaml"
 BS_ANSIBLE_PB_NGINX_MOD_REPO="setup_nginx_modules_repo.yaml"
 BS_ANSIBLE_PB_SYSCTL="setup_sysctl.yaml"
 BS_ANSIBLE_PB_CROWDSEC="install_or_delete_crowdsec.yaml"
+BS_ANSIBLE_PB_SECURITY="setup_security.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -164,4 +165,5 @@ BS_CROWDESC_WHITELIST_IP=185.164.148.1,185.164.149.100,95.213.198.99,158.160.117
 # crowdsec collection list, comma separated
 BS_CROWDSEC_COLLECTION_INSTALL=crowdsecurity/base-http-scenarios,crowdsecurity/mariadb,crowdsecurity/whitelist-good-actors
 
-
+# Setup Security by default (change ssh-port, disable root login, disable password auth, etc)
+BS_SETUP_SECURITY=N

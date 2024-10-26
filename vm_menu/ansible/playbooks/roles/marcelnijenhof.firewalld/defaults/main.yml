@@ -4,36 +4,30 @@
 #
 marcelnijenhof_firewalld_zones: []
 marcelnijenhof_firewalld_disable: false
-marcelnijenhof_firewalld_allow_ports:
-  - port: 8893/tcp
-    immediate: false
-  - port: 8894/tcp
-    immediate: false
-  - port: 1935/tcp
-    immediate: false
-  - port: 5060/tcp
-    immediate: false
-  - port: 12093/tcp
-    immediate: false
-  - port: 12092/tcp
-    immediate: false
-  - port: 5060/udp
-    immediate: false
-  - port: 1935/udp
-    immediate: false
-  - port: 3478/udp
-    immediate: false
-  - port: 8000-48000/udp
-    immediate: false
-  - port: 12093/udp
-    immediate: false
-  - port: 12092/udp
-    immediate: false
+marcelnijenhof_firewalld_allow_ports: []
+#  - port: 8893/tcp
+#    immediate: false
+#  - port: 8894/tcp
+#    immediate: false
+#  - port: 1935/tcp
+#    immediate: false
+#  - port: 5060/tcp
+#    immediate: false
+#  - port: 12093/tcp
+#    immediate: false
+#  - port: 12092/tcp
+#    immediate: false
+#  - port: 5060/udp
+#    immediate: false
+#  - port: 1935/udp
+#    immediate: false
+#  - port: 3478/udp
+#    immediate: false
+#  - port: 8000-48000/udp
+#    immediate: false
+#  - port: 12093/udp
+#    immediate: false
+#  - port: 12092/udp
+#    immediate: false
 
-marcelnijenhof_firewalld_allow_services:
-  - service: https
-    immediate: false
-  - service: http
-    immediate: false
-  - service: ssh
-    immediate: false
+marcelnijenhof_firewalld_allow_services: []

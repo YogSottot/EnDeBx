@@ -231,10 +231,24 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 
 if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
-  -e 'crowdsec_action="'INSTALL'" \
+  -e 'crowdsec_action="'"INSTALL"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
+fi
+
+
+if [ "$BS_SETUP_SECURITY" == "Y" ]; then
+  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "security_ssh_port=${BS_SSH_PORT} \
+      security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
+      security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
+      security_sudoers_passwordless=${BS_SSH_ADMIN_USER} \
+      security_autoupdate_enabled=${BS_AUTOUPDATE_ENABLED} \
+      security_sudoers_passwordless_ssh_key=\"${BS_SSH_ADMIN_USER_SSH_KEY}\" \
+      security_autoupdate_reboot=${BS_AUTOUPDATE_REBOOT_ENABLE} \
+      security_autoupdate_reboot_time=${BS_AUTOUPDATE_REBOOT_TIME} \
+      security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
 fi
 
 # disable httpd access logs
