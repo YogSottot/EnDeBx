@@ -1,0 +1,20 @@
+---
+- ansible.builtin.include_tasks: tls-certificate-certbot.yml
+  when: pureftpd_tls_certificate_method == 'certbot'
+
+- ansible.builtin.include_tasks: tls-certificate-generate.yml
+  when: pureftpd_tls_certificate_method == 'generate'
+
+- ansible.builtin.include_tasks: tls-certificate-upload.yml
+  when: pureftpd_tls_certificate_method == 'upload'
+
+- name: Verify TLS certificate exists.
+  stat:
+    path: "{{ pureftpd_tls_certificate_pem }}"
+  register: pureftpd_tls_certificate
+
+- name: Fail when no certificate is found.
+  fail:
+    msg: |
+        The certificate file was not found at {{ pureftpd_tls_certificate_pem }}
+  when: not pureftpd_tls_certificate.stat.exists | default(False)

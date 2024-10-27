@@ -1,0 +1,18 @@
+---
+- name: Include setup tasks
+  ansible.builtin.include_tasks: install.yml
+  when: pureftp_action == 'create'
+
+
+- name: Include delete tasks
+  ansible.builtin.include_tasks: delete.yml
+  when: pureftp_action == 'delete'
+
+- name: Show FTP user information
+  ansible.builtin.debug:
+    msg:
+      - "FTP Username: {{ ftp_user_name }}"
+      - "FTP password: {{ ftp_user_password }}"
+      - "FTP Home Directory: {{ ftp_user_dir }}"
+      - "Pureftp action {{ pureftp_action }}"
+  when: pureftp_action == 'create'

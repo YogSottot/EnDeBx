@@ -1,0 +1,6 @@
+---
+- ansible.builtin.include_tasks: remove-virtual-user.yml
+  vars:
+    user: "{{ item }}"
+  with_items: "{{ pureftpd_virtual_deleted_users }}"
+  when: pureftpd_virtual_deleted_users | length > 0

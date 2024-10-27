@@ -1,0 +1,42 @@
+---
+- name: Ensure Pure-FTPd group exists.
+  ansible.builtin.group:
+    name: "{{ pureftpd_virtual_users_group }}"
+    gid: "{{ pureftpd_virtual_users_gid | default(omit) }}"
+    system: false
+    state: present
+  when: pureftpd_virtual_users | length > 0
+
+- name: Ensure Pure-FTPd user exists.
+  ansible.builtin.user:
+    name: "{{ pureftpd_virtual_users_user }}"
+    uid: "{{ pureftpd_virtual_users_uid | default(omit) }}"
+    group: "{{ pureftpd_virtual_users_group }}"
+    home: /dev/null
+    shell: /usr/sbin/nologin
+    system: false
+    state: present
+  when: pureftpd_virtual_users | length > 0
+
+- name: Verify virtual users database existence.
+  ansible.builtin.stat:
+    path: "{{ pureftpd_config_dir }}/pureftpd.passwd"
+  register: pureftpd_virtual_users_database
+
+- name: Ensure virtual users database exists.
+  ansible.builtin.file:
+    path: "{{ pureftpd_config_dir }}/pureftpd.passwd"
+    owner: root
+    group: root
+    mode: '0600'
+    state: touch
+  when: (pureftpd_virtual_users | length > 0 or pureftpd_virtual_users_import) and not pureftpd_virtual_users_database.stat.exists | default(False)
+
+- ansible.builtin.include_tasks: create-virtual-user.yml
+  vars:
+    user: "{{ item }}"
+  with_items: "{{ pureftpd_virtual_users }}"
+  when: pureftpd_virtual_users | length > 0
+
+- ansible.builtin.include_tasks: import-system-users.yml
+  when: pureftpd_virtual_users_import

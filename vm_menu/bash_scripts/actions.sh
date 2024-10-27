@@ -363,3 +363,14 @@ function action_delete_site() {
 
     press_any_key_to_return_menu
 }
+
+function action_add_remove_ftp_user() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_FTP}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "pureftp_action=${pureftp_action} \
+      ftp_user_name=${ftp_user_name} \
+      ftp_user_password=${ftp_user_password} \
+      ftp_user_dir=${path_site_from_links} \
+      ftp_user_uid=${ftp_user_uid}"
+
+}

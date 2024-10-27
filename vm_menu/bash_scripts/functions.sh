@@ -43,7 +43,7 @@ main_menu(){
     echo "          2) Add/Change site";
     echo "          3) Configure Let\`s Encrypt certificate";
     echo "          4) Enable or Disable redirect HTTP to HTTPS";
-    echo "          5) ${mesg_menu_emulate_bitrix_vm}";
+    echo "          5) Add/Remove FTP user";
     echo "          6) Add/Change global PHP version";
     echo "          7) Settings SMTP sites";
     echo "          8) Installing Extensions";
@@ -65,7 +65,7 @@ main_menu(){
       "2") menu_edit_sites ;;
       "3") get_lets_encrypt_certificate ;;
       "4") enable_or_disable_redirect_http_to_https ;;
-      "5") action_emulate_bitrix_vm ;;
+      "5") add_remove_ftp_user ;;
       "6") change_php_version ;;
       "7") settings_smtp_sites ;;
       "8") menu_install_extensions ;;
@@ -692,6 +692,147 @@ enable_or_disable_redirect_http_to_https(){
       * ) echo "   Please enter Y or N.";;
     esac
   done
+}
+
+check_ftp_user_exists() {
+    pure-pw show "$1" >/dev/null 2>&1
+    return $?
+}
+
+list_ftp_users() {
+    pure-pw list | awk '{print $1}'
+}
+
+
+generate_unique_ftp_username() {
+    local base_name="${BS_USER_SERVER_SITES}-ftp-"
+    local counter=0
+    local username
+
+    while true; do
+        username="${base_name}$(printf "%04d" $counter)"
+        if ! check_ftp_user_exists "$username"; then
+            echo "$username"
+            return
+        fi
+        ((counter++))
+    done
+}
+add_remove_ftp_user(){
+    clear;
+    list_sites;
+
+    pureftp_action='C'
+    ftp_user_name=''
+    ftp_password=$(generate_password $BS_CHAR_DB_PASSWORD)
+    path_site_from_links=$BS_PATH_DEFAULT_SITE
+
+
+      echo -e "\n   Menu -> Create or Delete FTP user:\n";
+      while true; do
+        read -r -p "   Do you want to Create or Delete FTP-user? (C/D) [${pureftp_action}]: " answer
+        answer=${answer:-$pureftp_action}
+        case $answer in
+          [Cc]* ) pureftp_action=create; break;;
+          [Dd]* ) pureftp_action=delete; break;;
+          * ) printf "   Please enter C or D.\n";;
+        esac
+      done
+
+
+        case $pureftp_action in
+      create )
+        read_by_def "   Enter path to ftp directory (default: $path_site_from_links): " path_site_from_links "${path_site_from_links}";
+
+        extract_username_from_path
+
+        ftp_user_uid=$(id -u "${BS_USER_SERVER_SITES}")
+
+
+        # Generate a unique username
+        auto_generated_username=$(generate_unique_ftp_username)
+
+        # Prompt the user with the auto-generated username as default
+        read -r -p "   Enter FTP username [${auto_generated_username}]: " ftp_user_name
+
+        # If the user didn't enter anything, use the auto-generated username
+        ftp_user_name=${ftp_user_name:-$auto_generated_username}
+
+        # Check if the entered username already exists
+        while check_ftp_user_exists "$ftp_user_name"; do
+            read -p "   User already exists. Enter a different username: " ftp_user_name
+        done
+
+        # Generate a random password
+        auto_generated_password=$(openssl rand -base64 12)
+
+        # Prompt the user with the auto-generated password as default
+        read -r -s -p "   Enter FTP user password [${auto_generated_password}]: " ftp_user_password
+        echo
+
+        # If the user didn't enter anything, use the auto-generated password
+        ftp_user_password=${ftp_user_password:-$auto_generated_password}
+
+      ;;
+      delete )
+        echo "List of FTP users:"
+        mapfile -t users < <(list_ftp_users)
+        for i in "${!users[@]}"; do
+            echo "$((i+1)). ${users[i]}"
+        done
+
+        read -r -p "   Enter the number of the user you want to delete (or 0 to cancel): " user_number
+
+        if [[ $user_number -gt 0 && $user_number -le ${#users[@]} ]]; then
+            ftp_user_name="${users[$((user_number-1))]}"
+            read -r -p "   Are you sure you want to delete user '$ftp_user_name'? (y/N): " confirm
+            if [[ $confirm =~ ^[Yy]$ ]]; then
+                echo "   User '$ftp_user_name' selected for deletion."
+            else
+                echo "   Deletion cancelled."
+                ftp_user_name=""
+            fi
+        elif [[ $user_number -eq 0 ]]; then
+            echo "   Deletion cancelled."
+            ftp_user_name=""
+        else
+            echo "   Invalid selection. Deletion cancelled."
+            ftp_user_name=""
+        fi
+      ;;
+    esac
+
+    echo -e "\n   Entered data:\n"
+    echo "   Task: $pureftp_action ftp user";
+
+    case $answer in
+      create )
+        echo "   FTP-username: $ftp_user_name";
+        echo "   FTP directory: $path_site_from_links"
+        echo "   FTP-password: $ftp_user_password";
+      ;;
+      delete )
+        echo "   FTP-username: $ftp_user_name"
+      ;;
+    esac
+
+    while true; do
+      read -r -p "   Do you really want to $pureftp_action an FTP user? (Y/N): " answer
+      case $answer in
+        [Yy]* ) 
+          if action_add_remove_ftp_user; then
+            echo -e "\n   '${pureftp_action}' FTP user successfully executed."
+          else
+            echo -e "\n   Error: '${pureftp_action}' FTP user failed." >&2
+          fi
+          read -r -p "   Press any key to return to the menu..." key
+          break
+        ;;
+        [Nn]* ) break;;
+        * ) echo "   Please enter Y or N.";;
+      esac
+    done
+
 }
 
 function update_menu(){

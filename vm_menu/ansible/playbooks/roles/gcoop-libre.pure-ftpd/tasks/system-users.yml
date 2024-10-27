@@ -1,0 +1,12 @@
+---
+- ansible.builtin.include_tasks: create-system-user.yml
+  vars:
+    user: "{{ item }}"
+  with_items: "{{ pureftpd_system_users }}"
+  when: pureftpd_system_users | length > 0
+
+- ansible.builtin.include_tasks: remove-system-user.yml
+  vars:
+    user: "{{ item }}"
+  with_items: "{{ pureftpd_system_deleted_users }}"
+  when: pureftpd_system_deleted_users | length > 0

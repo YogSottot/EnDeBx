@@ -1,0 +1,25 @@
+---
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+- ansible.builtin.import_tasks: configure.yml
+- ansible.builtin.import_tasks: authentication.yml
+- ansible.builtin.import_tasks: system-users.yml
+- ansible.builtin.import_tasks: virtual-users.yml
+
+- ansible.builtin.include_tasks: tls-certificate.yml
+  when: pureftpd_config.TLS | default(0) | int() > 0
+
+- name: Ensure Pure-FTPd service is started enabled on startup.
+  ansible.builtin.service:
+    name: pure-ftpd
+    state: started
+    enabled: true
+
+- name: Reload Pure-FTPd users
+  ansible.builtin.command: pure-pw mkdb
+
+- name: Restart Pure-FTPd
+  ansible.builtin.service:
+    name: pure-ftpd
+    state: restarted
+
