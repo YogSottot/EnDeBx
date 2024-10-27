@@ -1,0 +1,15 @@
+---
+- name: "Setup bashrc"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  vars:
+    marcelnijenhof_firewalld_allow_ports:
+      - port: "{{ security_ssh_port }}/tcp"
+        immediate: true
+  roles:
+    - name: ssh-open port in firewall
+      role: marcelnijenhof.firewalld
+    - name: Setup ssh security
+      role: geerlingguy.security

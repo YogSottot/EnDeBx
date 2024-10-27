@@ -9,7 +9,7 @@
     - name: Add nginx modules repo key
       ansible.builtin.get_url:
         url: https://yogsottot.github.io/ppa/yogsottot.asc
-        dest: /etc/apt/trusted.gpg.d/yogsottot.asc
+        dest: /etc/apt/keyrings/yogsottot.asc
         mode: "0644"
         owner: root
         group: root
@@ -18,7 +18,7 @@
 
     - name: Add nginx modules repo.
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/yogsottot.asc] https://yogsottot.github.io/ppa/debian {{ ansible_distribution_release }} main"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/yogsottot.asc] https://yogsottot.github.io/ppa/debian {{ ansible_distribution_release }} main"
         state: present
       when:
         - ansible_os_family == "Debian"

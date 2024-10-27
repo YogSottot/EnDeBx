@@ -1,0 +1,25 @@
+---
+- name: "Ftp-user {{ pureftp_action }}"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - name: Open ftp port
+      role: marcelnijenhof.firewalld
+      vars:
+        marcelnijenhof_firewalld_allow_services:
+          - service: ftp
+            immediate: true
+      when: pureftp_action == 'create'
+    - name: "Ftp user {{ pureftp_action }}"
+      role: gcoop-libre.pure-ftpd
+      vars:
+        pureftpd_virtual_users:
+          - name: "{{ ftp_user_name }}"
+            password: "{{ ftp_user_password }}"
+            homedir: "{{ ftp_user_dir }}"
+            uid: "{{ ftp_user_uid }}"
+            gid: "{{ ftp_user_uid }}"
+        pureftpd_virtual_deleted_users:
+          - name: "{{ ftp_user_name }}"
