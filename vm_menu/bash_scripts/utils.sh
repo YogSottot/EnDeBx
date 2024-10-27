@@ -39,7 +39,7 @@ list_sites(){
       local username; username=$(basename "$user_home")
       local user_sites_dir="$user_home"
 
-      # Process additional sites for both www-data and other users
+      # Process additional sites for both default and other users
       if [[ -d "$user_sites_dir" ]]; then
         for tmp_dir in $(find "$user_sites_dir" -maxdepth 1 -type d | grep -v "^$user_sites_dir$" | sed 's|.*/||'); do
 

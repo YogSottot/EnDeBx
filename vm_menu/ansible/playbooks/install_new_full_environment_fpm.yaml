@@ -26,7 +26,7 @@
         mode: "{{ permissions_sites_dirs }}"
         recurse: true
 
-    - name: Fox owner of user_dir
+    - name: Fix owner of user_dir
       ansible.builtin.file:
         state: directory
         path: "{{ path_sites }}"
@@ -284,6 +284,7 @@
         regexp: "^{{ user_server_sites }}:"
         line: "{{ user_server_sites }}:x:33:33:{{ group_user_server_sites }}:{{ path_sites }}:/bin/bash"
         state: present
+      when: user_server_sites == 'www-data'
 
     - name: Setting password from user {{ user_server_sites }}
       ansible.builtin.user:

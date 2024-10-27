@@ -10,6 +10,7 @@ BS_DEFAULT_SITE_NAME="bx-site"
 BS_PATH_DEFAULT_SITE="$BS_PATH_SITES/$BS_DEFAULT_SITE_NAME"
 BS_USER_SERVER_SITES="www-data"
 BS_GROUP_USER_SERVER_SITES="www-data"
+BS_DEFAULT_USER_SERVER_SITES="www-data"
 BS_PERMISSIONS_SITES_DIRS="0775"
 BS_PERMISSIONS_SITES_FILES="0664"
 BS_EXCLUDED_DIRS_SITES=(".bx_temp" "temp" "tmp" "test" ".ssh" "bitrixenv_error")
@@ -134,7 +135,7 @@ BS_BRANCH_UPDATE_MENU="feature/php-fpm"
 BS_REPOSITORY_URL_FILE_VERSION="https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/${BS_BRANCH_UPDATE_MENU}/vm_menu/bash_scripts/config.sh"
 BS_URL_SCRIPT_UPDATE_MENU="https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/${BS_BRANCH_UPDATE_MENU}/update_menu.sh"
 BS_REPOSITORY_URL="https://github.com/YogSottot/DebianLikeBitrixVM/"
-BS_CHECK_UPDATE_MENU_MINUTES=10
+BS_CHECK_UPDATE_MENU_MINUTES=1440
 
 # Mysql binary name
 BS_MYSQL_CMD="mysql"

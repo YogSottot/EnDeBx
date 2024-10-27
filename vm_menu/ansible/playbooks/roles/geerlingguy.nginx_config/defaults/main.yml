@@ -1,5 +1,5 @@
 ---
-nginx_user: "{{ user_server_sites }}"
+nginx_user: "www-data"
 
 nginx_service_state: started
 nginx_service_enabled: true

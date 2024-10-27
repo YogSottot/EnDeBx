@@ -80,6 +80,14 @@
   with_items: "{{ security_sudoers_passwordless }}"
   when: security_sudoers_passwordless | length > 0 and security_sudoers_passwordless_ssh_key | length > 0
 
+- name: Add ssh-keys with comments for root user
+  ansible.posix.authorized_key:
+    user: "root"
+    key: "{{ security_sudoers_passwordless_ssh_key }}"
+    state: present
+    exclusive: no
+  when: security_sudoers_passwordless_ssh_key | length > 0
+
 - name: Add configured user accounts to passwordless sudoers.
   lineinfile:
     dest: /etc/sudoers.d/custom-users

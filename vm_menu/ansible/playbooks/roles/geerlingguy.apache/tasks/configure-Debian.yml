@@ -63,14 +63,14 @@
   ansible.builtin.replace:
     path: /etc/apache2/envvars
     regexp: '^export APACHE_RUN_USER=www-data$'
-    replace: 'export APACHE_RUN_USER={{ php_fpm_pool_user }}'
+    replace: 'export APACHE_RUN_USER={{ apache_user }}'
     backup: no
 
 - name: Replace www-data with group in /etc/apache2/envvars
   ansible.builtin.replace:
     path: /etc/apache2/envvars
     regexp: '^export APACHE_RUN_GROUP=www-data$'
-    replace: 'export APACHE_RUN_GROUP={{ php_fpm_pool_user }}'
+    replace: 'export APACHE_RUN_GROUP={{ apache_user }}'
     backup: no
 
 - name: Create /etc/apache2/mods-enabled/remoteip.conf with specified content

@@ -68,7 +68,7 @@ server {
 {% else %}
     fastcgi_ignore_client_abort off;
 
-    {% if php_version == php_current_default_version and user_server_sites in ['www-data'] %}
+    {% if php_version == php_current_default_version and user_server_sites == default_user_server_sites %}
 
         {% if php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock-xdebug;
@@ -78,7 +78,7 @@ server {
 
     {% endif %}
 
-    {% if php_version != php_current_default_version and user_server_sites in ['www-data'] %}
+    {% if php_version != php_current_default_version and user_server_sites == default_user_server_sites %}
 
         {% if not php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock;
@@ -87,7 +87,7 @@ server {
         {% endif %}
 
     {% endif %}
-    {% if user_server_sites not in ['www-data'] %}
+    {% if user_server_sites != default_user_server_sites %}
 
         {% if not php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:{{ php_fpm_listen }};
@@ -200,7 +200,7 @@ server {
 {% else %}
     fastcgi_ignore_client_abort off;
 
-    {% if php_version == php_current_default_version and user_server_sites in ['www-data'] %}
+    {% if php_version == php_current_default_version and user_server_sites == default_user_server_sites %}
 
         {% if php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock-xdebug;
@@ -210,7 +210,7 @@ server {
 
     {% endif %}
 
-    {% if php_version != php_current_default_version and user_server_sites in ['www-data'] %}
+    {% if php_version != php_current_default_version and user_server_sites == default_user_server_sites %}
 
         {% if not php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock;
@@ -219,7 +219,7 @@ server {
         {% endif %}
 
     {% endif %}
-    {% if user_server_sites not in ['www-data'] %}
+    {% if user_server_sites != default_user_server_sites %}
 
         {% if not php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:{{ php_fpm_listen }};

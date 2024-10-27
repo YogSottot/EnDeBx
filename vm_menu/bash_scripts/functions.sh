@@ -200,14 +200,9 @@ generate_unique_username() {
 
 # Extract username based on the path
 extract_username_from_path() {
-        if [[ "${path_site_from_links}" == $BS_PATH_USER_HOME_PREFIX/html/* ]]; then
-          BS_USER_SERVER_SITES="www-data"
-          BS_PATH_USER_HOME="html"
-        elif [[ "${path_site_from_links}" == $BS_PATH_USER_HOME_PREFIX/user*/* ]]; then
+        if [[ "${path_site_from_links}" != $BS_PATH_USER_HOME_PREFIX/$BS_PATH_USER_HOME/* ]]; then
           BS_USER_SERVER_SITES=$(echo "${path_site_from_links}" | cut -d'/' -f4)
           BS_PATH_USER_HOME="${BS_USER_SERVER_SITES}"
-        else
-          BS_USER_SERVER_SITES=""
         fi
 
         BS_GROUP_USER_SERVER_SITES="${BS_USER_SERVER_SITES}"
@@ -885,9 +880,9 @@ function change_php_version() {
 
     echo -e "\n   Selected PHP version: $new_version_php\n"
 
-    php_set_manual=false
+    php_set_manual=N
     while true; do
-      read -r -p "   Set this version of php as the default version? All sites on www-data that use the default version will be switched to this version. (Y/N)[${php_set_manual}]: " answer
+      read -r -p "   Set this version of php as the default version? All sites on ${BS_DEFAULT_USER_SERVER_SITES} that use the default version will be switched to this version. (Y/N)[${php_set_manual}]: " answer
             answer=${answer:-$php_set_manual}
       case ${answer,,} in
         y ) php_set_manual=1; break;;

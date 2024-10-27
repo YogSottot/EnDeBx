@@ -53,7 +53,7 @@
             pool_php_admin_value_error_log: "{{ php_fpm_php_admin_value_error_log }}"
             pool_php_admin_flag_log_errors: "{{ php_fpm_php_admin_flag_log_errors }}"
       when:
-        - user_server_sites != "www-data"
+        - user_server_sites != default_user_server_sites
 
   post_tasks:
     - name: Reload php-fpm

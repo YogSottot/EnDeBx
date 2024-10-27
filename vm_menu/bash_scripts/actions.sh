@@ -34,6 +34,7 @@ action_create_site(){
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_dirs=${BS_PERMISSIONS_SITES_DIRS} \
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
@@ -63,6 +64,7 @@ action_create_site(){
   php_version=${new_version_php} \
   php_current_default_version=${default_version} \
   php_enable_php_fpm_xdebug=$((php_enable_php_fpm_xdebug == 1)) \
+  php_force_install='true' \
   server_timezone=${BS_SERVER_TIMEZONE} \
 
   ansible_run_playbooks_params=${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}"
@@ -90,6 +92,7 @@ action_edit_site(){
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_dirs=${BS_PERMISSIONS_SITES_DIRS} \
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
@@ -117,6 +120,7 @@ action_edit_site(){
   php_version=${new_version_php} \
   php_current_default_version=${default_version} \
   php_enable_php_fpm_xdebug=$((php_enable_php_fpm_xdebug == 1)) \
+  php_force_install='false' \
   server_timezone=${BS_SERVER_TIMEZONE} \
 
   ansible_run_playbooks_params=${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}"
@@ -140,6 +144,7 @@ action_get_lets_encrypt_certificate(){
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
 
@@ -156,6 +161,7 @@ action_enable_or_disable_redirect_http_to_https(){
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
 
@@ -241,10 +247,13 @@ function action_change_php_version(){
   -e "php_version=${new_version_php} \
   php_current_default_version=${default_version} \
   php_set_manual=$((php_set_manual == 1)) \
+  php_force_install='true' \
   user_server_sites=${BS_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
   server_timezone=${BS_SERVER_TIMEZONE} \
-  domain=default"
+  domain=default \
+  htaccess_support=$((htaccess_support == 1))"
 
   press_any_key_to_return_menu;
 }
@@ -322,6 +331,7 @@ function action_install_or_delete_file_conversion_server() {
       domain=${domain} \
       full_path_site=${full_path_site} \
       user_server_sites=${BS_USER_SERVER_SITES} \
+      default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
       group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
       service_apache_name=${BS_SERVICE_APACHE_NAME}"
     press_any_key_to_return_menu;
@@ -353,6 +363,7 @@ function action_delete_site() {
       type=${type} \
 
       user_server_sites=${BS_USER_SERVER_SITES} \
+      default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
       service_nginx_name=${BS_SERVICE_NGINX_NAME} \
       path_nginx_sites_conf=${BS_PATH_NGINX_SITES_CONF} \

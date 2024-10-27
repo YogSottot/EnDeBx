@@ -83,7 +83,7 @@ LogLevel warn
 	</Directory>
 
 
-{% if php_version == php_current_default_version and user_server_sites in ['www-data'] %}
+{% if php_version == php_current_default_version and user_server_sites == default_user_server_sites %}
 
     {% if php_enable_php_fpm_xdebug | bool %}
 	# Cause the PHP interpreter to handle files with a .php extension.
@@ -94,7 +94,7 @@ LogLevel warn
 
 {% endif %}
 
-{% if php_version != php_current_default_version and user_server_sites in ['www-data'] %}
+{% if php_version != php_current_default_version and user_server_sites == default_user_server_sites %}
 
     {% if not php_enable_php_fpm_xdebug | bool %}
 	# Cause the PHP interpreter to handle files with a .php extension.
@@ -110,7 +110,7 @@ LogLevel warn
 
 {% endif %}
 
-{% if user_server_sites not in ['www-data'] %}
+{% if user_server_sites != default_user_server_sites %}
 
 	{% if not php_enable_php_fpm_xdebug | bool %}
 	# Cause the PHP interpreter to handle files with a .php extension.

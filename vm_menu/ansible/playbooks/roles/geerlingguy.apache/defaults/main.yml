@@ -13,6 +13,8 @@ apache_vhosts_template: "vhosts.conf.j2"
 # Set this to `true` to remove that default.
 apache_remove_default_vhost: true
 
+apache_user: www-data
+
 apache_global_vhost_settings: |
   DirectoryIndex index.php index.html
 

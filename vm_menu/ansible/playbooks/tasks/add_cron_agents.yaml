@@ -2,12 +2,12 @@
 - name: Set php_cron
   ansible.builtin.set_fact:
     php_cron: php
-  when: php_version == php_current_default_version and user_server_sites in ['www-data']
+  when: php_version == php_current_default_version and user_server_sites == default_user_server_sites
 
 - name: Set php_cron
   ansible.builtin.set_fact:
-    php_cron: "php{{ php_version}}"
-  when: user_server_sites not in ['www-data']
+    php_cron: "php{{ php_version }}"
+  when: user_server_sites != default_user_server_sites
 
 - name: Creating directories log
   ansible.builtin.file:

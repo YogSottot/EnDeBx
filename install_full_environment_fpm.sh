@@ -94,11 +94,15 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 # install deps
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
+if [ "$BS_USER_SERVER_SITES" != 'www-data'  ]; then
+    useradd --user-group --create-home --home-dir "$BS_PATH_USER_HOME_PREFIX/$BS_PATH_USER_HOME" --shell /usr/bin/bash "$BS_PATH_USER_HOME"
+fi
 if [ "$BS_INSTALL_BASH_ALIASES" == Y  ]; then
   # setup bashrc
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "user_server_sites=${BS_USER_SERVER_SITES} \
     group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+    default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
     path_sites=${BS_PATH_SITES} "
 fi
 
@@ -134,6 +138,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_dirs=${BS_PERMISSIONS_SITES_DIRS} \
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
@@ -159,6 +164,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   php_version=${BX_PHP_DEFAULT_VERSION} \
   php_enable_php_fpm_xdebug=false \
   php_default_version_debian=${BX_PHP_DEFAULT_VERSION} \
+  php_force_install='true' \
   server_timezone=${BS_SERVER_TIMEZONE}"
 
 # setup nginx modules repo
@@ -199,6 +205,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 
   user_server_sites=${BS_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+  default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
 
   permissions_sites_dirs=${BS_PERMISSIONS_SITES_DIRS} \
   permissions_sites_files=${BS_PERMISSIONS_SITES_FILES} \
