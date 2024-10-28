@@ -1,0 +1,44 @@
+---
+- name: Install rkhunter package
+  ansible.builtin.apt:
+    pkg: rkhunter
+    cache_valid_time: 86400 # 1 day
+  register: apt_out
+
+- name: Update rkhunter config defaults
+  ansible.builtin.lineinfile:
+    path: /etc/default/rkhunter
+    regexp: "^#?{{ item.regexp }}="
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: "CRON_DAILY_RUN", line: 'CRON_DAILY_RUN="yes"'}
+    - {regexp: "CRON_DB_UPDATE", line: 'CRON_DB_UPDATE="yes"'}
+    - {regexp: "DB_UPDATE_EMAIL", line: 'DB_UPDATE_EMAIL="no"'}
+    - {regexp: "REPORT_EMAIL", line: 'REPORT_EMAIL="{{ rkhunter_notification_email }}"'}
+    - {regexp: "APT_AUTOGEN", line: 'APT_AUTOGEN="yes"'}
+    - {regexp: "NICE", line: 'NICE="10"'}
+
+#- name: Add additional rkhunter config lines
+#  ansible.builtin.lineinfile:
+#    path: /etc/rkhunter.conf.local
+#    line: "{{ item }}"
+#    validate: "/usr/bin/rkhunter --config-check --configfile %s"
+#  with_items: "{{ rkhunter_additional_config }}"
+
+- name: Configure rkhunter template
+  ansible.builtin.template:
+    src: rkhunter.conf.local.j2
+    dest: /etc/rkhunter.conf.local
+    owner: root
+    group: root
+    mode: '0644'
+
+
+- name: Perform initial rkhunter setup
+  when: apt_out.changed
+  block:
+    - name: Update rkhunter database
+      ansible.builtin.shell: /usr/bin/rkhunter --update --nocolors || true
+
+    - name: Update rkhunter properties database
+      ansible.builtin.command: /usr/bin/rkhunter --propupd --nocolors

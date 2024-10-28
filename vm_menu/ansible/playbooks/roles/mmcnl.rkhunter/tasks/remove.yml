@@ -1,0 +1,5 @@
+---
+- name: Remove rkhunter package
+  ansible.builtin.apt:
+    pkg: rkhunter
+    state: absent

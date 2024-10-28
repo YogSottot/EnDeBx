@@ -286,6 +286,12 @@
         state: present
       when: user_server_sites == 'www-data'
 
+    - name: Delete html directory
+      ansible.builtin.file:
+        path: "/var/www/html"
+        state: absent
+      when: user_server_sites != 'www-data'
+
     - name: Setting password from user {{ user_server_sites }}
       ansible.builtin.user:
         name: "{{ user_server_sites }}"

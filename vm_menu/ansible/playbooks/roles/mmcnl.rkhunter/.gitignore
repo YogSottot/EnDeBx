@@ -1,0 +1,5 @@
+/TAGS
+.tags
+*.md.temp
+.DS_Store
+.galaxy_install_info

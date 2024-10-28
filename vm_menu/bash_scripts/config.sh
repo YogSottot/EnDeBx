@@ -88,6 +88,7 @@ BS_ANSIBLE_PB_CROWDSEC="install_or_delete_crowdsec.yaml"
 BS_ANSIBLE_PB_SECURITY="setup_security.yaml"
 BS_ANSIBLE_PB_FTP="install_or_delete_ftpuser.yaml"
 BS_ANSIBLE_PB_MYDUMPER_REPO="setup_mydumper_repo.yaml"
+BS_ANSIBLE_PB_RKHUNTER="install_or_delete_rkhunter.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -170,3 +171,6 @@ BS_CROWDSEC_COLLECTION_INSTALL=crowdsecurity/base-http-scenarios,crowdsecurity/m
 
 # Setup Security by default (change ssh-port, disable root login, disable password auth, etc)
 BS_SETUP_SECURITY=N
+
+# Setup rkhunter by default (Y/N)
+BS_SETUP_RKHUNTER=N

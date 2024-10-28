@@ -1,0 +1,10 @@
+---
+- name: Install rkhunter package
+  ansible.builtin.import_tasks:
+    install.yml
+  when: rkhunter_action == 'INSTALL'
+
+- name: Remove rkhunter package
+  ansible.builtin.import_tasks:
+    remove.yml
+  when: rkhunter_action =='DELETE'

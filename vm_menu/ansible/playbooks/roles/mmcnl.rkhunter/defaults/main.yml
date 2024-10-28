@@ -1,0 +1,11 @@
+---
+rkhunter_additional_config:
+  - ALLOWHIDDENDIR=/etc/.hg
+  - ALLOWHIDDENFILE=/etc/.hgignore
+  - ALLOWHIDDENDIR=/dev/shm/byobu-*/.last.tmux
+  - ALLOWDEVFILE=/dev/shm/byobu-*-????????/.last.tmux/*
+  - ALLOWDEVFILE=/dev/shm/byobu-*-????????/*/*
+  - ALLOWDEVFILE=/dev/shm/byobu-*-????????/*
+  - ALLOWDEVFILE=/dev/shm/sem.mp-????????
+  - ALLOWDEVFILE=/dev/shm/PostgreSQL.??????????
+  - ALLOWDEVFILE=/dev/shm/PostgreSQL.*

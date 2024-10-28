@@ -353,6 +353,25 @@ function action_install_or_delete_crowdsec() {
 
     press_any_key_to_return_menu;
 }
+
+function action_install_or_delete_rkhunter() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_RKHUNTER}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "rkhunter_action=${action} \
+      rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Rkhunter is installed and configured."
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      Rkhunter is deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \

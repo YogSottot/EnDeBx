@@ -248,6 +248,12 @@ if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
 fi
 
+if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
+  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  -e "rkhunter_action='install' \
+      rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
+fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
