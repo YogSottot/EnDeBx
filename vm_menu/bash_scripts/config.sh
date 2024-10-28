@@ -87,6 +87,7 @@ BS_ANSIBLE_PB_SYSCTL="setup_sysctl.yaml"
 BS_ANSIBLE_PB_CROWDSEC="install_or_delete_crowdsec.yaml"
 BS_ANSIBLE_PB_SECURITY="setup_security.yaml"
 BS_ANSIBLE_PB_FTP="install_or_delete_ftpuser.yaml"
+BS_ANSIBLE_PB_MYDUMPER_REPO="setup_mydumper_repo.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

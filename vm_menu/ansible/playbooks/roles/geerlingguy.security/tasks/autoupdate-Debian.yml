@@ -1,7 +1,9 @@
 ---
 - name: Install unattended upgrades package.
   package:
-    name: unattended-upgrades
+    name:
+      - unattended-upgrades
+      - powermgmt-base
     state: present
 
 - name: Copy unattended-upgrades configuration files in place.
