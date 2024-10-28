@@ -1,0 +1,4 @@
+---
+# Include variables and define needed variables.
+- name: Delete Memcached.
+  package: name=memcached state=absent

@@ -363,7 +363,7 @@ function action_install_or_delete_rkhunter() {
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "
-      Rkhunter is installed and configured."
+      Rkhunter is installed and configured.\n      Config in /etc/rkhunter.conf.local"
     elif [ "${action}" = "DELETE" ]; then
       echo -e "
       Rkhunter is deleted."
@@ -380,10 +380,26 @@ function action_install_or_delete_maldet() {
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "
-      Maldet is installed and configured."
+      Maldet is installed and configured.\n      Config in /usr/local/maldetect/conf.maldet"
     elif [ "${action}" = "DELETE" ]; then
       echo -e "
       Maldet is deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
+function action_install_or_delete_memcached() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MEMCACHED}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "memcached_action=${action}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Memcached is installed and configured.\n      Config in /etc/memcached.conf"
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      Memcached is deleted."
     fi
 
     press_any_key_to_return_menu;

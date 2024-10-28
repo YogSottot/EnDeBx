@@ -1,0 +1,9 @@
+---
+- name: "Memcached {{ memcached_action }}"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - name: "Memcached {{ memcached_action }}"
+      role: geerlingguy.memcached

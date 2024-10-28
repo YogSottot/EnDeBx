@@ -98,6 +98,7 @@ menu_install_extensions(){
     echo "          4) Install/Delete Crowdsec";
     echo "          5) Install/Delete Rkhunter";
     echo "          6) Install/Delete Linux Malware Detect ";
+    echo "          7) Install/Delete Memcached";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -111,6 +112,7 @@ menu_install_extensions(){
     "4") install_crowdsec ;;
     "5") install_rkhunter ;;
     "6") install_linux_malware_detect ;;
+    "7") install_memcached ;;
 
     0|z)  main_menu
     ;;
@@ -1231,6 +1233,27 @@ function install_linux_malware_detect() {
     read -r -p "   Do you really want to$(echo -e "${action_color}")Maldet? (Y/N): " answer
     case $answer in
       [Yy]* ) action_install_or_delete_maldet; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_memcached() {
+  clear
+
+  is_install_memcached=$(which memcached);
+  action="INSTALL"
+  if [ -n "$is_install_memcached" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")memcached? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_memcached; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac
