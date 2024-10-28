@@ -1,0 +1,9 @@
+---
+
+- name: restart maldet
+  service:
+    name: maldet
+    state: restarted
+  when:
+    - maldet_service_enabled|bool
+    - maldet_default_monitor_mode is defined and maldet_default_monitor_mode

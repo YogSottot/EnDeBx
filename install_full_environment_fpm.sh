@@ -250,9 +250,15 @@ fi
 
 if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
-  -e "rkhunter_action='install' \
+  -e "rkhunter_action='INSTALL' \
       rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
+fi
+
+if [ "$BS_SETUP_MALDET" == Y  ]; then
+  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  -e "maldet_action='INSTALL' \
+      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
@@ -293,6 +299,10 @@ apt install -y mysqltuner
 sed -i -e 's/#SystemMaxUse=/SystemMaxUse=100M/g' /etc/systemd/journald.conf
 sed -i -e 's/#RuntimeMaxUse=/RuntimeMaxUse=100M/g' /etc/systemd/journald.conf
 systemctl restart systemd-journald
+
+# remove compilers
+apt remove build-essential gcc gcc-12 -y
+apt autoremove -y
 
 if [ "$BS_PUSH_SERVER_STOPPED" == Y  ]; then
   systemctl stop push-server.service

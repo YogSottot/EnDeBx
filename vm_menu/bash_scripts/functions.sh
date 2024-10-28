@@ -51,13 +51,14 @@ main_menu(){
     echo "          R) Restart the server";
     echo "          P) Turn off the server";
     echo "          DELETE_SITE) Delete a site";
+    check_reboot_needed;
     if [ -n "${update_menu_action}" ]; then
       echo -e "\e[33m             ${update_menu_action}\e[0m";
     fi
     echo "          0) Exit";
     echo -e "\n\n";
     echo -n "Enter command: "
-    read comand
+    read -r comand
 
     case $comand in
 
@@ -96,6 +97,7 @@ menu_install_extensions(){
     echo "          3) Install/Delete Netdata";
     echo "          4) Install/Delete Crowdsec";
     echo "          5) Install/Delete Rkhunter";
+    echo "          6) Install/Delete Linux Malware Detect ";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -108,6 +110,7 @@ menu_install_extensions(){
     "3") install_netdata ;;
     "4") install_crowdsec ;;
     "5") install_rkhunter ;;
+    "6") install_linux_malware_detect ;;
 
     0|z)  main_menu
     ;;
@@ -1197,7 +1200,7 @@ function install_rkhunter() {
 
   is_install_rkhunter=$(which rkhunter);
   action="INSTALL"
-  if [ ! -z "$is_install_rkhunter" ]; then
+  if [ -n "$is_install_rkhunter" ]; then
       action="DELETE"
   fi
 
@@ -1212,6 +1215,28 @@ function install_rkhunter() {
     esac
   done
 }
+
+function install_linux_malware_detect() {
+  clear
+
+  is_install_linux_malware_detect=$(which maldet);
+  action="INSTALL"
+  if [ -n "$is_install_linux_malware_detect" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")Maldet? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_maldet; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
 
 function delete_site() {
     clear;
@@ -1296,3 +1321,21 @@ function delete_site() {
       esac
     done
 }
+
+check_reboot_needed() {
+    if command -v needrestart >/dev/null 2>&1; then
+        local ksta
+        ksta=$(needrestart -b | grep "NEEDRESTART-KSTA:" | cut -d' ' -f2)
+        if [ "$ksta" = "2" ] || [ "$ksta" = "3" ]; then
+            echo "          Reboot is needed (kernel upgrade pending)"
+            return 0
+        else
+            #echo "          No reboot required"
+            return 1
+        fi
+    else
+        #echo "          needrestart is not installed"
+        return 2
+    fi
+}
+

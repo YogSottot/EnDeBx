@@ -1,0 +1,19 @@
+---
+
+- name: Remove maldet binary
+  ansible.builtin.file:
+    path: /usr/local/sbin/maldet
+    state: absent
+
+- name: Remove maldet directory
+  ansible.builtin.file:
+    path: /usr/local/maldetect/
+    state: absent
+
+- name: Stop and disable maldet service
+  ansible.builtin.service:
+    name: maldet
+    state: stopped
+    enabled: false
+  when:
+    - maldet_default_monitor_mode is defined and maldet_default_monitor_mode

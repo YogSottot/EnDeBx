@@ -1,0 +1,20 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: maldet
+  author: Agnesius Santo Naibaho
+  description: Install and manage Linux Malware Detection
+  company: Cloudweeb
+  license: MIT
+  min_ansible_version: 2.7
+  platforms:
+    - name: EL
+      versions:
+        - 7
+    - name: Debian
+      versions:
+        - stretch
+  galaxy_tags:
+    - maldet
+    - security

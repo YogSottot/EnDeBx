@@ -372,6 +372,23 @@ function action_install_or_delete_rkhunter() {
     press_any_key_to_return_menu;
 }
 
+function action_install_or_delete_maldet() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MALDET}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "maldet_action=${action} \
+      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Maldet is installed and configured."
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      Maldet is deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \

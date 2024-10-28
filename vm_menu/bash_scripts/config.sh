@@ -89,6 +89,7 @@ BS_ANSIBLE_PB_SECURITY="setup_security.yaml"
 BS_ANSIBLE_PB_FTP="install_or_delete_ftpuser.yaml"
 BS_ANSIBLE_PB_MYDUMPER_REPO="setup_mydumper_repo.yaml"
 BS_ANSIBLE_PB_RKHUNTER="install_or_delete_rkhunter.yaml"
+BS_ANSIBLE_PB_MALDET="install_or_delete_maldet.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -165,12 +166,31 @@ BS_CROWDESC_WHITELIST_IP=185.164.148.1,185.164.149.100,95.213.198.99,158.160.117
 
 
 # Set your key for connect to cloud console (optional)
-#BS_CROWDSEC_ENROLL_KEY=
+BS_CROWDSEC_ENROLL_KEY=
 # crowdsec collection list, comma separated
 BS_CROWDSEC_COLLECTION_INSTALL=crowdsecurity/base-http-scenarios,crowdsecurity/mariadb,crowdsecurity/whitelist-good-actors
 
 # Setup Security by default (change ssh-port, disable root login, disable password auth, etc)
 BS_SETUP_SECURITY=N
+# Change ssh-port
+BS_SSH_PORT=22
+#  Allow root login (if you set "no", be sure to specify the creation of an alternate user, otherwise you will not be able to log in to the server) ("yes"/"no"/"prohibit-password")
+BS_SSH_PERMIT_ROOT_LOGIN="yes"
+# Specify an alternate user to log in to the server with sudo privileges
+BS_SSH_ADMIN_USER=
+# Specify the ssh key for the alternate user (in single quotes. Multiple keys can be used on a new line))
+BS_SSH_ADMIN_USER_SSH_KEY=
+# Enable/Disable login by password ('yes'/'no')
+BS_SSH_PASSWORD_AUTHENTICATION="yes"
+# Enable auto-installation of security updates ('true'/'false'
+BS_AUTOUPDATE_ENABLED="true"
+# Enable auto reboot of the server if required after installing updates ("true"/"false")
+BS_AUTOUPDATE_REBOOT_ENABLE="false"
+# Specify time for auto reboot
+BS_AUTOUPDATE_REBOOT_TIME="05:00"
 
 # Setup rkhunter by default (Y/N)
 BS_SETUP_RKHUNTER=N
+
+# Setup maldet by default (Y/N)
+BS_SETUP_MALDET=N

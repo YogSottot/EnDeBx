@@ -9,7 +9,6 @@ apache_vhosts_version: "2.4"
 
 __apache_packages:
   - httpd24
-  - httpd24-devel
   - mod24_ssl
   - openssh
 

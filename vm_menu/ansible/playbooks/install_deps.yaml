@@ -17,6 +17,7 @@
           - gifsicle
           - htop
           - jpegoptim
+          - libpam-tmpdir
           - locales
           - locales-all
           - lsof

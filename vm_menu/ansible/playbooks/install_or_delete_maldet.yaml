@@ -1,0 +1,9 @@
+---
+- name: "linux-malware-detect {{ maldet_action }}"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - name: "linux-malware-detect {{ maldet_action }}"
+      role: cloudweeb.maldet

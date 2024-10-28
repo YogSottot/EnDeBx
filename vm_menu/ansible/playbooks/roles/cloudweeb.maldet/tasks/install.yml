@@ -1,0 +1,55 @@
+---
+
+- name: Get maldet installer archive
+  ansible.builtin.get_url:
+    url: https://github.com/rfxn/linux-malware-detect/archive/refs/tags/{{ maldet_version }}.tar.gz
+    dest: /tmp
+    owner: root
+    group: root
+    mode: '0644'
+  register: __maldet_download
+  until: __maldet_download is succeeded
+  retries: 5
+  delay: 2
+
+- name: Unarchive maldet installer
+  ansible.builtin.unarchive:
+    src: /tmp/linux-malware-detect-{{ maldet_version }}.tar.gz
+    dest: /tmp
+    remote_src: true
+
+- name: Installing maldet
+  ansible.builtin.command: bash install.sh
+  args:
+    chdir: "/tmp/linux-malware-detect-{{ maldet_version }}"
+    creates: /usr/local/sbin/maldet
+
+- name: Configuring maldet
+  ansible.builtin.template:
+    src: maldet_conf.maldet.j2
+    dest: /usr/local/maldetect/conf.maldet
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart maldet
+
+- name: Configure pathes
+  ansible.builtin.lineinfile:
+    path: /usr/local/maldetect/monitor_paths
+    line: '/var/www/'
+    state: present
+
+- name: Cron custom exec
+  ansible.builtin.lineinfile:
+    path: /usr/local/maldetect/cron/custom.cron
+    line: "$inspath/maldet -b -r /var/www/ $scan_days >> /dev/null 2>&1"
+    state: present
+
+- name: Start and enable maldet service
+  ansible.builtin.service:
+    name: maldet
+    state: started
+    enabled: true
+  when:
+    - maldet_service_enabled|bool
+    - maldet_default_monitor_mode is defined and maldet_default_monitor_mode

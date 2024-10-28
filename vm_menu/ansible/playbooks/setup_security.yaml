@@ -1,5 +1,5 @@
 ---
-- name: "Setup bashrc"
+- name: "Setup basic security"
   hosts: localhost
   connection: local
   become: true

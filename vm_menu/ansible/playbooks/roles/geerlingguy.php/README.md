@@ -231,7 +231,6 @@ None.
       - php
       - php-cli
       - php-common
-      - php-devel
       - php-gd
       - php-mbstring
       - php-pdo

@@ -5,6 +5,16 @@
     name:
       - postfix
 
+- name: Suppress warning overriding earlier entry
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    search_string: "{{ item }}"
+    state: absent
+  with_items:
+    - mydestination
+    - smtpd_banner
+    - disable_vrfy_command
+
 - name: Setup postfix config
   ansible.builtin.blockinfile:
     path: /etc/postfix/main.cf
@@ -20,6 +30,8 @@
       #fallback_transport = relay
       # для кривых корпоративных сеток, если не может правильно отрезолвить адрес внутреннего домена
       # smtp_fallback_relay = [mail.domain.tld]:25
+      disable_vrfy_command = yes
+      smtpd_banner = $myhostname ESMTP
       mailbox_size_limit = 0
       message_size_limit = 0
       virtual_mailbox_limit = 0
@@ -30,12 +42,6 @@
     owner: root
     group: root
     mode: '0644'
-
-- name: Suppress warning verriding earlier entry
-  ansible.builtin.lineinfile:
-    path: /etc/postfix/main.cf
-    search_string: "mydestination = $myhostname"
-    state: absent
 
 - name: Setup virtual_alias_map
   ansible.builtin.blockinfile:

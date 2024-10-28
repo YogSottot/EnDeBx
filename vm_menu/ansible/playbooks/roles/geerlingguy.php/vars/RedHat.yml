@@ -1,10 +1,8 @@
 ---
 __php_packages:
-  - php
   - php-cli
   - php-common
   - php-bcmath
-  - php-devel
   - php-fpm
   - php-gd
   - php-intl
