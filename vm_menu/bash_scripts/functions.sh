@@ -127,6 +127,7 @@ menu_edit_sites(){
     echo "          1) Add site";
     echo "          2) Edit existing website";
     echo "          3) Delete site";
+    echo "          4) Block/Unblock access by ip";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -137,6 +138,7 @@ menu_edit_sites(){
       "1") add_site ;;
       "2") edit_site_config ;;
       "3") delete_site ;;
+      "4") block_access_by_ip ;;
 
     0|z)  main_menu
     ;;
@@ -829,6 +831,62 @@ add_remove_ftp_user(){
     done
 
 }
+
+block_access_by_ip() {
+  echo -e "\n   Menu -> Block/Unblock access by IP:\n"
+  echo -e "\n   Blocking access to ${BS_SERVICE_NGINX_NAME} by server ip addresses:\n"
+  
+  read -r -p "Do you want to Enable or Disable blocking access? (E/D) " ed
+  case $ed in
+    [Ee]* ) 
+      if enable_ip_blocking; then
+        echo "Block completed successfully."
+      else
+        echo "Block failed to complete."
+      fi
+      read -n 1 -s -r -p "Press any key to continue..."
+      ;;
+    [Dd]* ) 
+      if rm -rf "${BS_PATH_NGINX_SITES_ENABLED}/bx_ext_ip.conf"; then
+        echo "Unblock completed successfully."
+      else
+        echo "Unblock failed to complete."
+      fi
+      read -n 1 -s -r -p "Press any key to continue..."
+      ;;
+    * ) 
+      echo "Please answer E or D."
+      ;;
+  esac
+}
+
+enable_ip_blocking() {
+  ip=$(hostname -I)
+  cat <<EOT > "${BS_PATH_NGINX_SITES_CONF}/bx_ext_ip.conf"
+server {
+    listen 80;
+    listen [::]:80;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    
+    server_name ${ip};
+    
+    ssl_reject_handshake on;
+
+    
+    location / {
+        return 444;
+    }
+}
+EOT
+
+  cd "${BS_PATH_NGINX_SITES_ENABLED}" && \
+  ln -sf "${BS_PATH_NGINX_SITES_CONF}/bx_ext_ip.conf" . && \
+  "${BS_SERVICE_NGINX_NAME}" -t && \
+  systemctl reload "${BS_SERVICE_NGINX_NAME}"
+  
+}
+
 
 function update_menu(){
     clear;
