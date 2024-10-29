@@ -93,6 +93,7 @@ BS_ANSIBLE_PB_MALDET="install_or_delete_maldet.yaml"
 BS_ANSIBLE_PB_MEMCACHED="install_or_delete_memcached.yaml"
 BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 BS_ANSIBLE_PB_DOCKER="install_or_delete_docker.yaml"
+BS_ANSIBLE_PS_BASIC_AUTH="setup_basic_auth.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -115,6 +116,8 @@ BS_PATH_NGINX_SITES_ENABLED="$BS_PATH_NGINX/site_enabled"
 # Y — nginx + apache + php-fpm
 # N — nginx + php-fpm
 BS_HTACCESS_SUPPORT="Y"
+BS_NGINX_BASIC_AUTH_LOGIN=
+BS_NGINX_BASIC_AUTH_PASSWORD=
 
 # Apache configs
 BS_SERVICE_APACHE_NAME="apache2"

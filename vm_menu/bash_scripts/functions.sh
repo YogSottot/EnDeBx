@@ -139,6 +139,7 @@ menu_edit_sites(){
     echo "          2) Edit existing website";
     echo "          3) Delete site";
     echo "          4) Block/Unblock access by ip";
+    echo "          5) Enable/Disable Basic Auth in ${BS_SERVICE_NGINX_NAME}";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -150,6 +151,7 @@ menu_edit_sites(){
       "2") edit_site_config ;;
       "3") delete_site ;;
       "4") block_access_by_ip ;;
+      "5") enable_or_disable_basic_auth ;;
 
     0|z)  main_menu
     ;;
@@ -842,6 +844,88 @@ add_remove_ftp_user(){
     done
 
 }
+
+enable_or_disable_basic_auth(){
+    clear;
+    list_sites;
+
+    basic_auth_action='C'
+    htpasswd_username=${BS_NGINX_BASIC_AUTH_LOGIN}
+    htpasswd_password=${BS_NGINX_BASIC_AUTH_PASSWORD}
+    path_site_from_links=$BS_PATH_DEFAULT_SITE
+
+    echo -e "\n   Menu -> Create or Delete Basic Auth:\n";
+    while true; do
+        read -r -p "   Do you want to Create or Delete Basic Auth? (C/D) [${basic_auth_action}]: " answer
+        answer=${answer:-$basic_auth_action}
+        case $answer in
+            [Cc]* ) basic_auth_action=create; break;;
+            [Dd]* ) basic_auth_action=delete; break;;
+            * ) printf "   Please enter C or D.\n";;
+        esac
+    done
+
+    case $basic_auth_action in
+        create )
+            read -r -p "   Enter path to site directory (default: $path_site_from_links): " input_path
+            path_site_from_links=${input_path:-$path_site_from_links}
+
+            # Extract domain name from link
+            site=$(basename "$path_site_from_links")
+
+            # Prompt the user with the username from .env as default
+            read -r -p "   Enter Basic Auth username [${htpasswd_username}]: " input_username
+            htpasswd_username=${input_username:-$htpasswd_username}
+
+            # Prompt the user with the auto-generated password as default
+            read -r -s -p "   Enter Basic Auth password [${htpasswd_password}]: " input_password
+            htpasswd_password=${input_password:-$htpasswd_password}
+            echo
+        ;;
+        delete )
+            # Ensure `delete` action still captures the necessary values
+            read -r -p "   Enter path to site directory (default: $path_site_from_links): " input_path
+            path_site_from_links=${input_path:-$path_site_from_links}
+
+            site=$(basename "$path_site_from_links")
+        ;;
+    esac
+
+    htpasswd_path_file=${BS_PATH_NGINX}/site_settings/${site}/.htpasswd
+    htpasswd_basic_auth_conf=${BS_PATH_NGINX}/site_settings/${site}/basic_auth.conf
+
+
+    echo -e "\n   Entered data:\n"
+    echo "   Task: $basic_auth_action basic auth"
+    case $basic_auth_action in
+        create )
+            echo "   Username: $htpasswd_username"
+            echo "   Password: $htpasswd_password"
+            echo "   Site: $path_site_from_links"
+        ;;
+        delete )
+            echo "   Site: $path_site_from_links"
+        ;;
+    esac
+
+    while true; do
+        read -r -p "   Do you really want to $basic_auth_action basic auth? (Y/N): " confirm_action
+        case $confirm_action in
+            [Yy]* )
+                if action_enable_or_disable_basic_auth; then
+                    echo -e "\n   '${basic_auth_action}' basic auth successfully executed."
+                else
+                    echo -e "\n   Error: '${basic_auth_action}' basic auth failed." >&2
+                fi
+                read -r -p "   Press any key to return to the menu..." key
+                break
+            ;;
+            [Nn]* ) break;;
+            * ) echo "   Please enter Y or N.";;
+        esac
+    done
+}
+
 
 block_access_by_ip() {
   echo -e "\n   Menu -> Block/Unblock access by IP:\n"

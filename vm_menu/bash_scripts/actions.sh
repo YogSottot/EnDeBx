@@ -471,3 +471,15 @@ function action_add_remove_ftp_user() {
       ftp_user_uid=${ftp_user_uid}"
 
 }
+
+function action_enable_or_disable_basic_auth() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_BASIC_AUTH}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "basic_auth_action=${basic_auth_action} \
+      htpasswd_path_file=${htpasswd_path_file} \
+      htpasswd_basic_auth_conf=${htpasswd_basic_auth_conf} \
+      htpasswd_username=${htpasswd_username} \
+      htpasswd_password=${htpasswd_password} \
+      web_server_daemon=${BS_SERVICE_NGINX_NAME}"
+
+}

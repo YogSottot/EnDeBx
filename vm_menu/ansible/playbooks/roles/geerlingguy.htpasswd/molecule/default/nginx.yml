@@ -1,0 +1,36 @@
+---
+# # Note: This playbook is built to work on Debian-derivative Linux OSes.
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    htpasswd_credentials:
+      - path: /etc/nginx/passwdfile
+        name: johndoe
+        password: 'supersecure'
+        owner: root
+        group: www-data
+        mode: 'u+rw,g+r'
+
+    nginx_remove_default_vhost: true
+    nginx_vhosts:
+      - listen: "80"
+        server_name: "htpassword.test"
+        root: "/var/www/html"
+        index: "index.html index.html index.nginx-debian.html"
+        filename: "htpassword.test.conf"
+        extra_parameters: |
+              location / {
+                  auth_basic           "Nginx with basic auth.";
+                  auth_basic_user_file /etc/nginx/passwdfile;
+              }
+
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=true cache_valid_time=600
+      when: ansible_os_family == 'Debian'
+
+  roles:
+    - role: geerlingguy.nginx
+    - role: geerlingguy.htpasswd

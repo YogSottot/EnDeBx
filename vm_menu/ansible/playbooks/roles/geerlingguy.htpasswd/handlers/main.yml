@@ -1,0 +1,5 @@
+---
+- name: Reload web-server
+  ansible.builtin.service:
+    name: "{{ web_server_daemon }}"
+    state: reloaded

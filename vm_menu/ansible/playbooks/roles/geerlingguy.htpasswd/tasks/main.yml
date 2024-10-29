@@ -1,0 +1,65 @@
+---
+# Include variables and define needed variables.
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Define htpasswd_required_packages.
+  set_fact:
+    htpasswd_required_packages: "{{ __htpasswd_required_packages | list }}"
+  when: htpasswd_required_packages is not defined
+
+- name: Ensure the htpasswd packages are installed.
+  package:
+    name: "{{ htpasswd_required_packages }}"
+    state: present
+  when: basic_auth_action == 'create'
+
+- name: Ensure htpasswd credentials are configured.
+  htpasswd:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode | default('u+rw,g+r') }}"
+  with_items: "{{ htpasswd_credentials }}"
+  no_log: "{{ htpasswd_nolog }}"
+  when: basic_auth_action == 'create'
+  notify: Reload web-server
+
+- name: Ensure basic_auth.conf are configured.
+  ansible.builtin.template:
+    src: basic_auth.conf.j2
+    dest: "{{ htpasswd_basic_auth_conf }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: basic_auth_action == 'create'
+  notify: Reload web-server
+
+- name: Delete configs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ htpasswd_basic_auth_conf }}"
+    - "{{ htpasswd_path_file }}"
+  when: basic_auth_action == 'delete'
+  notify: Reload web-server
+
+
+- name: Debug htpasswd credentials
+  debug:
+    var: htpasswd_credentials
+    verbosity: 0
+
+- name: Debug individual credential components
+  debug:
+    msg: 
+      - "Path: {{ item.path }}"
+      - "Name: {{ item.name }}"
+      - "Password: {{ item.password }}"
+  loop: "{{ htpasswd_credentials }}"
+  loop_control:
+    label: "{{ item.name }}"
+
