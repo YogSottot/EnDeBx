@@ -14,14 +14,14 @@
         owner: root
         group: root
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"
 
     - name: Add nginx modules repo.
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/yogsottot.asc] https://yogsottot.github.io/ppa/debian {{ ansible_distribution_release }} main"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/yogsottot.asc] https://yogsottot.github.io/ppa/debian {{ ansible_facts.distribution_release }} main"
         state: present
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"
 
     - name: Update apt caches after repo is added (Debian).
       ansible.builtin.apt:
@@ -30,4 +30,4 @@
           - libnginx-mod-http-zip
           - libnginx-mod-http-zstd
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"

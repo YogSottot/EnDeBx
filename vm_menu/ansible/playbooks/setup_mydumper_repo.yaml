@@ -14,14 +14,14 @@
         owner: root
         group: root
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"
 
     - name: Add mydumper repo.
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }} ./"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_facts.distribution | lower }} ./"
         state: present
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"
 
     - name: Update apt caches after repo is added (Debian).
       ansible.builtin.apt:
@@ -29,4 +29,4 @@
         name:
           - mydumper
       when:
-        - ansible_os_family == "Debian"
+        - ansible_facts.os_family == "Debian"

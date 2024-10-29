@@ -421,6 +421,24 @@ function action_install_or_delete_deadsnakes_ppa() {
     press_any_key_to_return_menu;
 }
 
+function action_install_or_delete_docker() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DOCKER}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "docker_action=${action} \
+      docker_packages_state=${docker_packages_state} \
+      docker_user_list=${BS_DEFAULT_USER_SERVER_SITES}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Docker is installed"
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      Docker is is deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \

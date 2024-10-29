@@ -100,6 +100,7 @@ menu_install_extensions(){
     echo "          6) Install/Delete Linux Malware Detect ";
     echo "          7) Install/Delete Memcached";
     echo "          8) Install/Delete Deadsnakes PPA";
+    echo "          9) Install/Delete Docker";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -115,6 +116,7 @@ menu_install_extensions(){
     "6") install_linux_malware_detect ;;
     "7") install_memcached ;;
     "8") install_deadsnakes_ppa ;;
+    "9") install_docker ;;
 
     0|z)  main_menu
     ;;
@@ -1283,6 +1285,33 @@ function install_deadsnakes_ppa() {
   done
 }
 
+
+function install_docker() {
+  clear
+
+  is_install_docker=$(which docker);
+  action="INSTALL"
+  if [ -n "$is_install_docker" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  if [ "$action" == "DELETE" ]; then
+      docker_packages_state='absent'
+  else
+      docker_packages_state='present'
+  fi
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")docker? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_docker; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
 
 function delete_site() {
     clear;
