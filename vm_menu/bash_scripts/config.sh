@@ -94,6 +94,7 @@ BS_ANSIBLE_PB_MEMCACHED="install_or_delete_memcached.yaml"
 BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 BS_ANSIBLE_PB_DOCKER="install_or_delete_docker.yaml"
 BS_ANSIBLE_PS_BASIC_AUTH="setup_basic_auth.yaml"
+BS_ANSIBLE_PS_SWAP="setup_swap.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -200,3 +201,8 @@ BS_SETUP_RKHUNTER=N
 
 # Setup maldet by default (Y/N)
 BS_SETUP_MALDET=N
+
+# Setup swap (Y/N)
+BS_SETUP_SWAP=N
+# Swap size in MB
+BS_SWAP_SIZE=1024

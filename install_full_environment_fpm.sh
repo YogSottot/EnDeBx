@@ -88,6 +88,13 @@ timedatectl set-timezone "${BS_SERVER_TIMEZONE}"
 
 DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
 
+# setup swap
+if [ "$BS_SETUP_SWAP" == 'Y'  ]; then
+    ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+    -e "swap_file_state='present' \
+    swap_file_size_mb=${BS_SWAP_SIZE}"
+fi
+
 # setup repos
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
