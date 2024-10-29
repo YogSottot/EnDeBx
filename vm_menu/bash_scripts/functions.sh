@@ -51,7 +51,7 @@ main_menu(){
     echo "          R) Restart the server";
     echo "          P) Turn off the server";
     echo "          DELETE_SITE) Delete a site";
-    check_reboot_needed;
+    # check_reboot_needed;
     if [ -n "${update_menu_action}" ]; then
       echo -e "\e[33m             ${update_menu_action}\e[0m";
     fi
@@ -99,6 +99,7 @@ menu_install_extensions(){
     echo "          5) Install/Delete Rkhunter";
     echo "          6) Install/Delete Linux Malware Detect ";
     echo "          7) Install/Delete Memcached";
+    echo "          8) Install/Delete Deadsnakes PPA";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -113,6 +114,7 @@ menu_install_extensions(){
     "5") install_rkhunter ;;
     "6") install_linux_malware_detect ;;
     "7") install_memcached ;;
+    "8") install_deadsnakes_ppa ;;
 
     0|z)  main_menu
     ;;
@@ -1254,6 +1256,27 @@ function install_memcached() {
     read -r -p "   Do you really want to$(echo -e "${action_color}")memcached? (Y/N): " answer
     case $answer in
       [Yy]* ) action_install_or_delete_memcached; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_deadsnakes_ppa() {
+  clear
+
+  is_install_deadsnakes_ppa=$(grep -R "deadsnakes/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/);
+  action="INSTALL"
+  if [ -n "$is_install_deadsnakes_ppa" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")Deadsnakes PPA? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_deadsnakes_ppa; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac

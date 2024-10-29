@@ -91,6 +91,7 @@ BS_ANSIBLE_PB_MYDUMPER_REPO="setup_mydumper_repo.yaml"
 BS_ANSIBLE_PB_RKHUNTER="install_or_delete_rkhunter.yaml"
 BS_ANSIBLE_PB_MALDET="install_or_delete_maldet.yaml"
 BS_ANSIBLE_PB_MEMCACHED="install_or_delete_memcached.yaml"
+BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

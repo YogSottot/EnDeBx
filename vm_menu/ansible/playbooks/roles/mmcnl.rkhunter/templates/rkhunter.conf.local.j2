@@ -1,7 +1,7 @@
 WEB_CMD=curl
 APPEND_LOG=1
 MAIL-ON-WARNING="{{ rkhunter_notification_email }}"
-MAIL_CMD="[rkhunter] Warnings found for ${HOST_NAME}"
+MAIL_CMD=mail -s "[rkhunter] Warnings found for ${HOST_NAME}"
 MIRRORS_MODE=0
 UPDATE_MIRRORS=1
 ALLOW_SSH_ROOT_USER={{ rkhunter_ssh_permit_root_login }}

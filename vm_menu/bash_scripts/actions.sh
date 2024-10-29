@@ -405,6 +405,22 @@ function action_install_or_delete_memcached() {
     press_any_key_to_return_menu;
 }
 
+function action_install_or_delete_deadsnakes_ppa() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DEADSNAKES_PPA}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "deadsnakes_action=${action}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Deadsnakes PPA is installed and configured.\n      Don't forget that you can break systems using Ubuntu PPA in Debian"
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      Deadsnakes PPA is deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
