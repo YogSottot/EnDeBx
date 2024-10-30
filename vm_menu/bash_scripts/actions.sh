@@ -472,6 +472,87 @@ function action_add_remove_ftp_user() {
 
 }
 
+function action_add_postgresql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_action=${action} \
+      postgresql_version=${postgresql_version} \
+      postgresql_port=${postgresql_port}" \
+      --tags installation,initialise,autotune,configuration
+
+    press_any_key_to_return_menu
+}
+
+function action_delete_postgresql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_action=${action} \
+      postgresql_version=${postgresql_version} \
+      postgresql_uninstall_1='true' \
+      postgresql_uninstall_2='true'" \
+      --tags='uninstallation'
+
+    press_any_key_to_return_menu
+}
+
+function action_add_db_user_postgresql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_action=${action} \
+
+      postgresql_version=${postgresql_version} \
+      postgresql_username=${postgresql_username} \
+      postgresql_user_password=${postgresql_user_password} \
+      postgresql_user_port=${postgresql_port} \
+
+      postgresql_db_name=${postgresql_db_name} \
+      postgresql_user_state=${postgresql_user_state} \
+      postgresql_db_lc_collate=${postgresql_db_lc_collate} \
+      postgresql_db_lc_ctype=${postgresql_db_lc_ctype} \
+      postgresql_db_encoding=${postgresql_db_encoding} \
+      postgresql_socket='/run/postgresql/'" \
+      --tags users,databases,privileges
+
+    press_any_key_to_return_menu
+}
+
+function action_delete_user_and_db_postgresql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_action=${action} \
+
+      postgresql_version=${postgresql_version} \
+      postgresql_username=${postgresql_username} \
+      postgresql_user_password=${postgresql_user_password} \
+      postgresql_user_port=${postgresql_port} \
+
+      postgresql_db_name=${postgresql_db_name} \
+      postgresql_user_state=${postgresql_user_state} \
+      postgresql_db_lc_collate=${postgresql_db_lc_collate} \
+      postgresql_db_lc_ctype=${postgresql_db_lc_ctype} \
+      postgresql_db_encoding=${postgresql_db_encoding} \
+      postgresql_socket='/run/postgresql/'" \
+      --tags databases
+
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_action=${action} \
+
+      postgresql_version=${postgresql_version} \
+      postgresql_username=${postgresql_username} \
+      postgresql_user_password=${postgresql_user_password} \
+      postgresql_user_port=${postgresql_port} \
+
+      postgresql_db_name=${postgresql_db_name} \
+      postgresql_user_state=${postgresql_user_state} \
+      postgresql_db_lc_collate=${postgresql_db_lc_collate} \
+      postgresql_db_lc_ctype=${postgresql_db_lc_ctype} \
+      postgresql_db_encoding=${postgresql_db_encoding} \
+      postgresql_socket='/run/postgresql/'" \
+      --tags users
+
+    press_any_key_to_return_menu
+}
+
 function action_enable_or_disable_basic_auth() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_BASIC_AUTH}")
     ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \

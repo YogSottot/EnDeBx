@@ -95,6 +95,7 @@ BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 BS_ANSIBLE_PB_DOCKER="install_or_delete_docker.yaml"
 BS_ANSIBLE_PS_BASIC_AUTH="setup_basic_auth.yaml"
 BS_ANSIBLE_PS_SWAP="setup_swap.yaml"
+BS_ANSIBLE_PS_POSTGRESQL_SETUP="install_or_delete_postgresql.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

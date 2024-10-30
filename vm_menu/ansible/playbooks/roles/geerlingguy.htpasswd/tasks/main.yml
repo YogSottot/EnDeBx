@@ -48,13 +48,8 @@
   notify: Reload web-server
 
 
-- name: Debug htpasswd credentials
-  debug:
-    var: htpasswd_credentials
-    verbosity: 0
-
 - name: Debug individual credential components
-  debug:
+  ansible.builtin.debug:
     msg: 
       - "Path: {{ item.path }}"
       - "Name: {{ item.name }}"

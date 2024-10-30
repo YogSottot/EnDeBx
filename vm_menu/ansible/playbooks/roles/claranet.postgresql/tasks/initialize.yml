@@ -1,0 +1,26 @@
+---
+- name: Ensure PostgreSQL data directory exists.
+  ansible.builtin.file:
+    path: "{{ _postgresql_data_dir }}"
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    state: directory
+    mode: "0700"
+
+- name: Check if PostgreSQL database is initialized.
+  ansible.builtin.stat:
+    path: "{{ _postgresql_data_dir }}/PG_VERSION"
+  register: _postgresql_pgdata_dir_version_res
+
+- name: Include initialization tasks for os family {{ ansible_os_family | lower }}
+  when:
+    - ansible_os_family | lower in ['debian', 'redhat']
+  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/initialize.yml"
+
+- name: Ensure PostgreSQL log directory exists.
+  ansible.builtin.file:
+    path: "{{ postgresql_effective_log_dir }}"
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    state: directory
+    mode: "{{ postgresql_log_directory_mode }}"

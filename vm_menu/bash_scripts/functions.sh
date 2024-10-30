@@ -101,6 +101,7 @@ menu_install_extensions(){
     echo "          7) Install/Delete Memcached";
     echo "          8) Install/Delete Deadsnakes PPA";
     echo "          9) Install/Delete Docker";
+    echo "          10) PostgreSQL";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -117,6 +118,7 @@ menu_install_extensions(){
     "7") install_memcached ;;
     "8") install_deadsnakes_ppa ;;
     "9") install_docker ;;
+    "10") menu_postgresql ;;
 
     0|z)  main_menu
     ;;
@@ -152,6 +154,39 @@ menu_edit_sites(){
       "3") delete_site ;;
       "4") block_access_by_ip ;;
       "5") enable_or_disable_basic_auth ;;
+
+    0|z)  main_menu
+    ;;
+     *)
+      echo "Error unknown command"
+      ;;
+
+    esac
+    done
+}
+
+
+menu_postgresql(){
+    comand=;
+    until [[ "$comand" == "0" ]]; do
+    clear;
+
+    echo -e "\n          Menu -> PostgreSQL settings:\n";
+    echo "          1) Install PostgreSQL";
+    echo "          2) Delete PostgreSQL";
+    echo "          3) Add user and db in PostgreSQL";
+    echo "          4) Remove user and db from PostgreSQL";
+    echo "          0) Return to main menu";
+    echo -e "\n\n";
+    echo -n "Enter command: "
+    read -r comand
+
+    case $comand in
+
+      "1") install_postgresql ;;
+      "2") delete_postgresql ;;
+      "3") add_user_and_db_postgresql ;;
+      "4") delete_user_and_db_postgresql ;;
 
     0|z)  main_menu
     ;;
@@ -878,7 +913,7 @@ enable_or_disable_basic_auth(){
             htpasswd_username=${input_username:-$htpasswd_username}
 
             # Prompt the user with the auto-generated password as default
-            read -r -s -p "   Enter Basic Auth password [${htpasswd_password}]: " input_password
+            read -r -p "   Enter Basic Auth password [${htpasswd_password}]: " input_password
             htpasswd_password=${input_password:-$htpasswd_password}
             echo
         ;;
@@ -1391,6 +1426,219 @@ function install_docker() {
     read -r -p "   Do you really want to$(echo -e "${action_color}")docker? (Y/N): " answer
     case $answer in
       [Yy]* ) action_install_or_delete_docker; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_postgresql() {
+  clear
+  local versions filtered_versions
+  versions=$(get_installed_postgresql_versions)
+  filtered_versions=$(validate_numeric_version "$versions")
+  
+  for version in $filtered_versions; do
+      get_postgresql_info "$version"
+  done
+
+  postgresql_version='17';
+  postgresql_port='5432';
+
+  action="INSTALL"
+
+  action_color="\e[33m ${action} \e[0m"
+
+  read -r -p "   Avaliable version: https://wiki.postgresql.org/wiki/Apt
+   Enter postgresql version (default: $postgresql_version): " input_version
+            postgresql_version=${input_version:-$postgresql_version}
+
+read -r -p "   Specify the port that this version will use (default: $postgresql_port): " input_port
+            postgresql_port=${input_port:-$postgresql_port}
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")PostgreSQL? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_add_postgresql; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+
+}
+
+get_installed_postgresql_versions() {
+    local versions
+    versions=$(ls -d /usr/lib/postgresql/[0-9]* 2>/dev/null | xargs -n1 basename | sort -n | tr '\n' ' ')
+    printf "   Installed versions: %s\n" "$versions"
+}
+
+validate_numeric_version() {
+    local version_list="$1" valid_versions=""
+    for version in $version_list; do
+        if [[ "$version" =~ ^[0-9]+$ ]]; then
+            valid_versions+="$version "
+        fi
+    done
+    printf '%s\n' "$valid_versions"
+}
+get_postgresql_info() {
+    local version=$1
+    local port socket
+    port=$(grep -r "/var/lib/postgresql/$version/main" /run/postgresql/ | grep -oP '(?<=PGSQL.)\d+')
+    socket="/run/postgresql/.s.PGSQL.$port"
+    
+    if [ -n "$port" ] && [ -S "$socket" ]; then
+        printf "   \n   Version: %s\n   Port: %s\n   Unix socket: %s\n\n" "$version" "$port" "$socket"
+        export postgresql_port="$port"
+        export postgresql_socket="$socket"
+    else
+        printf "   PostgreSQL for version %s not found\n" "$version"
+        #export stub
+    fi
+}
+
+function delete_postgresql() {
+  clear
+  local versions filtered_versions
+  versions=$(get_installed_postgresql_versions)
+  filtered_versions=$(validate_numeric_version "$versions")
+  
+  for version in $filtered_versions; do
+      get_postgresql_info "$version"
+  done
+
+      action="DELETE"
+
+  action_color="\e[33m ${action} \e[0m"
+
+    read -r -p "   Enter the version of postgresql to remove: "  input_version
+            postgresql_version=${input_version:-$postgresql_version}
+
+
+  while true; do
+    read -r -p "   All data / users / databases of the selected version will be deleted! Make a backup copy first!
+   Do you really want to$(echo -e "${action_color}")PostgreSQL? (Y/N):" answer
+    case $answer in
+      [Yy]* ) action_delete_postgresql; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function validate_input() {
+    local input=$1
+    local field_name=$2
+    if [[ -z "$input" ]]; then
+        echo "Error: $field_name cannot be empty."
+        return 1
+    fi
+    # Add more specific validation rules as needed
+    return 0
+}
+
+function add_user_and_db_postgresql() {
+        clear
+        get_installed_postgresql_versions
+
+        postgresql_user_state='present'
+
+        action="CREATE"
+        postgresql_db_lc_collate="ru_RU.UTF-8"
+        postgresql_db_lc_ctype="${postgresql_db_lc_collate}"
+        postgresql_db_encoding="UTF-8"
+
+        auto_generated_password=$(openssl rand -base64 12)
+
+        action_color="\e[33m ${action} \e[0m"
+
+        read -r -p "   Enter the version of postgresql to create the user and database: "  input_version
+        postgresql_version=${input_version:-$postgresql_version}
+
+        get_postgresql_info "${postgresql_version}"
+
+        read -r -p "   Enter username: "  input_username
+        if validate_input "$input_username" "Username"; then
+          postgresql_username=$input_username
+        else
+          return 1
+        fi
+
+        read -r -p "   Enter password (default: ${auto_generated_password}) :"  input_user_password
+        postgresql_user_password=${input_user_password:-${auto_generated_password}}
+
+        read -r -p "   Enter dbname (default: $postgresql_username) :"  input_dbname
+        postgresql_db_name=${input_dbname:-$postgresql_username}
+
+        read -r -p "   Enter LC_COLLATE (default: $postgresql_db_lc_collate) :"  input_lc_collate
+        postgresql_db_lc_collate=${input_lc_collate:-$postgresql_db_lc_collate}
+
+        read -r -p "   Enter LC_CTYPE (default: $postgresql_db_lc_ctype) :"  input_lc_ctype
+        postgresql_db_lc_ctype=${input_lc_ctype:-$postgresql_db_lc_ctype}
+
+        read -r -p "   Enter db encoding (default: $postgresql_db_encoding) :"  input_db_encoding
+        postgresql_db_encoding=${input_db_encoding:-$postgresql_db_encoding}
+
+        echo -e "\n   Entered data:\n"
+        echo "   Task: $action user/db in PostgreSQL"
+        echo "   Username: $postgresql_username"
+        echo "   Password: $postgresql_user_password"
+        echo "   DB name: $postgresql_db_name"
+        echo "   LC_COLLATE: $postgresql_db_lc_collate"
+        echo "   LC_CTYPE: $postgresql_db_lc_ctype"
+        echo "   DB encoding: $postgresql_db_encoding"
+        echo "   DB port: $postgresql_port"
+        echo "   DB socket: $postgresql_socket"
+
+        while true; do
+          read -r -p "   Do you really want to$(echo -e "${action_color}") user/db in PostgreSQL? (Y/N):" answer
+          case $answer in
+            [Yy]* ) action_add_db_user_postgresql; break;;
+            [Nn]* ) break;;
+            * ) echo "   Please enter Y or N.";;
+          esac
+        done
+}
+
+function delete_user_and_db_postgresql() {
+  clear
+  get_installed_postgresql_versions;
+
+  postgresql_user_state='absent'
+
+  action="DELETE"
+
+  action_color="\e[33m ${action} \e[0m"
+
+    read -r -p "   Enter the version of postgresql to delete the user and database: "  input_version
+            postgresql_version=${input_version:-$postgresql_version}
+
+    get_postgresql_info "${postgresql_version}"
+
+    read -r -p "   Enter username: "  input_username
+        if validate_input "$input_username" "Username"; then
+            postgresql_username=$input_username
+        else
+            return 1
+        fi
+
+    read -r -p "   Enter dbname (default: $postgresql_username) :"  input_dbname
+            postgresql_db_name=${input_dbname:-$postgresql_username}
+    
+
+    echo -e "\n   Entered data:\n"
+    echo "   Task: $action user/db in PostgreSQL"
+    echo "   Username: $postgresql_username"
+    echo "   DB name: $postgresql_db_name"
+    echo "   DB port: $postgresql_port"
+    echo "   DB socket: $postgresql_socket"
+
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}") user/db from PostgreSQL? (Y/N):" answer
+    case $answer in
+      [Yy]* ) action_delete_user_and_db_postgresql; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac

@@ -107,6 +107,10 @@
             value: 0
           - name: net.ipv4.tcp_mtu_probing
             value: 1
+          - name: kernel.kptr_restrict
+            value: 1
+          - name: kernel.dmesg_restrict
+            value: 1
 
     - role: buluma.ulimit
       vars:
