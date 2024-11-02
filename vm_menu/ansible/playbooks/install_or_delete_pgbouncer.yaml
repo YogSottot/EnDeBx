@@ -1,0 +1,9 @@
+---
+- name: "Pgbouncer {{ pgbouncer_action }}"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - name: "Pgbouncer {{ pgbouncer_action }}"
+      role: mshurutov.pgbouncer

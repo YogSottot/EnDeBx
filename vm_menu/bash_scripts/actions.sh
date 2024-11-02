@@ -513,6 +513,22 @@ function action_add_db_user_postgresql() {
       postgresql_socket='/run/postgresql/'" \
       --tags users,databases,privileges
 
+    is_install_delete_pgbouncer=$(which pgbouncer);
+      pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
+
+        ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+        -e "pgbouncer_action=${action} \
+            pgbouncer_pkg_state='present' \
+            pgbouncer_db_user=${postgresql_username} \
+            pgbouncer_db_password=${postgresql_user_password} \
+            pgbouncer_db_port=${postgresql_port} \
+            pgbouncer_db_host='/run/postgresql/' \
+            postgresql_db_encoding=${postgresql_db_encoding}" \
+            --tags pgbouncer_add_user
+    if [ -n "$is_install_delete_pgbouncer" ]; then
+        press_any_key_to_return_menu
+    fi
+
     press_any_key_to_return_menu
 }
 
@@ -549,6 +565,40 @@ function action_delete_user_and_db_postgresql() {
       postgresql_db_encoding=${postgresql_db_encoding} \
       postgresql_socket='/run/postgresql/'" \
       --tags users
+
+    is_install_delete_pgbouncer=$(which pgbouncer);
+      pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
+
+        ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+        -e "pgbouncer_action=${action} \
+            pgbouncer_pkg_state='absent' \
+            pgbouncer_db_user=${postgresql_username} \
+            pgbouncer_db_password=${postgresql_user_password} \
+            pgbouncer_db_port=${postgresql_port} \
+            pgbouncer_db_host='/run/postgresql/' \
+            postgresql_db_encoding=${postgresql_db_encoding}" \
+            --tags pgbouncer_add_user
+    if [ -n "$is_install_delete_pgbouncer" ]; then
+        press_any_key_to_return_menu
+    fi
+
+    press_any_key_to_return_menu
+}
+
+function action_add_delete_pgbouncer() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
+
+  if [ "$action" == "DELETE" ]; then
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "pgbouncer_action=${action} \
+        pgbouncer_pkg_state=${pgbouncer_state}" \
+        --tags pgbouncer_install
+  else
+      ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "pgbouncer_action=${action} \
+        pgbouncer_pkg_state=${pgbouncer_state}" \
+        --tags pgbouncer_install,pgbouncer_config
+  fi
 
     press_any_key_to_return_menu
 }

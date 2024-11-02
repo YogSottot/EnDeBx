@@ -176,6 +176,7 @@ menu_postgresql(){
     echo "          2) Delete PostgreSQL";
     echo "          3) Add user and db in PostgreSQL";
     echo "          4) Remove user and db from PostgreSQL";
+    echo "          5) Install/Delete Pgbouncer";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -187,6 +188,7 @@ menu_postgresql(){
       "2") delete_postgresql ;;
       "3") add_user_and_db_postgresql ;;
       "4") delete_user_and_db_postgresql ;;
+      "5") install_delete_pgbouncer ;;
 
     0|z)  main_menu
     ;;
@@ -1431,6 +1433,31 @@ function install_docker() {
     esac
   done
 }
+
+
+function install_delete_pgbouncer() {
+  clear
+
+  is_install_delete_pgbouncer=$(which pgbouncer);
+  action="INSTALL"
+  pgbouncer_state="present"
+  if [ -n "$is_install_delete_pgbouncer" ]; then
+      action="DELETE"
+      pgbouncer_state="absent"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")pgbouncer? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_add_delete_pgbouncer; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
 
 function install_postgresql() {
   clear
