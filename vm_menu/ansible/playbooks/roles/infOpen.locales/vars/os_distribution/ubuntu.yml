@@ -1,6 +1,0 @@
----
-
-# Ubuntu OS variables
-
-locales_language_packs_packages:
-  - name: 'language-pack-en'

@@ -1,9 +1,0 @@
----
-- name: "Rkhunter {{ rkhunter_action }}"
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: true
-  roles:
-    - name: "Rkhunter {{ rkhunter_action }}"
-      role: mmcnl.rkhunter

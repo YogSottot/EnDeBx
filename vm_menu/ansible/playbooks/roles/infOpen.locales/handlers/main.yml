@@ -1,8 +1,0 @@
----
-
-# Handlers main file for locales role
-
-- name: 'HANDLER | Update system settings'
-  ansible.builtin.command: "{{ locales_update_command }}"
-  when: locales_update_command | bool
-  changed_when: true

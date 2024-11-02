@@ -1,9 +1,0 @@
----
-
-- name: Get maldet installer archive
-  ansible.builtin.import_tasks: install.yml
-  when: maldet_action == 'INSTALL'
-
-- name: Delete maldet
-  ansible.builtin.import_tasks: delete.yml
-  when: maldet_action == 'DELETE'

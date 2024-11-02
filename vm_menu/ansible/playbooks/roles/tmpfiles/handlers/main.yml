@@ -1,4 +1,0 @@
----
-- name: Create tmpfiles
-  ansible.builtin.command: systemd-tmpfiles --create
-  changed_when: true

@@ -1,8 +1,0 @@
----
-- name: Settings SMTP server
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: false
-  roles:
-    - role: settings_smtp_sites

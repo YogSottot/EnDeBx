@@ -1,8 +1,0 @@
----
-
-# Role tests
-
-- name: 'Converge | Main tasks'
-  hosts: 'all'
-  roles:
-    - role: "ansible-role-locales"

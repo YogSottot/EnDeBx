@@ -1,5 +1,0 @@
----
-# defaults file for bashrc
-bashrc_liquidprompt_release_url: "https://github.com/liquidprompt/liquidprompt/releases/download/v{{ bashrc_liquidprompt_release_version }}/liquidprompt"
-bashrc_liquidprompt_release_version: "2.2.1"
-bashrc_liquidprompt_release_checksum: "sha256:45fed84904ff870f8f74e806641f7f1c619b07f2d55399222d5389c1e0f06096"

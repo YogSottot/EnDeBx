@@ -1,6 +1,0 @@
-# defaults file
----
-user_groups: []
-user_users: []
-user_ssh_key_type: ed25519
-user_generate_ssh_key: true

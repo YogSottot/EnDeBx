@@ -1,9 +1,0 @@
----
-
-# RedHat Centos8 variables
-# -----------------------------------------------------------------------------
-
-# Packages
-locales_language_packs_packages:
-  - name: 'glibc-locale-source'
-  - name: 'glibc-langpack-en'

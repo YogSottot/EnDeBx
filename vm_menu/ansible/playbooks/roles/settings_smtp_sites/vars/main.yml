@@ -1,4 +1,0 @@
----
-# vars file for settings_smtp_sites
-log_path: "~/msmtp_{{ account_name }}.log"
-smtp_timeout: 45

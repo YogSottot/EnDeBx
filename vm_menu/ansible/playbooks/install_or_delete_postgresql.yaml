@@ -1,9 +1,0 @@
----
-- name: "Postgresql {{ postgresql_action }}"
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: true
-  roles:
-    - name: "Postgresql {{ postgresql_action }}"
-      role: claranet.postgresql

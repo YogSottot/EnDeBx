@@ -1,9 +1,0 @@
----
-# Include variables and define needed variables.
-- name: Install Memcached.
-  ansible.builtin.include_tasks: install.yml
-  when: memcached_action == "INSTALL"
-
-- name: Delete Memcached.
-  ansible.builtin.include_tasks: delete.yml
-  when: memcached_action == "DELETE"

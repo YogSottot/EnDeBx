@@ -1,9 +1,0 @@
----
-- name: "Setup swap"
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: true
-  roles:
-    - name: Setup swap
-      role: geerlingguy.swap

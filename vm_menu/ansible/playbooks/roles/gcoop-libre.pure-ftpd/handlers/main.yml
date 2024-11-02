@@ -1,8 +1,0 @@
----
-- name: reload Pure-FTPd users
-  command: pure-pw mkdb
-
-- name: restart Pure-FTPd
-  service:
-    name: pure-ftpd
-    state: restarted

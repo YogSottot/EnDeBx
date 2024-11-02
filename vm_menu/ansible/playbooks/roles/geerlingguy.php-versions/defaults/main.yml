@@ -1,7 +1,0 @@
----
-# The PHP version to be installed.
-php_version: '8.2'
-php_version_redhat: "{{ php_version | regex_replace('[.~]', '') }}"
-
-# For Debian OSes only.
-php_versions_install_recommends: false

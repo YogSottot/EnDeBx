@@ -1,4 +1,0 @@
----
-# vars file for create_site
-bx_temporary_files_directory: "{{ path_sites }}/.bx_temp/{{ db_name }}/"
-document_root: "{{ path_sites }}/{{ domain }}"

@@ -1,6 +1,0 @@
----
-# handlers file for create_site
-- name: "Reload {{ service_nginx_name }}"
-  ansible.builtin.systemd:
-    state: reloaded
-    name: "{{ service_nginx_name }}"

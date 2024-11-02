@@ -1,9 +1,0 @@
----
-- name: "Setup basic auth"
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: true
-  roles:
-    - name: Setup basic auth
-      role: geerlingguy.htpasswd

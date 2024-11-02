@@ -1,5 +1,0 @@
----
-# 'service reload' was not always working, needs complete reload
-- name: Firewalld complete reload
-  ansible.builtin.command: firewall-cmd --complete-reload
-  changed_when: true

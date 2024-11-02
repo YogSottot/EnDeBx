@@ -1,9 +1,0 @@
-location ~* ^/bx_tmp_download/ {
-    internal;
-    rewrite /bx_tmp_download/(.+) /.bx_temp/{{ db_name }}/$1 last;
-}
-
-location ~* ^/\.bx_temp/{{ db_name }}/ {
-    internal;
-    root {{ path_sites }};
-}

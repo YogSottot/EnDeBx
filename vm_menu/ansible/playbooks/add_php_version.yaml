@@ -1,9 +1,0 @@
----
-- name: "Add new php version"
-  hosts: localhost
-  connection: local
-  become: true
-  gather_facts: true
-  roles:
-    - role: geerlingguy.php-versions
-    - role: geerlingguy.php
