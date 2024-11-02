@@ -15,6 +15,13 @@
     group: root
     mode: '0644'
 
+# fix gitlab-runner
+- name: Delete .bash_logout in /etc/skel
+  ansible.builtin.file:
+    path: "/etc/skel/.bash_logout"
+    state: absent
+
+
 - name: Create .ssh dir in /etc/skel
   ansible.builtin.file:
     path: "/etc/skel/.ssh"
@@ -46,3 +53,9 @@
     owner: "{{ user_server_sites }}"
     group: "{{ group_user_server_sites }}"
     mode: '0644'
+
+# fix gitlab-runner
+- name: "Delete .bash_logout in {{ user_server_sites }}"
+  ansible.builtin.file:
+    path: "{{ path_sites }}/.bash_logout"
+    state: absent
