@@ -1,0 +1,5 @@
+# file {{ pgbouncer_auth_hba_file }} is managed by ansible
+# do not edit it manually!
+{% for hba_line in pgbouncer_hba_rules %}
+{{ hba_line }}
+{% endfor %}

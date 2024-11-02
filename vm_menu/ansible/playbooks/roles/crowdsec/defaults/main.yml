@@ -1,0 +1,89 @@
+---
+default_os_firewall: "firewalld"
+crowdsec_install_firewall_bouncer: true
+enable_crowdsec: true
+cs_collections_list:
+  - crowdsecurity/nginx
+  - crowdsecurity/sshd
+  - crowdsecurity/linux
+  - crowdsecurity/iptables
+  - crowdsecurity/http-cve
+
+cs_collections_remove_list:
+  - crowdsecurity/apache2
+# eg.
+# cs_collections_remove_list:
+#   - crowdsecurity/http-cve
+
+cs_scenarios_list:
+  - crowdsecurity/apache_log4j2_cve-2021-44228
+  - crowdsecurity/http-cve-2021-42013
+
+cs_scenarios_remove_list: []
+# eg.
+# cs_scenarios_remove_list:
+#   - crowdsecurity/apache_log4j2_cve-2021-44228
+
+cs_parsers_list:
+  - crowdsecurity/whitelists
+#  - crowdsecurity/docker-logs
+
+cs_parsers_remove_list: []
+# eg.
+# parsers_remove_list:
+#  - crowdsecurity/whitelists
+
+cs_postoverflows_list: []
+#  - crowdsecurity/cdn-whitelist
+#  - crowdsecurity/seo-bots-whitelist
+
+cs_postoverflows_remove_list: []
+# eg.
+# cs_postoverflows_remove_list:
+#   - crowdsecurity/seo-bots-whitelist
+
+cs_ban_duration: "duration: 4h" # PROD eg. 10m for testing
+
+cs_prometheus_endpoint: "enabled: true"
+
+cs_acquis_addon: |
+      ---
+      source: journalctl
+      journalctl_filter:
+        - "_SYSTEMD_UNIT=ssh.service"
+      labels:
+        type: journald"
+      ---
+
+cs_parsers_mywhitelists_ip: []
+
+cs_parsers_mywhitelists_cidr: |
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+
+crowdsec_enroll_key: ""
+crowdsec_enroll_name: "{{ ansible_fqdn }}"
+
+
+# LAPI server in host vars...
+# enable_crowdsec: true
+# crowdsec_install_firewall_bouncer: true
+# crowdsec_lapi_server: true
+# crowdsec_lapi_agent: true
+# crowdsec_lapi_ip: 192.168.56.11
+# crowdsec_agent_hosts:
+#   - srv02.test
+#   - srv03.test
+#   - srv04.test
+# crowdsec_agent_hosts_password: 'VeryLongPasswordShouldBeRandomChangeme2022!'
+# crowdsec_psql_db_user: crowdsec
+# crowdsec_psql_db_password: 'VeryLongPasswordPsqlChangeme2022!'
+# crowdsec_psql_db_name: crowdsec
+
+# LAPI agent in host vars...
+# enable_crowdsec: true
+# crowdsec_install_firewall_bouncer: true
+# crowdsec_lapi_agent: true
+# crowdsec_lapi_ip: 192.168.56.11
+# crowdsec_agent_hosts_password: 'VeryLongPasswordShouldBeRandomChangeme2022!'

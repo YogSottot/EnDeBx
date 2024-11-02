@@ -1,0 +1,15 @@
+---
+# handlers file for pgbouncer
+- name: Pgbouncer restart
+  become: true
+  become_user: root
+  ansible.builtin.service:
+    name: pgbouncer
+    state: restarted
+
+- name: Pgbouncer reload
+  become: true
+  become_user: root
+  ansible.builtin.service:
+    name: pgbouncer
+    state: reloaded

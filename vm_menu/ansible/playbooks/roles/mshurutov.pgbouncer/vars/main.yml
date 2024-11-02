@@ -1,0 +1,11 @@
+---
+# vars file for pgbouncer
+pgbouncer_config_params: "{{
+  [pgbouncer_config_params_default,
+    pgbouncer_config_params_group_all | default([]),
+    pgbouncer_config_params_supgroup | default([]),
+    pgbouncer_config_params_group | default([]),
+    pgbouncer_config_params_subgroup | default([]),
+    pgbouncer_config_params_host | default([])] |
+  community.general.lists_mergeby('name', list_merge='append_rp')
+}}"

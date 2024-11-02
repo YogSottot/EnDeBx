@@ -1,0 +1,128 @@
+---
+- name: Check if ansible version is equal or greater than 2.11
+  ansible.builtin.fail:
+    msg: "Ansible core should be equal or greater than 2.11"
+  when: ansible_version.full is ansible.builtin.version('2.11','<')
+
+- name: Check if python is equal or greater than 3
+  ansible.builtin.fail:
+    msg: "Python should be equal or greater than 3"
+  when: ansible_python.version.major is ansible.builtin.version('3','<')
+
+# tasks file for pgbouncer
+- name: Set distro independed variables
+  ansible.builtin.include_vars:
+    file: "{{ pgbouncer_vars_dir }}/main.yml"
+  tags: pgbouncer,pgbouncer_install,pgbouncer_config
+
+# Update cache for APT and APT+RPM package managers
+- name: Update cache for apt PM
+  become: true
+  become_user: root
+  when: ansible_pkg_mgr == "apt"
+  tags: pgbouncer,pgbouncer_install
+  ansible.builtin.apt:
+    update_cache: true
+- name: Update cache for apt+rpm PM
+  become: true
+  become_user: root
+  when: ansible_pkg_mgr == "apt_rpm"
+  tags: pgbouncer,pgbouncer_install
+  community.general.apt_rpm:
+    update_cache: true
+
+- name: Pgbouncer "{{ pgbouncer_action }}"
+  become: true
+  become_user: root
+  tags: pgbouncer,pgbouncer_install
+  ansible.builtin.package:
+    name: pgbouncer
+    state: "{{ pgbouncer_pkg_state }}"
+
+- name: Check if config dir exists
+  become: true
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ pgbouncer_config_dir }}"
+    state: "directory"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0750'
+  tags: pgbouncer,pgbouncer_config
+
+- name: Configure pgbouncer
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    dest: "{{ pgbouncer_config_file }}"
+    src: "{{ pgbouncer_templates_dir }}/pgbouncer.ini.j2"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0640'
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_config
+
+- name: Enable include file in main pgbouncer config
+  become: true
+  become_user: root
+  ansible.builtin.lineinfile:
+    dest: "{{ pgbouncer_config_dir }}/pgbouncer.ini"
+    line: "%include {{ pgbouncer_config_file }}"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0640'
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_config
+
+- name: Set HBA if it is defined
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    dest: "{{ pgbouncer_auth_hba_file }}"
+    src: "{{ pgbouncer_templates_dir }}/pg_hba.conf.j2"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0640'
+  when: pgbouncer_auth_hba_file is defined and pgbouncer_auth_hba_file | length > 0
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_auth_hba
+
+- name: Set user list
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    dest: "{{ pgbouncer_user_file }}"
+    src: "{{ pgbouncer_templates_dir }}/userlist.txt.j2"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0600'
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_user
+
+- name: Add new user in user list
+  become: true
+  become_user: root
+  ansible.builtin.lineinfile:
+    dest: "{{ pgbouncer_user_file }}"
+    line: '"{{ pgbouncer_db_user }}" "{{ pgbouncer_db_password }}"'
+    create: true
+    state: "{{ pgbouncer_pkg_state }}"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0600'
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_add_user
+
+- name: Add new user in config
+  become: true
+  become_user: root
+  ansible.builtin.lineinfile:
+    dest: "{{ pgbouncer_config_file }}"
+    insertbefore: '^\[pgbouncer\]$'
+    line: "{{ pgbouncer_db_user }} = host={{ pgbouncer_db_host }} port={{ pgbouncer_db_port }} client_encoding={{ postgresql_db_encoding }}"
+    state: "{{ pgbouncer_pkg_state }}"
+    owner: "{{ pgbouncer_system_user }}"
+    group: "{{ pgbouncer_system_group }}"
+    mode: '0600'
+  notify: Pgbouncer restart
+  tags: pgbouncer,pgbouncer_add_user

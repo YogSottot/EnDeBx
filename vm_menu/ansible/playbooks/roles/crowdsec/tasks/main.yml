@@ -1,0 +1,8 @@
+---
+- name: Install crowdsec
+  ansible.builtin.include_tasks: install_crowdsec.yml
+  when: crowdsec_action == 'INSTALL'
+
+- name: Delete crowdsec
+  ansible.builtin.include_tasks: delete_crowdsec.yml
+  when: crowdsec_action == 'DELETE'
