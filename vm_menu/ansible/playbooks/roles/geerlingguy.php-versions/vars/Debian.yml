@@ -22,7 +22,6 @@ __php_xdebug_module_path: "/usr/lib/php/{{ php_version }}/modules"
 __php_xhprof_module_path: "/usr/lib/php/{{ php_version }}/modules"
 
 __php_packages:
-  - "php{{ php_version }}"
   - "php{{ php_version }}-common"
   - "php{{ php_version }}-cli"
   - "php{{ php_version }}-fpm"
@@ -46,6 +45,7 @@ __php_packages:
   - "php{{ php_version }}-intl"
   - "php{{ php_version }}-mysql"
   - "php{{ php_version }}-xdebug"
+  - "php{{ php_version }}-pgsql"
   - "php-pear"
 
 php_versions_debian:

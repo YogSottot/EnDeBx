@@ -24,6 +24,7 @@ __php_packages:
   - php{{ php_default_version_debian }}-intl
   - php{{ php_default_version_debian }}-mysql
   - php{{ php_default_version_debian }}-xdebug
+  - php{{ php_default_version_debian }}-pgsql
   - php-pear
 
 __php_webserver_daemon: "apache2"
