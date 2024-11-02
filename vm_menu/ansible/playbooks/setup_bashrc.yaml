@@ -3,7 +3,7 @@
   hosts: localhost
   connection: local
   become: true
-  gather_facts: false
+  gather_facts: true
   roles:
     - name: Setup bashrc
       role: bashrc

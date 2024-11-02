@@ -1,18 +1,17 @@
 ---
+- name: Include deps list
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+
 - name: Install deps
   ansible.builtin.apt:
-    name:
-      - bash-completion
-      - bat
-      - bpytop
-      - colordiff
-      - duf
-      - exa
-      - fd-find
-      - fzf
-      - gdu
-      - lsd
-      - ripgrep
+    name: "{{ item }}"
+  with_items:
+    "{{ bashrc_packages }}"
   environment:
     NEEDRESTART_MODE: automatically
 

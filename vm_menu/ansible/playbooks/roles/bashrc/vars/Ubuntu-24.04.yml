@@ -1,0 +1,14 @@
+---
+ls_replacment: eza
+bashrc_packages:
+  - bash-completion
+  - bat
+  - bpytop
+  - colordiff
+  - duf
+  - "{{ ls_replacment }}"
+  - fd-find
+  - fzf
+  - gdu
+  - lsd
+  - ripgrep

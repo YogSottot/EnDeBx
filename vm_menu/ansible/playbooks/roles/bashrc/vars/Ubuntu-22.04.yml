@@ -1,0 +1,13 @@
+---
+ls_replacment: exa
+bashrc_packages:
+  - bash-completion
+  - bat
+  - bpytop
+  - colordiff
+  - duf
+  - "{{ ls_replacment }}"
+  - fd-find
+  - fzf
+  - gdu
+  - ripgrep

@@ -72,14 +72,14 @@ alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
-# TODO: change exa to eza when Debian 13 released
-alias l='exa --long --all --group --header --classify --time-style long-iso --icons'
+# TODO: change {{ ls_replacment }} to eza when Debian 13 released
+alias l='{{ ls_replacment }} --long --all --group --header --classify --time-style long-iso --icons'
 # sort by date
-alias lst='exa --long --all --group --header --classify  --time-style long-iso -s date --icons'
+alias lst='{{ ls_replacment }} --long --all --group --header --classify  --time-style long-iso -s date --icons'
 # sort by size
-alias lst='exa --long --all --group --header --classify  --reverse --time-style long-iso -s size --icons'
+alias lst='{{ ls_replacment }} --long --all --group --header --classify  --reverse --time-style long-iso -s size --icons'
 # show directory tree, use lt 2 or more to show more levels
-alias lt='exa --long --all --header --classify  --tree --time-style long-iso --icons --level '
+alias lt='{{ ls_replacment }} --long --all --header --classify  --tree --time-style long-iso --icons --level '
 # lsd color
 alias lsd='lsd --color=never'
 

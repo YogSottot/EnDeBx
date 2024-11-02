@@ -208,3 +208,6 @@ BS_SETUP_MALDET=N
 BS_SETUP_SWAP=N
 # Swap size in MB
 BS_SWAP_SIZE=1024
+
+# Add menu in autostart when connect to ssh (Y/N)
+BS_ADD_MENU_IN_BASH_PROFILE=Y

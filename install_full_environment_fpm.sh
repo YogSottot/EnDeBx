@@ -61,17 +61,6 @@ cd $DEST_DIR_MENU
 
 chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
 
-# Check script in .profile and add to .profile if not exist
-if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
-  cat << INSTALL_MENU >> /root/.profile
-
-#if [ -n "\$SSH_CONNECTION" ]; then
-#  $FULL_PATH_MENU_FILE
-#fi
-
-INSTALL_MENU
-fi
-
 ln -fs $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
 
 # Final actions
@@ -81,6 +70,19 @@ source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
 # shellcheck source=/dev/null
 if [ -e /root/.env.menu ]; then
   source /root/.env.menu
+fi
+
+if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
+    # Check script in .profile and add to .profile if not exist
+    if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
+      cat << INSTALL_MENU >> /root/.profile
+
+    if [ -n "\$SSH_CONNECTION" ]; then
+      $FULL_PATH_MENU_FILE
+    fi
+
+INSTALL_MENU
+    fi
 fi
 
 # set timezone
