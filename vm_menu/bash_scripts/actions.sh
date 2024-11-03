@@ -57,7 +57,7 @@ action_create_site(){
   bx_cron_logs_path_file=${BS_BX_CRON_LOGS_PATH_FILE} \
 
   push_server_config=${BS_PUSH_SERVER_CONFIG} \
-  push_server_bx_settings=$((push_server_bx_settings == 1)) \
+  push_server_bx_settings=${push_server_bx_settings} \
 
   pb_redirect_http_to_https=${pb_redirect_http_to_https} \
 

@@ -359,8 +359,8 @@ add_site(){
             read -r -p "   Do you want to add local push-server config to /bitrix/.setting.php? (Y/N) [${push_server_bx_settings}]: " answer
             answer=${answer:-$push_server_bx_settings}
             case ${answer,,} in
-              y ) push_server_bx_settings=1; break;;
-              n ) push_server_bx_settings=0; break;;
+              y ) push_server_bx_settings=Y; break;;
+              n ) push_server_bx_settings=N; break;;
               * ) printf "   Please enter Y or N.\n";;
             esac
           done
