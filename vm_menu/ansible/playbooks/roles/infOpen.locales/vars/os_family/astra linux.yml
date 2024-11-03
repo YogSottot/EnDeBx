@@ -1,0 +1,15 @@
+---
+
+# Debian family variables
+# -----------------------------------------------------------------------------
+
+# Packages
+_locales_packages:
+  - name: 'locales'
+
+# Configuration files path
+_locales_config_file_dest: '/etc/default/locale'
+_locales_gen_file_dest: '/etc/locale.gen'
+
+# Locale update command
+_locales_update_command: '/usr/sbin/update-locale'

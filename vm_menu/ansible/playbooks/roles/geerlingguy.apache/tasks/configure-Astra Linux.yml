@@ -1,0 +1,120 @@
+---
+- name: Configure Apache.
+  ansible.builtin.lineinfile:
+    dest: "{{ apache_server_root }}/ports.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    mode: '0644'
+  with_items: "{{ apache_ports_configuration_items }}"
+  notify: restart apache
+
+- name: Enable Apache mods.
+  ansible.builtin.file:
+    src: "{{ apache_server_root }}/mods-available/{{ item }}.load"
+    dest: "{{ apache_server_root }}/mods-enabled/{{ item }}.load"
+    state: link
+    mode: '0644'
+  with_items: "{{ apache_mods_enabled }}"
+  notify: restart apache
+
+- name: Disable Apache mods.
+  ansible.builtin.file:
+    path: "{{ apache_server_root }}/mods-enabled/{{ item }}.load"
+    state: absent
+  with_items: "{{ apache_mods_disabled }}"
+  notify: restart apache
+
+- name: Check whether certificates defined in vhosts exist.
+  ansible.builtin.stat:
+    path: "{{ item.certificate_file }}"
+  register: apache_ssl_certificates
+  with_items: "{{ apache_vhosts_ssl }}"
+  no_log: "{{ apache_ssl_no_log }}"
+
+- name: Add apache vhosts configuration.
+  ansible.builtin.template:
+    src: "{{ apache_vhosts_template }}"
+    dest: "{{ apache_conf_path }}/sites-available/{{ apache_vhosts_filename }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart apache
+  when: apache_create_vhosts | bool
+
+- name: Add vhost symlink in sites-enabled.
+  ansible.builtin.file:
+    src: "{{ apache_conf_path }}/sites-available/{{ apache_vhosts_filename }}"
+    dest: "{{ apache_conf_path }}/sites-enabled/{{ apache_vhosts_filename }}"
+    state: link
+    mode: '0644'
+    force: "{{ ansible_check_mode }}"
+  notify: restart apache
+  when: apache_create_vhosts | bool
+
+- name: Remove default vhost in sites-enabled.
+  ansible.builtin.file:
+    path: "{{ apache_conf_path }}/sites-enabled/{{ apache_default_vhost_filename }}"
+    state: absent
+  notify: restart apache
+  when: apache_remove_default_vhost
+
+- name: Replace www-data with user in /etc/apache2/envvars
+  ansible.builtin.replace:
+    path: /etc/apache2/envvars
+    regexp: '^export APACHE_RUN_USER=www-data$'
+    replace: 'export APACHE_RUN_USER={{ apache_user }}'
+    backup: no
+
+- name: Replace www-data with group in /etc/apache2/envvars
+  ansible.builtin.replace:
+    path: /etc/apache2/envvars
+    regexp: '^export APACHE_RUN_GROUP=www-data$'
+    replace: 'export APACHE_RUN_GROUP={{ apache_user }}'
+    backup: no
+
+- name: Create /etc/apache2/mods-enabled/remoteip.conf with specified content
+  ansible.builtin.copy:
+    dest: /etc/apache2/mods-enabled/remoteip.conf
+    content: |
+      <IfModule remoteip_module>
+        RemoteIPHeader X-Real-IP
+        RemoteIPInternalProxy 127.0.0.1
+      </IfModule>
+    mode: '0644'
+
+- name: Create /etc/apache2/conf-enabled/php.conf with specified content
+  ansible.builtin.copy:
+    dest: /etc/apache2/conf-enabled/php.conf
+    content: |
+      #
+      # The following lines prevent .user.ini files from being viewed by Web clients.
+      #
+      <Files ".user.ini">
+          <IfModule mod_authz_core.c>
+              Require all denied
+          </IfModule>
+          <IfModule !mod_authz_core.c>
+              Order allow,deny
+              Deny from all
+              Satisfy All
+          </IfModule>
+      </Files>
+
+      # Cause the PHP interpreter to handle files with a .php extension.
+      <FilesMatch "\.php$">
+      #        SetHandler "proxy:fcgi://127.0.0.1:9000"
+              SetHandler "proxy:unix:/run/php/php-fpm.sock|fcgi://localhost"
+      #       AddType application/x-httpd-php .php
+      </FilesMatch>
+
+      # Add index.php to the list of files that will be served as directory
+      # indexes.
+
+      DirectoryIndex index.php
+
+      # Uncomment the following line to allow PHP to pretty-print .phps
+      # files as PHP source code:
+      #
+      #AddType application/x-httpd-php-source .phps
+    mode: '0644'

@@ -16,4 +16,4 @@ systemd_overrides_unit:
    - transformer
    - unattended-upgrades
 
-systemd_overrides_redis_group: "{{ nginx_user }}"
+systemd_overrides_redis_group: "{{ user_server_sites }}"

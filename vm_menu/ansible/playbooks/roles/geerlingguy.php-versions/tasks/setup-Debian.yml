@@ -8,9 +8,19 @@
     name: dirmngr
     state: present
 
-- name: Add repository for PHP versions (Ubuntu).
+- name: Add ppa:ondrej/php key
+  ansible.builtin.get_url:
+    url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB8DC7E53946656EFBCE4C1DD71DAEAAB4AD4CAB6&exact=on
+    dest: /etc/apt/keyrings/ondrej.asc
+    mode: "0644"
+    owner: root
+    group: root
+  when: ansible_distribution == "Ubuntu"
+
+- name: Add ppa:ondrej/php
   ansible.builtin.apt_repository:
-    repo: 'ppa:ondrej/php'
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/ondrej.asc] http://ppa.launchpad.net/ondrej/php/ubuntu {{ ansible_facts.distribution_release }} main"
+    state: present
   when: ansible_distribution == "Ubuntu"
 
 # Debian-specific tasks.
@@ -23,15 +33,17 @@
   when: ansible_distribution == "Debian"
 
 - name: Add Ondrej Sury's apt key (Debian).
-  ansible.builtin.apt_key:
+  ansible.builtin.get_url:
     url: https://mirror.hoztnode.net/mirrors/deb.sury.org/apt.gpg
-    id: 15058500A0235D97F5D10063B188E2B695BD4743
-    state: present
+    dest: /etc/apt/keyrings/deb.sury.org.gpg
+    mode: "0644"
+    owner: root
+    group: root
   when: ansible_distribution == "Debian"
 
 - name: Add Ondrej Sury's repo (Debian).
   ansible.builtin.apt_repository:
-    repo: "deb https://mirror.hoztnode.net/mirrors/deb.sury.org/php {{ ansible_distribution_release }} main"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deb.sury.org.gpg] https://mirror.hoztnode.net/mirrors/deb.sury.org/php {{ ansible_distribution_release }} main"
     state: present
   register: php_ondrej_debian_repo
   when: ansible_distribution == "Debian"

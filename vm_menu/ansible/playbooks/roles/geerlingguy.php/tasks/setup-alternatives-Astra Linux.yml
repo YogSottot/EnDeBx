@@ -1,0 +1,30 @@
+---
+- name: Set php-fpm manual as alternatives
+  community.general.alternatives:
+    name: php-fpm.sock
+    path: "/run/php/php{{ php_version }}-fpm.sock"
+
+- name: Set php manual as alternatives
+  community.general.alternatives:
+    name: php
+    path: "/usr/bin/php{{ php_version }}"
+
+- name: Set phar manual as alternatives
+  community.general.alternatives:
+    name: phar
+    path: "/usr/bin/phar{{ php_version }}"
+
+- name: Set phar.phar manual as alternatives
+  community.general.alternatives:
+    name: phar.phar
+    path: "/usr/bin/phar.phar{{ php_version }}"
+
+- name: Set php-config manual as alternatives
+  community.general.alternatives:
+    name: php-config
+    path: "/usr/bin/php-config{{ php_version }}"
+
+- name: Set phar.phar manual as alternatives
+  community.general.alternatives:
+    name: phpize
+    path: "/usr/bin/phpize{{ php_version }}"

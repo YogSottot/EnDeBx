@@ -20,6 +20,9 @@ nginx_additional_package_name_debian:
 #  - libnginx-mod-http-lua
 #  - libnginx-mod-http-perl
 
+nginx_additional_package_name_astralinux:
+  - libnginx-mod-http-headers-more-filter
+
 nginx_package_name_redhat: "nginx-more"
 
 nginx_service_state: started

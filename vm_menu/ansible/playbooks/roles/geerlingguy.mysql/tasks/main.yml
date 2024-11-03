@@ -3,11 +3,7 @@
 - ansible.builtin.include_tasks: variables.yml # noqa name[missing]
 
 # Setup/install tasks.
-- ansible.builtin.include_tasks: setup-RedHat.yml # noqa name[missing]
-  when: ansible_os_family == 'RedHat'
-
-- ansible.builtin.include_tasks: setup-Debian.yml # noqa name[missing]
-  when: ansible_os_family == 'Debian'
+- ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml" # noqa name[missing]
 
 - name: Check if MySQL packages were installed.
   ansible.builtin.set_fact:

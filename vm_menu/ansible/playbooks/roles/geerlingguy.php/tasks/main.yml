@@ -13,7 +13,9 @@
 - name: Set the default PHP version for Debian-based OSes.
   ansible.builtin.set_fact:
     php_default_version_debian: "{{ __php_default_version_debian }}"
-  when: php_default_version_debian is not defined and ansible_os_family == 'Debian'
+  when:
+    - php_default_version_debian is not defined
+    - ansible_os_family == 'Debian' or ansible_os_family == 'Astra Linux'
 
 - name: Define the name of the JSON extension package on Debian for PHP <8.
   ansible.builtin.set_fact:
@@ -71,15 +73,8 @@
   when: php_fpm_daemon_xdebug is not defined
 
 # Setup/install tasks.
-- ansible.builtin.include_tasks: setup-RedHat.yml # noqa name[missing]
-  when:
-    - not php_install_from_source
-    - ansible_os_family == 'RedHat'
-
-- ansible.builtin.include_tasks: setup-Debian.yml # noqa name[missing]
-  when:
-    - not php_install_from_source
-    - ansible_os_family == 'Debian'
+- ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml" # noqa name[missing]
+  when: not php_install_from_source
 
 # Install PHP from source when php_install_from_source is true.
 - ansible.builtin.include_tasks: install-from-source.yml # noqa name[missing]
@@ -96,4 +91,4 @@
 # Setup alterantives
 - name: Setup alterantives
   ansible.builtin.include_tasks: "setup-alternatives-{{ ansible_os_family }}.yml"
-  when: php_set_manual | bool
+  when: php_set_manual | bool and ansible_os_family != 'RedHat'

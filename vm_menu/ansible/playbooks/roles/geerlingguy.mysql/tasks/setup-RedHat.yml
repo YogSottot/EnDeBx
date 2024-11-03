@@ -25,6 +25,6 @@
   register: rh_percona_install_packages
 
 - name: Ensure MySQL mariadbb-5.5 packages are installed.
-  ansible.builtin.import_tasks:
+  ansible.builtin.include_tasks:
     file: mariadb-5.5.yml
   when: mysql_flavor =='mariadb' and mysql_mariadb_version == '5.5' and not mysql_installed.stat.exists

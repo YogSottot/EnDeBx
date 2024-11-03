@@ -3,9 +3,10 @@
   hosts: localhost
   connection: local
   become: true
-  gather_facts: false
+  gather_facts: true
   pre_tasks:
     - name: Install deps
+      when: ansible_os_family == "Debian"
       ansible.builtin.apt:
         name:
           - bind9-libs
@@ -36,6 +37,45 @@
           - rsync
           - rsyslog
           - s-nail
+          - software-properties-common
+          - ssl-cert
+          - telnet
+          - traceroute
+          - unattended-upgrades
+          - unzip
+          - webp
+          - wget
+          - zstd
+      environment:
+        NEEDRESTART_MODE: automatically
+    - name: Install deps
+      when: ansible_os_family == "Astra Linux"
+      ansible.builtin.apt:
+        name:
+          - bind9-libs
+          - catdoc
+          - chrony
+          - cron
+          - curl
+          - ghostscript
+          - htop
+          - locales
+          - locales-all
+          - lsof
+          - mc
+          - nano
+          - ncdu
+          - needrestart
+          - net-tools
+          - nmap
+          - optipng
+          - perl
+          - poppler-utils
+          - postfix
+          - psmisc
+          - pwgen
+          - rsync
+          - rsyslog
           - software-properties-common
           - ssl-cert
           - telnet

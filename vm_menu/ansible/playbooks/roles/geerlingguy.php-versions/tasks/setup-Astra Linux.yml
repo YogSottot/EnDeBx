@@ -1,0 +1,37 @@
+---
+- name: Set the correct opcache filename (Ubuntu/Debian).
+  ansible.builtin.set_fact:
+    php_opcache_conf_filename: "10-opcache.ini"
+
+- name: Ensure dirmngr is installed (gnupg dependency).
+  ansible.builtin.apt:
+    name: dirmngr
+    state: present
+
+# Debian-specific tasks.
+- name: Add dependencies for PHP versions (Astra Linux).
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+    state: present
+
+- name: Add Ondrej Sury's apt key (Astra Linux).
+  ansible.builtin.get_url:
+    url: https://mirror.hoztnode.net/mirrors/deb.sury.org/apt.gpg
+    dest: /etc/apt/keyrings/deb.sury.org.gpg
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Add Ondrej Sury's repo (Astra Linux).
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deb.sury.org.gpg] https://mirror.hoztnode.net/mirrors/deb.sury.org/php bookworm main"
+    state: present
+  register: php_ondrej_debian_repo
+
+- name: Update apt caches after repo is added (Astra Linux).
+  ansible.builtin.apt: update_cache=true
+  when:
+    - php_ondrej_debian_repo.changed
+  tags: ['skip_ansible_lint']

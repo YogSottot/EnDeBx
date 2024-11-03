@@ -1,0 +1,22 @@
+---
+
+- name: 'INSTALL | APT | Install locales packages'
+  become: true
+  ansible.builtin.apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    update_cache: true
+    cache_valid_time: "{{ locales_repositories_cache_valid_time }}"
+  with_items: "{{ locales_packages }}"
+
+
+- name: 'INSTALL | APT | Install language packs packages'
+  become: true
+  ansible.builtin.apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    update_cache: true
+    cache_valid_time: "{{ locales_repositories_cache_valid_time }}"
+  notify: 'HANDLER | Update system settings'
+  with_items: "{{ locales_language_packs_packages }}"
+  when: "(ansible_distribution | lower) == 'ubuntu'"
