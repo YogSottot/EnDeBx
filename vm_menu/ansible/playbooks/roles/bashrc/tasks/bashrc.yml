@@ -18,7 +18,7 @@
 - name: Copy .bash_aliases template in /etc/skel
   ansible.builtin.template:
     src: .bash_aliases.j2
-    dest: "/etc/skel/"
+    dest: "/etc/skel/.bash_aliases"
     owner: root
     group: root
     mode: '0644'
@@ -57,7 +57,7 @@
 - name: Copy .bash_aliases template in /root/
   ansible.builtin.template:
     src: .bash_aliases.j2
-    dest: "/root/"
+    dest: "/root/.bash_aliases"
     owner: root
     group: root
     mode: '0644'
@@ -73,7 +73,7 @@
 - name: "Copy .bash_aliases template in {{ user_server_sites }}"
   ansible.builtin.template:
     src: .bash_aliases.j2
-    dest: "{{ path_sites }}/"
+    dest: "{{ path_sites }}/.bash_aliases"
     owner: "{{ user_server_sites }}"
     group: "{{ group_user_server_sites }}"
     mode: '0644'
