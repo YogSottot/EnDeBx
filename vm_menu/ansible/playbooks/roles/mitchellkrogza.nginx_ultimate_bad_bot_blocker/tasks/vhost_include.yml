@@ -1,0 +1,23 @@
+---
+- name: Create bots_block.conf file
+  ansible.builtin.blockinfile:
+    path: "{{ path_nginx }}/site_settings/{{ domain }}/bots_block.conf"
+    marker: "# {mark} default"
+    block: |
+        ##
+        # Nginx Bad Bot Blocker Includes
+        # REPO: https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+        ##
+            include bots.d/ddos.conf;
+            include bots.d/blockbots.conf;
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  when: bot_blocker_action == 'enable'
+
+- name: Delete bots_block.conf file
+  ansible.builtin.file:
+    path: "{{ path_nginx }}/site_settings/{{ domain }}/bots_block.conf"
+    state: absent
+  when: bot_blocker_action == 'disable'

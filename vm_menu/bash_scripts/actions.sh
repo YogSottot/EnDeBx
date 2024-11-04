@@ -171,6 +171,22 @@ action_enable_or_disable_redirect_http_to_https(){
   press_any_key_to_return_menu;
 }
 
+action_enable_or_disable_bot_blocker(){
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_BOTBLOCKER}")
+
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "path_site=${path_site_from_links} \
+
+  path_nginx_sites_conf=${BS_PATH_NGINX_SITES_CONF} \
+  path_nginx=${BS_PATH_NGINX} \
+  service_nginx_name=${BS_SERVICE_NGINX_NAME} \
+
+  domain=${site} \
+  bot_blocker_action=${action}"
+
+  press_any_key_to_return_menu;
+}
+
 action_emulate_bitrix_vm(){
   clear;
 

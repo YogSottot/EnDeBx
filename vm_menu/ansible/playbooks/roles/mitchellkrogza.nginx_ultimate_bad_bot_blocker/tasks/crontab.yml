@@ -1,0 +1,13 @@
+---
+- name: Create cronjob to schedule output after every year,month,week,hour,minute
+  ansible.builtin.cron:
+    name: nginx-ultimate-bad-bot-blocker
+    minute: "22"
+    hour: "00"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    job: '/usr/local/sbin/update-ngxblocker -c {{ path_nginx }}/settings -n > /dev/null 2>&1 || true'
+    user: "root"
+    cron_file: "nginx-ultimate-bad-bot-blocker"
+    state: present

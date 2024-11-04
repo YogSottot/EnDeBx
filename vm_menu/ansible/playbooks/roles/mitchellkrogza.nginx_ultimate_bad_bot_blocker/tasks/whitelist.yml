@@ -1,0 +1,68 @@
+---
+- name: Update blacklist-user-agents.conf file
+  ansible.builtin.blockinfile:
+    path: "/etc/{{ service_nginx_name }}/bots.d/blacklist-user-agents.conf"
+    marker: "# {mark} default"
+    block: |
+        "~*\bUptimeRobot\b"     0;
+        "~*\bYandexBot\b"       0;
+        "~*\bYandexImages\b"    0;
+        "~*\bUptimeRobot/2.0\b" 0;
+        "~*(?:\b)WEBDAV(?:\b)"  0;
+        "~*\bMail.ru\b"         0;
+        "~*(?:\b)Mail.RU_Bot(?:\b)"   0;
+        "~*\bbingbot\b"         3;
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Update whitelist-domains.conf file
+  ansible.builtin.blockinfile:
+    path: "/etc/{{ service_nginx_name }}/bots.d/whitelist-domains.conf"
+    marker: "# {mark} default"
+    block: |
+        "~*\bwebvisor\.com\b"         0;
+        "~*\bwww\.uptimerobot\.com\b" 0;
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Update custom-bad-referrers.conf file
+  ansible.builtin.blockinfile:
+    path: "/etc/{{ service_nginx_name }}/bots.d/custom-bad-referrers.conf"
+    marker: "# {mark} default"
+    block: |
+        "~*\baway\.vk\.com\b"   0;
+        "~*\bok\.ru\b"  0;
+        "~*(?:\b)spb\.ru(?:\b)"         0;
+        "~*(?:\b)msk\.ru(?:\b)"         0;
+        "~*(?:\b)admitad\.com(?:\b)"    0;
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Update whitelist-ips.conf file
+  ansible.builtin.blockinfile:
+    path: "/etc/{{ service_nginx_name }}/bots.d/whitelist-ips.conf"
+    marker: "# {mark} default"
+    block: |
+        {% for ip in ansible_all_ipv4_addresses %}
+        {{ ip }}          0;
+        {% endfor %}
+        {% for ip in ansible_all_ipv6_addresses %}
+        {{ ip }}          0;
+        {% endfor %}
+        127.0.0.1         0;
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Comment out nginx_server_names_hash_bucket_size
+  ansible.builtin.lineinfile:
+    path: "{{ path_nginx }}/settings/botblocker-nginx-settings.conf"
+    regexp: '^server_names_hash_bucket_size'
+    line: '# server_names_hash_bucket_size 256;'

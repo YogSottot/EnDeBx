@@ -1,0 +1,62 @@
+---
+- name: Create bin directory if it does not exist
+  ansible.builtin.file:
+    path: /usr/local/sbin
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+
+- name: Check if setup-ngxblocker exists
+  ansible.builtin.stat:
+    path: /usr/local/sbin/setup-ngxblocker
+  register: setup_ngxblocker_check
+
+
+# Step 1:
+# played from https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+# Download install-ngxblocker to your /usr/local/sbin/directory and make the script executable.
+- name: Download nginx blocker
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker/master/install-ngxblocker"
+    dest: "/usr/local/sbin/install-ngxblocker"
+    owner: "root"
+    group: "root"
+    mode: '0755'
+    timeout: "120"
+  when: not setup_ngxblocker_check.stat.exists
+
+# Step 2:
+# Now run the install script with the -x parameter to download all the necessary files from the repository
+- name: Run live command with -x
+  ansible.builtin.command:
+    chdir: /usr/local/sbin/
+    cmd: "./install-ngxblocker -c {{ path_nginx }}/settings -x"
+  changed_when: false
+  when: not setup_ngxblocker_check.stat.exists
+
+# Step 3:
+# Enable crontab
+- name: Include cront list in play
+  ansible.builtin.include_tasks:
+    file: crontab.yml
+  when: not setup_ngxblocker_check.stat.exists
+
+- name: Include whitelist list in play
+  ansible.builtin.include_tasks:
+    file: whitelist.yml
+  when: not setup_ngxblocker_check.stat.exists
+
+- name: Include enable/disable block for {{ domain }}
+  ansible.builtin.include_tasks:
+    file: vhost_include.yml
+
+- name: Validate {{ service_nginx_name }} configuration
+  ansible.builtin.command: "{{ service_nginx_name }} -t"
+  changed_when: false
+
+- name: Reload {{ service_nginx_name }}
+  ansible.builtin.service:
+    name: "{{ service_nginx_name }}"
+    state: reloaded

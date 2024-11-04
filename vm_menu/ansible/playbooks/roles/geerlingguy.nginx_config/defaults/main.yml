@@ -28,7 +28,7 @@ nginx_server_tokens: "off"
 nginx_client_max_body_size: "1024m"
 nginx_client_body_buffer_size: "4m"
 
-nginx_server_names_hash_bucket_size: "128"
+nginx_server_names_hash_bucket_size: "256"
 
 nginx_listen_ipv6: true
 

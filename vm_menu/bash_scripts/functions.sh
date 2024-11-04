@@ -142,6 +142,7 @@ menu_edit_sites(){
     echo "          3) Delete site";
     echo "          4) Block/Unblock access by ip";
     echo "          5) Enable/Disable Basic Auth in ${BS_SERVICE_NGINX_NAME}";
+    echo "          6) Enable/Disable Bot Blocker in ${BS_SERVICE_NGINX_NAME}";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -154,6 +155,7 @@ menu_edit_sites(){
       "3") delete_site ;;
       "4") block_access_by_ip ;;
       "5") enable_or_disable_basic_auth ;;
+      "6") enable_or_disable_bot_blocker ;;
 
     0|z)  main_menu
     ;;
@@ -740,6 +742,61 @@ enable_or_disable_redirect_http_to_https(){
     esac
   done
 }
+
+enable_or_disable_bot_blocker(){
+  clear;
+  list_sites;
+
+  site=$BS_DEFAULT_SITE_NAME;
+  path_site_from_links=$BS_PATH_DEFAULT_SITE
+
+  echo -e "\n   Enable or Disable Nginx Bad Bot and User-Agent Blocker, Spam Referrer Blocker, Anti DDOS, Bad IP Blocker and Wordpress Theme Detector Blocker:\n";
+
+  read_by_def "  Enter path to site (default: $path_site_from_links): " path_site_from_links $path_site_from_links;
+
+        # Extract domain name from link
+        site=$(basename "$path_site_from_links")
+
+  while [[ -z "$site" ]] || ! [[ " ${ARR_ALL_USERS_DIR_SITES[*]} " =~ " $site " ]]; do
+
+      if [ -z "$site" ]; then
+        echo "   Incorrect site dir! Please enter site dir";
+        read_by_def "   Enter site dir: " site "${site}";
+      elif ! [[ " ${ARR_ALL_USERS_DIR_SITES[*]} " =~ " $site " ]]; then
+        site='';
+        echo "   Domain does not exist! You can use exists domain";
+        read_by_def "   Enter site dir: " site "${site}";
+      fi
+  done
+
+
+
+  if [ -s "${BS_PATH_NGINX}"/site_settings/"${site}"/bots_block.conf ]; then
+        current_state='enabled';
+        action='disable';
+  else
+      current_state='disabled';
+      action='enable';
+  fi
+
+    echo "   Your site $site Bad Bot status: $current_state";
+
+    extract_username_from_path
+
+    path_site="$BS_PATH_SITES/$site"
+
+  while true; do
+    read -r -p "   Do you really want to $action Bad Bot? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_enable_or_disable_bot_blocker; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+
+
 
 check_ftp_user_exists() {
     pure-pw show "$1" >/dev/null 2>&1

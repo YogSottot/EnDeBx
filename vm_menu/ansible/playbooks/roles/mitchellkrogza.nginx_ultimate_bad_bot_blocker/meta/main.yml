@@ -1,0 +1,21 @@
+---
+
+galaxy_info:
+  role_name: "nginx_badbot_blocker"
+  author: "Olohimai"
+  description: "Install Nginx Ultimate Bad Bot Blocker."
+  license: "MIT"
+  min_ansible_version: "2.10.0"
+
+  platforms:
+    - name: "Ubuntu"
+      versions:
+        - "focal"
+        - "jammy"
+
+  galaxy_tags:
+    - "nginx"
+    - "ultimate"
+    - "badbot-blocker"
+
+dependencies: []

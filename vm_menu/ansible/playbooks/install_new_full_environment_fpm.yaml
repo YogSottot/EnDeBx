@@ -75,7 +75,6 @@
         group: "{{ group_user_server_sites }}"
         mode: "{{ permissions_sites_files }}"
         timeout: "{{ timeout_download_bitrix_install_files_new_site }}"
-      ignore_errors: true
       with_items: "{{ urls }}"
 
     - name: Creating of downloaded file names array
