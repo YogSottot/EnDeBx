@@ -212,3 +212,9 @@ BS_SWAP_SIZE=1024
 
 # Add menu in autostart when connect to ssh (Y/N)
 BS_ADD_MENU_IN_BASH_PROFILE=Y
+
+# Add your packages in format "package1 package2 package3"
+BX_ADDITIONAL_PACKAGES=
+
+# Add your own additional php extension packages, they will be added including when php version changes in the menu
+BX_ADDITIONAL_PHP_EXTENSIONS=

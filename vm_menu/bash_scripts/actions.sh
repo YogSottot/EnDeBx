@@ -262,6 +262,7 @@ function action_change_php_version(){
   ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "php_version=${new_version_php} \
   php_current_default_version=${default_version} \
+  php_additional_packages=${BX_ADDITIONAL_PHP_EXTENSIONS} \
   php_set_manual=$((php_set_manual == 1)) \
   php_force_install='true' \
   user_server_sites=${BS_USER_SERVER_SITES} \

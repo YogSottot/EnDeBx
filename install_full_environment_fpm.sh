@@ -173,6 +173,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   php_version=${BX_PHP_DEFAULT_VERSION} \
   php_enable_php_fpm_xdebug=false \
   php_default_version_debian=${BX_PHP_DEFAULT_VERSION} \
+  php_additional_packages=${BX_ADDITIONAL_PHP_EXTENSIONS} \
   php_force_install='true' \
   server_timezone=${BS_SERVER_TIMEZONE}"
 
@@ -321,6 +322,10 @@ if [ "$BS_PUSH_SERVER_STOPPED" == Y  ]; then
 else
   systemctl restart push-server.service
   systemctl restart redis-server.service
+fi
+
+if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
+  apt -y install "${BX_ADDITIONAL_PACKAGES}"
 fi
 
 echo -e "\n\n";
