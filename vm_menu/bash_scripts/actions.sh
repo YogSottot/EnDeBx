@@ -259,10 +259,8 @@ function action_update_server() {
 function action_change_php_version(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ADD_PHP_VERSIONS}")
 
-  ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
-  -e "php_version=${new_version_php} \
+  extra_vars="php_version=${new_version_php} \
   php_current_default_version=${default_version} \
-  php_additional_packages=${BX_ADDITIONAL_PHP_EXTENSIONS} \
   php_set_manual=$((php_set_manual == 1)) \
   php_force_install='true' \
   user_server_sites=${BS_USER_SERVER_SITES} \
@@ -271,6 +269,12 @@ function action_change_php_version(){
   server_timezone=${BS_SERVER_TIMEZONE} \
   domain=default \
   htaccess_support=$((htaccess_support == 1))"
+
+  if [ -n "${BX_ADDITIONAL_PHP_EXTENSIONS}" ]; then
+    extra_vars+=" php_packages_extra='${BX_ADDITIONAL_PHP_EXTENSIONS}'"
+  fi
+
+  ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
 
   press_any_key_to_return_menu;
 }

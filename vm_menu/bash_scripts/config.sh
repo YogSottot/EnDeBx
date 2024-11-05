@@ -217,4 +217,5 @@ BS_ADD_MENU_IN_BASH_PROFILE=Y
 BX_ADDITIONAL_PACKAGES=
 
 # Add your own additional php extension packages, they will be added including when php version changes in the menu
+# in format: '["php{{ php_version }}-zmq", "php{{ php_version }}-redis"]'
 BX_ADDITIONAL_PHP_EXTENSIONS=
