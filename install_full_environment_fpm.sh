@@ -318,8 +318,11 @@ else
 fi
 
 if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
-  apt -y install "${BX_ADDITIONAL_PACKAGES}"
+  for package in ${BX_ADDITIONAL_PACKAGES}; do
+    apt -y install "$package"
+  done
 fi
+
 
 echo -e "\n\n";
 echo "Full environment installed";
