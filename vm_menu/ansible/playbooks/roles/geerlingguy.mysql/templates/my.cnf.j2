@@ -87,25 +87,25 @@ performance_schema = {{ mysql_performance_schema }}
 # Memory settings.
 key_buffer_size = {{ mysql_key_buffer_size | default(([ansible_memtotal_mb // 16, 16] | min ~ 'M')) }}
 max_allowed_packet = {{ mysql_max_allowed_packet | default(([ansible_memtotal_mb // 64, 64] | min ~ 'M')) }}
-table_open_cache = {{ mysql_table_open_cache | default(mysql_config.table_open_cache) }}
+table_open_cache = {{ mysql_table_open_cache | default(matching_row.table_open_cache) }}
 {% if mysql_flavor == 'mariadb' %}
 table_definition_cache = {{ mysql_table_definition_cache }}
 {% endif %}
-sort_buffer_size = {{ mysql_sort_buffer_size | default(mysql_config.sort_buffer_size | string + 'M') }}
-join_buffer_size = {{ mysql_join_buffer_size | default(mysql_config.join_buffer_size | string + 'M') }}
+sort_buffer_size = {{ mysql_sort_buffer_size | default(matching_row.sort_buffer_size | string + 'M') }}
+join_buffer_size = {{ mysql_join_buffer_size | default(matching_row.join_buffer_size | string + 'M') }}
 read_buffer_size = {{ mysql_read_buffer_size | default(([ansible_memtotal_mb // 512, 16] | min ~ 'M')) }}
 read_rnd_buffer_size = {{ mysql_read_rnd_buffer_size | default(([ansible_memtotal_mb // 512, 16] | min ~ 'M')) }}
 myisam_sort_buffer_size = {{ mysql_myisam_sort_buffer_size | default(([ansible_memtotal_mb // 512, 4] | min ~ 'M')) }}
-thread_cache_size = {{ mysql_thread_cache_size | default(mysql_config.thread_cache_size) }}
+thread_cache_size = {{ mysql_thread_cache_size | default(matching_row.thread_cache_size) }}
 {% if '8.0.' not in mysql_cli_version.stdout %}
 query_cache_type = {{ mysql_query_cache_type | default(1) }}
-query_cache_size = {{ mysql_query_cache_size | default(mysql_config.query_cache_size | string + 'M') }}
-query_cache_limit = {{ mysql_query_cache_limit | default(mysql_config.query_cache_limit | string + 'M') }}
+query_cache_size = {{ mysql_query_cache_size | default(matching_row.query_cache_size | string + 'M') }}
+query_cache_limit = {{ mysql_query_cache_limit | default(matching_row.query_cache_limit | string + 'M') }}
 query_cache_strip_comments = {{ mysql_query_cache_strip_comments }}
 {% endif %}
 max_connections = {{ mysql_max_connections | default([ansible_memtotal_mb // 20, 100] | min) }}
-tmp_table_size = {{ mysql_tmp_table_size | default(mysql_config.tmp_table_size | string + 'M') }}
-max_heap_table_size = {{ mysql_max_heap_table_size | default(mysql_config.max_heap_table_size | string + 'M') }}
+tmp_table_size = {{ mysql_tmp_table_size | default(matching_row.tmp_table_size | string + 'M') }}
+max_heap_table_size = {{ mysql_max_heap_table_size | default(matching_row.max_heap_table_size | string + 'M') }}
 group_concat_max_len = {{ mysql_group_concat_max_len }}
 
 # Other settings.
@@ -143,7 +143,7 @@ thread_pool_size = {{ mysql_thread_pool_size }}
 # InnoDB settings.
 innodb_file_per_table = {{ mysql_innodb_file_per_table }}
 {% set default_buffer_pool_size = (ansible_memtotal_mb <= 2048) | ternary((ansible_memtotal_mb * 0.4) | int, (ansible_memtotal_mb * 0.7) | int) %}
-innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size | default(mysql_config.innodb_buffer_pool_size | string + 'M') }}
+innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size | default(matching_row.innodb_buffer_pool_size | string + 'M') }}
 
 {% if '5.7.' in mysql_cli_version.stdout or '8.0.' in mysql_cli_version.stdout or '5.5.' in mysql_cli_version.stdout %}
 {% set calculated_instances = [(default_buffer_pool_size // 1024) | round | int, 64, ansible_processor_vcpus, 1] | sort %}
