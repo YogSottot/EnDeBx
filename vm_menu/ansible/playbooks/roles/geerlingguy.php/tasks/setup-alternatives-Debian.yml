@@ -23,8 +23,10 @@
   community.general.alternatives:
     name: php-config
     path: "/usr/bin/php-config{{ php_version }}"
+  ignore_errors: true
 
 - name: Set phar.phar manual as alternatives
   community.general.alternatives:
     name: phpize
     path: "/usr/bin/phpize{{ php_version }}"
+  ignore_errors: true
