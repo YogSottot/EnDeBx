@@ -3,6 +3,7 @@
 - name: Pgbouncer restart
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.service:
     name: pgbouncer
     state: restarted
@@ -10,6 +11,7 @@
 - name: Pgbouncer reload
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.service:
     name: pgbouncer
     state: reloaded

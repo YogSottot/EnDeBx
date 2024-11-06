@@ -7,6 +7,7 @@
   register: _postgresql_replication_check
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
   vars:
     ansible_ssh_pipelining: true
     ansible_python_interpreter: "{{ _postgresql_ansible_python_interpreter }}"
@@ -76,6 +77,7 @@
       delegate_to: "{{ postgresql_replication_primary_inventory_name | d(omit, true) }}"
       become: true
       become_user: "{{ postgresql_user }}"
+      become_method: su
       when: postgresql_replication_create_slot and postgresql_replication_slot | length > 0
       vars:
         ansible_ssh_pipelining: true
@@ -87,6 +89,7 @@
       changed_when: false
       become: true
       become_user: "{{ postgresql_user }}"
+      become_method: su
       vars:
         ansible_ssh_pipelining: true
 

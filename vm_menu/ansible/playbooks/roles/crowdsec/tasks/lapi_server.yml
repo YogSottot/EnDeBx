@@ -26,6 +26,7 @@
     name: "{{ crowdsec_psql_db_name }}"
   become: true
   become_user: postgres
+  become_method: su
 
 - name: Crowdsec - create crowdsec db userc
   postgresql_user:
@@ -34,6 +35,7 @@
     password: "{{ crowdsec_psql_db_password }}"
   become: true
   become_user: postgres
+  become_method: su
 
 - name: Crowdsec - grant db user access to app db
   postgresql_privs:
@@ -44,6 +46,7 @@
     privs: all
   become: true
   become_user: postgres
+  become_method: su
 
 - name: Crowdsec - /etc/crowdsec/config.yaml template for lapi server
   template:

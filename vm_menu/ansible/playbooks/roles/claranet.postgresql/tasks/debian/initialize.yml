@@ -11,3 +11,4 @@
     - "'Error' not in _postgresql_initdb_res.stdout"
   become: true
   become_user: root
+  become_method: su

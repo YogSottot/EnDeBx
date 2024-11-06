@@ -15,6 +15,7 @@
   no_log: "{{ postgres_users_no_log }}"
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
   # See: https://github.com/ansible/ansible/issues/16048#issuecomment-229012509
   vars:
     ansible_ssh_pipelining: true
@@ -32,6 +33,7 @@
     login_unix_socket: "{{ postgresql_unix_socket_directories[0] }}"
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
   vars:
     ansible_ssh_pipelining: true
     ansible_python_interpreter: "{{ _postgresql_ansible_python_interpreter }}"

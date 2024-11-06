@@ -19,6 +19,7 @@
   no_log: "{{ postgres_users_no_log }}"
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
   vars:
     ansible_ssh_pipelining: true
     ansible_python_interpreter: "{{ _postgresql_ansible_python_interpreter }}"
@@ -44,6 +45,7 @@
   changed_when: false
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
   when: not ansible_check_mode
   vars:
     ansible_ssh_pipelining: true

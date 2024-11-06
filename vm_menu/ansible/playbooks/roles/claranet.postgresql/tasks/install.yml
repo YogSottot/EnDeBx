@@ -43,6 +43,7 @@
     virtualenv: "{{ _postgresql_virtualenv_path }}"
     virtualenv_command: python3 -m venv
   become_user: "{{ postgresql_user }}"
+  become_method: su
   environment: "{{ _postgresql_general_proxy_env | ansible.builtin.combine({'PATH': _postgresql_pythonized_path}) }}"
 
 # Errors while installing this dependency on redhat system. Used the link below to provide a solution
@@ -53,4 +54,5 @@
     name: "{{ _postgresql_dependencies_pip_packages }}"
     virtualenv: "{{ _postgresql_virtualenv_path }}"
   become_user: "{{ postgresql_user }}"
+  become_method: su
   environment: "{{ _postgresql_general_proxy_env | ansible.builtin.combine({'PATH': _postgresql_pythonized_path}) }}"

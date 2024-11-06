@@ -19,6 +19,7 @@
 - name: Update cache for apt PM
   become: true
   become_user: root
+  become_method: su
   when: ansible_pkg_mgr == "apt"
   tags: pgbouncer,pgbouncer_install
   ansible.builtin.apt:
@@ -26,6 +27,7 @@
 - name: Update cache for apt+rpm PM
   become: true
   become_user: root
+  become_method: su
   when: ansible_pkg_mgr == "apt_rpm"
   tags: pgbouncer,pgbouncer_install
   community.general.apt_rpm:
@@ -34,6 +36,7 @@
 - name: Pgbouncer "{{ pgbouncer_action }}"
   become: true
   become_user: root
+  become_method: su
   tags: pgbouncer,pgbouncer_install
   ansible.builtin.package:
     name: pgbouncer
@@ -42,6 +45,7 @@
 - name: Check if config dir exists
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.file:
     path: "{{ pgbouncer_config_dir }}"
     state: "directory"
@@ -53,6 +57,7 @@
 - name: Configure pgbouncer
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.template:
     dest: "{{ pgbouncer_config_file }}"
     src: "{{ pgbouncer_templates_dir }}/pgbouncer.ini.j2"
@@ -65,6 +70,7 @@
 - name: Enable include file in main pgbouncer config
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.lineinfile:
     dest: "{{ pgbouncer_config_dir }}/pgbouncer.ini"
     line: "%include {{ pgbouncer_config_file }}"
@@ -77,6 +83,7 @@
 - name: Set HBA if it is defined
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.template:
     dest: "{{ pgbouncer_auth_hba_file }}"
     src: "{{ pgbouncer_templates_dir }}/pg_hba.conf.j2"
@@ -90,6 +97,7 @@
 - name: Set user list
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.template:
     dest: "{{ pgbouncer_user_file }}"
     src: "{{ pgbouncer_templates_dir }}/userlist.txt.j2"
@@ -102,6 +110,7 @@
 - name: Add new user in user list
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.lineinfile:
     dest: "{{ pgbouncer_user_file }}"
     line: '"{{ pgbouncer_db_user }}" "{{ pgbouncer_db_password }}"'
@@ -116,6 +125,7 @@
 - name: Add new user in config
   become: true
   become_user: root
+  become_method: su
   ansible.builtin.lineinfile:
     dest: "{{ pgbouncer_config_file }}"
     insertbefore: '^\[pgbouncer\]$'

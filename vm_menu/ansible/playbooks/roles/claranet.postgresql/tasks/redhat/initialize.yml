@@ -25,3 +25,4 @@
     - not _postgresql_pgdata_dir_version_res.stat.exists
   become: true
   become_user: "{{ postgresql_user }}"
+  become_method: su
