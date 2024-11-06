@@ -146,7 +146,7 @@ innodb_file_per_table = {{ mysql_innodb_file_per_table }}
 innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size | default(matching_row.innodb_buffer_pool_size | string + 'M') }}
 
 {% if '5.7.' in mysql_cli_version.stdout or '8.0.' in mysql_cli_version.stdout or '5.5.' in mysql_cli_version.stdout %}
-{% set calculated_instances = [(default_buffer_pool_size // 1024) | round | int, 64, ansible_processor_vcpus, 1] | sort %}
+{% set calculated_instances = [(matching_row.innodb_buffer_pool_size | int // 1024) | round | int, 64, ansible_processor_vcpus, 1] | sort %}
 innodb_buffer_pool_instances = {{ mysql_innodb_buffer_pool_instances | default(calculated_instances[1]) }}
 {% endif %}
 
