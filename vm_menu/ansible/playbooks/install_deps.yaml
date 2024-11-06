@@ -87,3 +87,10 @@
           - zstd
       environment:
         NEEDRESTART_MODE: automatically
+
+    - name: Ensure mailx symlink to s-nail exists
+      ansible.builtin.file:
+        src: /usr/bin/s-nail
+        dest: /usr/bin/mailx
+        state: link
+        force: false  # Do not overwrites if a different link or file exists at /usr/bin/mailx
