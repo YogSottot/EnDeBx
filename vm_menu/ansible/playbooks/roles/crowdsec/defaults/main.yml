@@ -3,7 +3,6 @@ default_os_firewall: "firewalld"
 crowdsec_install_firewall_bouncer: true
 enable_crowdsec: true
 cs_collections_list:
-  - crowdsecurity/nginx
   - crowdsecurity/sshd
   - crowdsecurity/linux
   - crowdsecurity/iptables
@@ -11,6 +10,7 @@ cs_collections_list:
 
 cs_collections_remove_list:
   - crowdsecurity/apache2
+  - crowdsecurity/nginx
 # eg.
 # cs_collections_remove_list:
 #   - crowdsecurity/http-cve
