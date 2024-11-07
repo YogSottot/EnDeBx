@@ -103,7 +103,7 @@ query_cache_size = {{ mysql_query_cache_size | default(matching_row.query_cache_
 query_cache_limit = {{ mysql_query_cache_limit | default(matching_row.query_cache_limit | string + 'M') }}
 query_cache_strip_comments = {{ mysql_query_cache_strip_comments }}
 {% endif %}
-max_connections = {{ mysql_max_connections | default([ansible_memtotal_mb // 20, 100] | min) }}
+max_connections = {{ mysql_max_connections | default([ansible_memtotal_mb // 40, 100] | min) }}
 tmp_table_size = {{ mysql_tmp_table_size | default(matching_row.tmp_table_size | string + 'M') }}
 max_heap_table_size = {{ mysql_max_heap_table_size | default(matching_row.max_heap_table_size | string + 'M') }}
 group_concat_max_len = {{ mysql_group_concat_max_len }}
@@ -152,7 +152,7 @@ innodb_buffer_pool_instances = {{ mysql_innodb_buffer_pool_instances | default(c
 
 {% if '8.0.' not in mysql_cli_version.stdout %}
 {% set buffer_pool_size = mysql_innodb_buffer_pool_size | default(default_buffer_pool_size, true) %}
-{% set log_file_size = (buffer_pool_size | replace('M', '') | int // 4) %}
+{% set log_file_size = (matching_row.innodb_buffer_pool_size | int // 4) %}
 innodb_log_file_size = {{ log_file_size }}M
 {% endif %}
 
