@@ -11,7 +11,7 @@ set +x
 # bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/update_menu.sh)
 
 cat > /root/temp_update_menu.sh <<\END
-#!/bin/bash
+#!/usr/bin/env bash
 
 BRANCH="feature/php-fpm"
 REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"

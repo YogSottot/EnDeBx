@@ -365,6 +365,7 @@ function action_install_or_delete_crowdsec() {
       -e 'crowdsec_action="'"${action}"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
+      cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
 
     if [ "${action}" = "INSTALL" ]; then

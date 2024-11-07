@@ -55,7 +55,7 @@
 # collections
 - name: Crowdsec - remove collections
   ansible.builtin.command:
-    cmd: "cscli collections remove {{ item }}"
+    cmd: "cscli collections remove {{ item }} --force"
   with_items: "{{ cs_collections_remove_list }}"
   register: collections_remove_result
   changed_when: "'systemctl reload crowdsec' in collections_remove_result.stderr"
@@ -73,7 +73,7 @@
 # scenarios
 - name: Crowdsec - remove scenarios
   ansible.builtin.command:
-    cmd: "cscli scenarios remove {{ item }}"
+    cmd: "cscli scenarios remove {{ item }} --force"
   with_items: "{{ cs_scenarios_remove_list }}"
   register: scenarios_remove_result
   changed_when: "'systemctl reload crowdsec' in scenarios_remove_result.stderr"
@@ -90,7 +90,7 @@
 # parsers
 - name: Crowdsec - remove parsers
   ansible.builtin.command:
-    cmd: "cscli parsers remove {{ item }}"
+    cmd: "cscli parsers remove {{ item }} --force"
   with_items: "{{ cs_parsers_remove_list }}"
   register: parsers_remove_result
   changed_when: "'systemctl reload crowdsec' in parsers_remove_result.stderr"
@@ -108,7 +108,7 @@
 # postoverflows
 - name: Crowdsec - remove postoverflows
   ansible.builtin.command:
-    cmd: "cscli postoverflows remove {{ item }}"
+    cmd: "cscli postoverflows remove {{ item }} --force"
   with_items: "{{ cs_postoverflows_remove_list }}"
   register: postoverflows_remove_result
   changed_when: "'systemctl reload crowdsec' in postoverflows_remove_result.stderr"

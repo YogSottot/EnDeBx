@@ -178,7 +178,8 @@ BS_CROWDESC_WHITELIST_IP=185.164.148.1,185.164.149.100,95.213.198.99,158.160.117
 # Set your key for connect to cloud console (optional)
 BS_CROWDSEC_ENROLL_KEY=
 # crowdsec collection list, comma separated
-BS_CROWDSEC_COLLECTION_INSTALL=crowdsecurity/mariadb,crowdsecurity/whitelist-good-actors
+BS_CROWDSEC_COLLECTION_INSTALL=crowdsecurity/mariadb,crowdsecurity/whitelist-good-actors,crowdsecurity/http-cve,crowdsecurity/iptables
+BS_CROWDSEC_SCENARIOS_INSTALL=crowdsecurity/apache_log4j2_cve-2021-44228,crowdsecurity/http-cve-2021-42013
 
 # Setup Security by default (change ssh-port, disable root login, disable password auth, etc)
 BS_SETUP_SECURITY=N

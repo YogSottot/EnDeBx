@@ -26,6 +26,7 @@ cs_scenarios_remove_list: []
 
 cs_parsers_list:
   - crowdsecurity/whitelists
+  - crowdsecurity/http-logs
 #  - crowdsecurity/docker-logs
 
 cs_parsers_remove_list: []
