@@ -23,10 +23,6 @@ FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
 
 DEST_DIR_BACKUP_MENU="$DEST_DIR_MENU/backup_vm_menu"
 
-apt update -y
-apt upgrade -y
-apt install -y git
-
 # Backup vm_menu
 current_date=$(date "+%d.%m.%Y %H:%M:%S")
 full_path_backup_menu="$DEST_DIR_BACKUP_MENU/$current_date"
