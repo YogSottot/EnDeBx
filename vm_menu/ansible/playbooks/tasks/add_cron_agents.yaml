@@ -16,7 +16,8 @@
     recurse: true
     owner: "{{ user_site }}"
     group: "{{ group_user_site }}"
-    mode: '0774'
+    mode: '0777'
+  when: user_server_sites == default_user_server_sites
 
 - name: Adding cron job for bitrix agents the site {{ domain }}
   ansible.builtin.cron:
