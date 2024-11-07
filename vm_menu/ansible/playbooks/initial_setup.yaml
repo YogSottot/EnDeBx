@@ -18,6 +18,15 @@
         immediate: false
       - service: ssh
         immediate: false
+    mysql_databases:
+      - name: "{{ db_name }}"
+        collation: "{{ mysql_collation_server }}"
+        encoding: "{{ mysql_character_set_server }}"
+    mysql_users:
+      - name: "{{ db_user }}"
+        host: "localhost"
+        password: "{{ db_password }}"
+        priv: "{{ db_name }}.*:ALL"
 
   roles:
     - infOpen.locales

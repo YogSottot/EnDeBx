@@ -154,18 +154,18 @@ mysql_config_include_files: []
 #  character_set_server = utf8
 
 # Databases.
-mysql_databases:
-    - name: "{{ db_name }}"
-      collation: "{{ mysql_collation_server }}"
-      encoding: "{{ mysql_character_set_server }}"
+mysql_databases: []
+#    - name: "{{ db_name }}"
+#      collation: "{{ mysql_collation_server }}"
+#      encoding: "{{ mysql_character_set_server }}"
 #      replicate: 1
 
 # Users.
-mysql_users:
-    - name: "{{ db_user }}"
-      host: "localhost"
-      password: "{{ db_password }}"
-      priv: "{{ db_name }}.*:ALL"
+mysql_users: []
+#    - name: "{{ db_user }}"
+#      host: "localhost"
+#      password: "{{ db_password }}"
+#      priv: "{{ db_name }}.*:ALL"
 
 ## To use the password from mysql_users later in a Jinja2 template, you can access it like this:
 # {{ mysql_users[0].password }}
