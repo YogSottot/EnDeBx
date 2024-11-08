@@ -1230,8 +1230,8 @@ function settings_smtp_sites() {
     fi
 
     read_by_def "   Enter From email address (example: test@example.com): " email_from $email_from;
-    read_by_def "   Enter server address or DNS (127.0.0.1): " host $host;
-    read_by_def "   Enter server port (default: ${port}): " port $port;
+    read_by_def "   Enter SMTP server address ( smtp.yandex.ru / smtp.gmail.com / smtp.mail.ru / mail.domain.tld ): " host $host;
+    read_by_def "   Enter SMTP server port (default: ${port}): " port $port;
 
     read_by_def "   Enter Y or N for to use SMTP authentication on ${host}:${port} (default: $is_auth): " is_auth $is_auth;
     is_auth="${is_auth^^}"
