@@ -157,10 +157,9 @@ innodb_log_file_size = {{ log_file_size }}M
 {% endif %}
 
 {% if '8.0.' in mysql_cli_version.stdout %}
-{% if mysql_innodb_redo_log_capacity is defined and mysql_innodb_redo_log_capacity %}
 {% set mysql_innodb_redo_log_capacity_numeric = (mysql_innodb_redo_log_capacity | replace("M", "")) | int %}
-innodb_redo_log_capacity = {{ mysql_innodb_redo_log_capacity }}
-{% endif %}
+{% set innodb_redo_log_capacity = (matching_row.innodb_buffer_pool_size | int // 4) %}
+innodb_redo_log_capacity = {{ innodb_redo_log_capacity }}
 {% endif %}
 innodb_log_buffer_size = {{ mysql_innodb_log_buffer_size | default(([ansible_memtotal_mb // 64, 64] | min ~ 'M')) }}
 innodb_flush_log_at_trx_commit = {{ mysql_innodb_flush_log_at_trx_commit }}
@@ -179,6 +178,7 @@ percona_telemetry_disable = 1
 
 [mysqldump]
 quick
+quote-names
 max_allowed_packet = {{ mysql_mysqldump_max_allowed_packet }}
 
 [mysqld_safe]
