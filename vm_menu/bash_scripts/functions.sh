@@ -338,14 +338,19 @@ add_site(){
         done
       ;;
       full )
-          # Choose php version for site
-          read_by_def "   Enter PHP version for site from installed (default: $default_version): " new_version_php "$new_version_php";
-          if [ -z "$new_version_php" ]; then
-          echo "   Incorrect PHP version! Please enter PHP version";
-          fi
-            new_version_php="${new_version_php^^}"
-            new_version_php=$(echo "$new_version_php" | sed -e 's/PHP//')
-            echo -e "\n   Selected PHP version: $new_version_php\n"
+          # Choose PHP version for site
+          while true; do
+              read_by_def "   Enter PHP version for site from installed (default: $default_version): " new_version_php "$new_version_php"
+              if [[ " $version_list " =~ " $new_version_php " ]]; then
+                  break
+              else
+                  echo "   Incorrect PHP version! Please enter a version from the installed list."
+              fi
+          done
+
+          new_version_php="${new_version_php^^}"
+          new_version_php=$(echo "$new_version_php" | sed -e 's/PHP//')
+          echo -e "\n   Selected PHP version: $new_version_php\n"
 
           while true; do
             read -r -p "   Do you want to use xdebug? (Y/N) [${php_enable_php_fpm_xdebug}]: " answer
@@ -549,14 +554,21 @@ edit_site_config(){
         # Extract username based on the path
         extract_username_from_path
 
-        # Choose php version for site
-        read_by_def "   Enter PHP version for site from installed (default: $default_version): " new_version_php "$new_version_php";
-        if [ -z "$new_version_php" ]; then
-        echo "   Incorrect PHP version! Please enter PHP version";
-        fi
-          new_version_php="${new_version_php^^}"
-          new_version_php=$(echo "$new_version_php" | sed -e 's/PHP//')
-          echo -e "\n   Selected PHP version: $new_version_php\n"
+        # Choose PHP version for site
+        while true; do
+            read_by_def "   Enter PHP version for site from installed (default: $default_version): " new_version_php "$new_version_php"
+            if [[ " $version_list " =~ " $new_version_php " ]]; then
+                break
+            else
+                echo "   Incorrect PHP version! Please enter a version from the installed list."
+            fi
+        done
+
+        new_version_php="${new_version_php^^}"
+        new_version_php=$(echo "$new_version_php" | sed -e 's/PHP//')
+        echo -e "\n   Selected PHP version: $new_version_php\n"
+
+
 
         # Xdebug
         while true; do
@@ -1587,7 +1599,6 @@ get_postgresql_info() {
         export postgresql_socket="$socket"
     else
         printf "   PostgreSQL for version %s not found\n" "$version"
-        #export stub
     fi
 }
 

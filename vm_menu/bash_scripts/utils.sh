@@ -214,6 +214,7 @@ function get_current_version_php() {
     
     echo -e "\n   Current default PHP version: $default_version"
     echo -e "   All installed PHP versions: $version_list"
+    #export php_versions_available="${version_list}"
 }
 
 

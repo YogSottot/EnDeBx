@@ -1,13 +1,7 @@
 ---
 - name: Set php_cron
   ansible.builtin.set_fact:
-    php_cron: php
-  when: php_version == php_current_default_version and user_server_sites == default_user_server_sites
-
-- name: Set php_cron
-  ansible.builtin.set_fact:
-    php_cron: "php{{ php_version }}"
-  when: user_server_sites != default_user_server_sites
+    php_cron: "{{ 'php' if php_version == php_current_default_version and user_server_sites == default_user_server_sites else 'php' + php_version }}"
 
 - name: Creating directories log
   ansible.builtin.file:
