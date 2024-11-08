@@ -39,7 +39,7 @@ server {
         {% if php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock-xdebug;
         {% else %}
-    set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock;
+    set $php_sock  unix:/run/php/php-fpm.sock;
         {% endif %}
 
     {% endif %}
@@ -126,7 +126,7 @@ server {
         {% if php_enable_php_fpm_xdebug | bool %}
     set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock-xdebug;
         {% else %}
-    set $php_sock  unix:/run/php/php{{ php_default_version_debian }}-fpm.sock;
+    set $php_sock  unix:/run/php/php-fpm.sock;
         {% endif %}
 
     {% endif %}
