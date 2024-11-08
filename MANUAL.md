@@ -96,15 +96,15 @@
 
    `10) PostgreSQL` — меню для управления postgresql.  
 
-       `1) Install PostgreSQL` — установка разных версии postgresql из официальных репозиториев.  
+     - `1) Install PostgreSQL` — установка разных версии postgresql из официальных репозиториев.  
 
-       `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
+     - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
 
-       `3) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
+     - `3) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
 
-       `4) Remove user and db from PostgreSQL` — удалить пользователя и бд.  
+     - `4) Remove user and db from PostgreSQL` — удалить пользователя и бд.  
 
-       `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
+     - `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
 
 `9) Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
