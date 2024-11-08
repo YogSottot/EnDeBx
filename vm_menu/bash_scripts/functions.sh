@@ -1023,30 +1023,39 @@ enable_or_disable_basic_auth(){
 
 block_access_by_ip() {
   echo -e "\n   Menu -> Block/Unblock access by IP:\n"
-  echo -e "\n   Blocking access to ${BS_SERVICE_NGINX_NAME} by server ip addresses:\n"
-  
-  read -r -p "Do you want to Enable or Disable blocking access? (E/D) " ed
-  case $ed in
-    [Ee]* ) 
-      if enable_ip_blocking; then
+
+  if [ -h "${BS_PATH_NGINX_SITES_ENABLED}"/bx_ext_ip.conf ]; then
+        current_state='enabled';
+        action='disable';
+  else
+      current_state='disabled';
+      action='enable';
+  fi
+
+    echo "   Blocking access to ${BS_SERVICE_NGINX_NAME} by server ip addresses is: $current_state";
+
+    read -r -p "   Do you really want to $action Blocking access? (Y/N): " answer
+    case $answer in
+      [Yy]* )
+      if [ $action == 'enable' ]; then
+        if enable_ip_blocking; then
         echo "Block completed successfully."
       else
         echo "Block failed to complete."
       fi
       read -n 1 -s -r -p "Press any key to continue..."
-      ;;
-    [Dd]* ) 
-      if rm -rf "${BS_PATH_NGINX_SITES_ENABLED}/bx_ext_ip.conf"; then
-        echo "Unblock completed successfully."
       else
-        echo "Unblock failed to complete."
+        if rm -f "${BS_PATH_NGINX_SITES_ENABLED}/bx_ext_ip.conf"; then
+          echo "Unblock completed successfully."
+        else
+          echo "Unblock failed to complete."
+        fi
+        read -n 1 -s -r -p "Press any key to continue..."
       fi
-      read -n 1 -s -r -p "Press any key to continue..."
-      ;;
-    * ) 
-      echo "Please answer E or D."
-      ;;
-  esac
+        ;;
+      [Nn]* ) return;;
+      * ) echo "   Please enter Y or N.";;
+    esac
 }
 
 enable_ip_blocking() {
