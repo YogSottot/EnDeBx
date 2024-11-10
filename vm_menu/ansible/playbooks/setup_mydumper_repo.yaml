@@ -18,7 +18,7 @@
 
     - name: Add mydumper repo.
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_facts.distribution | lower }} ./"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main"
         state: present
       when:
         - ansible_facts.os_family == "Debian"
