@@ -4,6 +4,16 @@
   ansible.builtin.apt:
     name: certbot
     state: latest
+  when: ansible_os_family == 'Debian'
+
+- name: Check if certbot exists
+  ansible.builtin.stat:
+    path: /usr/bin/certbot
+  register: certbot_symlink
+
+- name: Include task for astra
+  ansible.builtin.include_tasks: "install_Astra Linux.yml"
+  when: not certbot_symlink.stat.exists
 
 - name: Ensure letsencrypt dir exists
   ansible.builtin.file:

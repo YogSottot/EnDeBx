@@ -2,17 +2,17 @@
 - name: "{{ file_conversion_server_action }} File Conversion Server (transformer)"
   hosts: localhost
   connection: local
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
   pre_tasks:
     - name: Creating temporary directory exists
-      file:
+      ansible.builtin.file:
         path: /tmp/.ansible/tmp
         state: directory
         mode: '0777'
 
     - name: Setting temporary directories
-      set_fact:
+      ansible.builtin.set_fact:
         ansible_local_tmp: '/tmp/.ansible/tmp'
         ansible_remote_tmp: '/tmp/.ansible/tmp'
 

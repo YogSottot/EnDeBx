@@ -5,6 +5,19 @@
   become: true
   gather_facts: true
 
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
+    - name: Set facts for Debian bookworm
+      ansible.builtin.set_fact:
+        ansible_facts: "{{ ansible_facts | combine({'distribution_release': 'jammy'}) }}"
+        ansible_distribution_release: "jammy"
+      when:
+        - ansible_distribution == 'Debian'
+        - ansible_distribution_release == 'bookworm'
+
   tasks:
     - name: Install deadsnakes PPA
       when: deadsnakes_action == "INSTALL"
@@ -30,15 +43,14 @@
             owner: root
             group: root
           when:
-            - ansible_facts.os_family == "Debian"
+            - ansible_os_family == "Debian"
 
         - name: Add deadsnakes/ppa
           ansible.builtin.apt_repository:
-            repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deadsnakes.asc] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {% if ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '12' %}jammy{% else %}{{ ansible_facts.distribution_release }}{% endif %} main"
+            repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deadsnakes.asc] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {{ ansible_distribution_release }} main"
             state: present
           when:
-            - ansible_facts.os_family == "Debian"
-
+            - ansible_os_family == "Debian"
 
     - name: Delete deadsnakes PPA
       when: deadsnakes_action == "DELETE"
@@ -47,17 +59,18 @@
           ansible.builtin.file:
             path: /etc/apt/preferences.d/10-ppa.pref
             state: absent
+          when: ansible_distribution == "Debian"
 
         - name: Remove deadsnakes/ppa key
           ansible.builtin.file:
             path: /etc/apt/keyrings/deadsnakes.asc
             state: absent
           when:
-            - ansible_facts.os_family == "Debian"
+            - ansible_os_family == "Debian"
 
         - name: Remove deadsnakes/ppa
           ansible.builtin.apt_repository:
-            repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deadsnakes.asc] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {% if ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '12' %}jammy{% else %}{{ ansible_facts.distribution_release }}{% endif %} main"
+            repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deadsnakes.asc] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {{ ansible_distribution_release }} main"
             state: absent
           when:
-            - ansible_facts.os_family == "Debian"
+            - ansible_os_family == "Debian"

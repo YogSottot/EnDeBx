@@ -118,3 +118,11 @@
       #
       #AddType application/x-httpd-php-source .phps
     mode: '0644'
+
+- name: Create /etc/apache2/conf-enabled/astra.conf with specified content
+  ansible.builtin.copy:
+    dest: /etc/apache2/conf-enabled/astra.conf
+    content: |
+      AstraMode off
+    mode: '0644'
+  when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'

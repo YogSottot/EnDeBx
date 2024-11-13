@@ -102,6 +102,7 @@ menu_install_extensions(){
     echo "          8) Install/Delete Deadsnakes PPA";
     echo "          9) Install/Delete Docker";
     echo "          10) PostgreSQL";
+    echo "          11) Install/Delete Debian repo on Astra Linux";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -119,6 +120,7 @@ menu_install_extensions(){
     "8") install_deadsnakes_ppa ;;
     "9") install_docker ;;
     "10") menu_postgresql ;;
+    "11") install_debian_repo_on_astra_linux ;;
 
     0|z)  main_menu
     ;;
@@ -918,7 +920,7 @@ add_remove_ftp_user(){
       ;;
     esac
 
-    echo -e "\n   Entered data:\n"
+#    echo -e "\n   Entered data:\n"
     echo "   Task: $pureftp_action ftp user";
 
     case $answer in
@@ -1743,6 +1745,26 @@ function delete_user_and_db_postgresql() {
     read -r -p "   Do you really want to$(echo -e "${action_color}") user/db from PostgreSQL? (Y/N):" answer
     case $answer in
       [Yy]* ) action_delete_user_and_db_postgresql; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_debian_repo_on_astra_linux() {
+  clear
+
+  action="INSTALL"
+  if [ -s /etc/apt/sources.list.d/debian_repositories_for_astra.list ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")Debian repo on Astra Linux? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_setup_debian_repositories_for_astra; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac

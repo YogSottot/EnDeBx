@@ -5,5 +5,5 @@
   become: true
   gather_facts: true
   roles:
-    - name: "Docker {{ bot_blocker_action }}"
+    - name: "Nginx ultimate bot blocker {{ bot_blocker_action }}"
       role: mitchellkrogza.nginx_ultimate_bad_bot_blocker

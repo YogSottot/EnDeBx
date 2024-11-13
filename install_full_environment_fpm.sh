@@ -296,7 +296,6 @@ chmod +x /etc/cron.monthly/cloudflare_ip_updater.sh
 systemctl restart php"${BX_PHP_DEFAULT_VERSION}"-fpm.service
 systemctl restart postfix@-.service
 firewall-cmd --reload
-apt install -y mysqltuner
 
 # fix journald sizes
 sed -i -e 's/#SystemMaxUse=/SystemMaxUse=100M/g' /etc/systemd/journald.conf

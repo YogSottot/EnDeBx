@@ -8,6 +8,10 @@
     marcelnijenhof_firewalld_allow_ports:
       - port: "{{ security_ssh_port }}/tcp"
         immediate: true
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
   roles:
     - name: ssh-open port in firewall
       role: marcelnijenhof.firewalld

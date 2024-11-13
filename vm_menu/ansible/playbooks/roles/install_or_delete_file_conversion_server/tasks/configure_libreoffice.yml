@@ -4,3 +4,12 @@
     name:
       - libreoffice-nogui
     state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install libreoffice packages
+  apt:
+    name:
+      - libreoffice-core-nogui
+      - libreoffice-writer-nogui
+    state: present
+  when: ansible_os_family == 'Astra Linux'

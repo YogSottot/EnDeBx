@@ -98,6 +98,7 @@ BS_ANSIBLE_PS_SWAP="setup_swap.yaml"
 BS_ANSIBLE_PS_POSTGRESQL_SETUP="install_or_delete_postgresql.yaml"
 BS_ANSIBLE_PS_PGBOUNCER="install_or_delete_pgbouncer.yaml"
 BS_ANSIBLE_PS_BOTBLOCKER="enable_or_disable_nginx_ultimate_bot_blocker.yaml"
+BS_ANSIBLE_PS_SETUP_DEBIAN_REPO_ON_ASTRA="setup_tmp_debian_repositories_for_astra.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

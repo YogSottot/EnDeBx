@@ -2,7 +2,24 @@
 - name: "{{ sphinx_action }} Sphinx"
   hosts: localhost
   connection: local
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
   roles:
+    - role: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+
     - role: install_or_delete_sphinx
+
+    - role: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always

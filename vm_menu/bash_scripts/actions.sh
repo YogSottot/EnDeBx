@@ -343,7 +343,7 @@ function action_install_or_delete_file_conversion_server() {
 
     if [ $action = "INSTALL" ]; then
       echo "Install community.rabbitmq collection";
-      ansible-galaxy collection install community.rabbitmq;
+      ansible-galaxy collection install 'community.rabbitmq:==1.3.0';
     fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_FILE_CONVERSION_SERVER}")
@@ -635,4 +635,12 @@ function action_enable_or_disable_basic_auth() {
       htpasswd_password=${htpasswd_password} \
       web_server_daemon=${BS_SERVICE_NGINX_NAME}"
 
+}
+
+function action_setup_debian_repositories_for_astra() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_SETUP_DEBIAN_REPO_ON_ASTRA}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "setup_debian_repositories_for_astra_action=${action}"
+
+    press_any_key_to_return_menu
 }

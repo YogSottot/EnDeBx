@@ -1,5 +1,5 @@
 ---
-- name: "Memcached {{ memcached_action }}"
+- name: "Setup repos"
   hosts: localhost
   connection: local
   become: true
@@ -8,7 +8,6 @@
     - name: Set facts for Astra Linux
       ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
       tags: always
-
   roles:
-    - name: "Memcached {{ memcached_action }}"
-      role: geerlingguy.memcached
+    - name: Setup Debian repos for Astra Linux
+      role: setup_tmp_debian_repositories_for_astra

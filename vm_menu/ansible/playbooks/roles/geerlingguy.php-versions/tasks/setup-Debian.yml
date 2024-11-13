@@ -19,7 +19,7 @@
 
 - name: Add ppa:ondrej/php
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/ondrej.asc] http://ppa.launchpad.net/ondrej/php/ubuntu {{ ansible_facts.distribution_release }} main"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/ondrej.asc] http://ppa.launchpad.net/ondrej/php/ubuntu {{ ansible_distribution_release }} main"
     state: present
   when: ansible_distribution == "Ubuntu"
 

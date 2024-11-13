@@ -168,13 +168,13 @@
         group: root
         mode: '644'
 
-    - name: Delete Astra Linux unsupported config
-      ansible.builtin.file:
-        path: "/etc/{{ service_nginx_name }}/custom_conf.d/section_http/{{ item }}"
-        state: absent
-      with_items:
-        - brotli.conf
-      when: ansible_os_family == 'Astra Linux'
+#    - name: Delete Astra Linux unsupported config
+#      ansible.builtin.file:
+#        path: "/etc/{{ service_nginx_name }}/custom_conf.d/section_http/{{ item }}"
+#        state: absent
+#      with_items:
+#        - brotli.conf
+#      when: ansible_os_family == 'Astra Linux'
 
     - name: Insert include line into http section of nginx.conf
       ansible.builtin.blockinfile:

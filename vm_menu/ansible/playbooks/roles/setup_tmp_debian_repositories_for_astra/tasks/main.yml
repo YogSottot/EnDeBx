@@ -1,0 +1,28 @@
+---
+# tasks file for setup_repositories
+- name: Install repo deps
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - debian-archive-keyring
+    state: present
+
+- name: Setup repositories
+  ansible.builtin.template:
+    src: "sources.list_{{ ansible_os_family }}.j2"
+    dest: /etc/apt/sources.list.d/debian_repositories_for_astra.list
+    owner: root
+    group: root
+    mode: '0644'
+  when: setup_debian_repositories_for_astra_action == 'INSTALL'
+
+- name: Remove repositories
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/debian_repositories_for_astra.list
+    state: absent
+  when: setup_debian_repositories_for_astra_action == 'DELETE'
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true

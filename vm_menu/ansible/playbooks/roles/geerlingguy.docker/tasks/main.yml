@@ -29,6 +29,8 @@
     name: "{{ docker_packages }}"
     state: "{{ docker_packages_state }}"
     allow_downgrade: true
+    purge: true
+    autoremove: true
   notify: restart docker
   ignore_errors: "{{ ansible_check_mode }}"
   when: "ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
@@ -85,6 +87,10 @@
     key: docker
     split: ':'
   when: docker_users | length > 0
+
+- name: Debug ansible_facts.getent_group
+  debug:
+    var: ansible_facts.getent_group["docker"]
 
 - name: Check if there are any users to add to the docker group.
   set_fact:

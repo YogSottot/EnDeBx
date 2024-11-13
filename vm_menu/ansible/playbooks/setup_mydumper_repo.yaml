@@ -4,6 +4,10 @@
   connection: local
   become: true
   gather_facts: true
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
 
   tasks:
     - name: Add mydumper repo key
@@ -14,19 +18,18 @@
         owner: root
         group: root
       when:
-        - ansible_facts.os_family == "Debian"
+        - ansible_os_family == "Debian"
 
     - name: Add mydumper repo.
       ansible.builtin.apt_repository:
         repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main"
         state: present
       when:
-        - ansible_facts.os_family == "Debian"
+        - ansible_os_family == "Debian"
 
     - name: Update apt caches after repo is added (Debian).
       ansible.builtin.apt:
-#        update_cache: true
         name:
           - mydumper
       when:
-        - ansible_facts.os_family == "Debian"
+        - ansible_os_family == "Debian"

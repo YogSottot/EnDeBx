@@ -4,3 +4,4 @@
 
 - name: Ensure Apache is installed on Debian.
   apt: "name={{ apache_packages }} state={{ apache_packages_state }}"
+  ignore_errors: true

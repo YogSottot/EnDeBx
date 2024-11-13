@@ -1,0 +1,44 @@
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-venv
+      - libaugeas0
+    state: present
+
+- name: Create Python virtual environment
+  ansible.builtin.command: python3 -m venv /opt/certbot/
+  changed_when: false
+
+- name: Upgrade pip in virtual environment
+  ansible.builtin.pip:
+    name: pip
+    state: latest
+    virtualenv: /opt/certbot/
+
+- name: Install certbot in virtual environment
+  ansible.builtin.pip:
+    name: certbot
+    virtualenv: /opt/certbot/
+
+- name: Create symlink for certbot
+  ansible.builtin.file:
+    src: /opt/certbot/bin/certbot
+    dest: /usr/bin/certbot
+    state: link
+
+- name: Add certbot renewal cron job
+  ansible.builtin.cron:
+    name: "Certbot renewal"
+    minute: "00"
+    hour: "01"
+    job: "certbot renew -q"
+    user: root
+    cron_file: certbot
+
+- name: Upgrade certbot monthly
+  ansible.builtin.cron:
+    name: "Upgrade certbot"
+    special_time: monthly
+    job: "/opt/certbot/bin/pip install --upgrade certbot"
+    user: root

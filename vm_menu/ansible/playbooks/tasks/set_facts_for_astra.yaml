@@ -1,0 +1,13 @@
+---
+- name: Set facts for Astra Linux 1.8_x86-64
+  ansible.builtin.set_fact:
+    ansible_os_family: "Debian"
+    ansible_distribution: "Debian"
+    ansible_distribution_major_version: "12"
+    ansible_distribution_release: "bookworm"
+    ansible_facts_lsb_id: "Astra"
+  when:
+    - ansible_os_family == 'Astra Linux'
+    - ansible_distribution == 'Astra Linux'
+    - ansible_distribution_version == '1.8_x86-64'
+  tags: always

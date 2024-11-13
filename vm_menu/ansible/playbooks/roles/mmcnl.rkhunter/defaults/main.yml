@@ -9,3 +9,6 @@ rkhunter_additional_config:
   - ALLOWDEVFILE=/dev/shm/sem.mp-????????
   - ALLOWDEVFILE=/dev/shm/PostgreSQL.??????????
   - ALLOWDEVFILE=/dev/shm/PostgreSQL.*
+  - ALLOWDEVFILE=/dev/shm/mongoc-??????
+  - ALLOWDEVFILE=/dev/shm/sem.netdata_sem_cgroup_ebpf
+  - ALLOWDEVFILE=/dev/shm/netdata_shm_cgroup_ebpf

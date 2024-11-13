@@ -5,6 +5,19 @@
   become: true
   gather_facts: true
   pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
+    - name: Setup repo for Astra Linux
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+
+  tasks:
     - name: Install deps
       when: ansible_os_family == "Debian"
       ansible.builtin.apt:
@@ -48,49 +61,20 @@
           - zstd
       environment:
         NEEDRESTART_MODE: automatically
-    - name: Install deps
-      when: ansible_os_family == "Astra Linux"
-      ansible.builtin.apt:
-        name:
-          - bind9-libs
-          - catdoc
-          - chrony
-          - cron
-          - curl
-          - ghostscript
-          - htop
-          - locales
-          - locales-all
-          - lsof
-          - mc
-          - nano
-          - ncdu
-          - needrestart
-          - net-tools
-          - nmap
-          - optipng
-          - perl
-          - poppler-utils
-          - postfix
-          - psmisc
-          - pwgen
-          - rsync
-          - rsyslog
-          - software-properties-common
-          - ssl-cert
-          - telnet
-          - traceroute
-          - unattended-upgrades
-          - unzip
-          - webp
-          - wget
-          - zstd
-      environment:
-        NEEDRESTART_MODE: automatically
 
     - name: Ensure mailx symlink to s-nail exists
+      when: ansible_os_family == "Debian"
       ansible.builtin.file:
         src: /usr/bin/s-nail
         dest: /usr/bin/mailx
         state: link
         force: false  # Do not overwrites if a different link or file exists at /usr/bin/mailx
+
+  post_tasks:
+    - name: Setup repo for Astra Linux (cleanup)
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
