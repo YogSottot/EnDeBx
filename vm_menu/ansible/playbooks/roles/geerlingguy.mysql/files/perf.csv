@@ -1,6 +1,6 @@
 Type;Memory;OpenVZ;query_cache_size;query_cache_limit;PHP_threads;table_open_cache;thread_cache_size;max_heap_table_size;tmp_table_size;key_buffer_size;join_buffer_size;sort_buffer_size;bulk_insert_buffer_size;myisam_sort_buffer_size;innodb_buffer_pool_size;MySQL_Memory;Full_Memory;Delta
-1;512;openvz;16;2;4;1024;8;8;8;4;1;1;1;1;32;64;576;-64
-1;512;general;16;2;4;2048;32;16;16;8;1;1;1;1;64;100;612;-100
+1;456;openvz;16;2;4;1024;8;8;8;4;1;1;1;1;32;64;576;-64
+1;456;general;16;2;4;2048;32;16;16;8;1;1;1;1;64;100;612;-100
 2;1024;openvz;48;4;6;2048;16;24;24;24;2;2;1;2;64;166;934;90
 2;1024;general;48;4;6;4096;32;48;48;24;4;4;1;4;128;254;1022;2
 3;1536;openvz;64;4;8;4048;32;32;32;12;4;4;2;4;128;284;1308;228
