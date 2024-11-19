@@ -16,6 +16,7 @@
 
 - name: Configure sysctl for redis
   ansible.builtin.include_tasks: sysctl.yml
+  when: ansible_virtualization_type != 'lxc'
 
 - name: Setup/install task
   ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"

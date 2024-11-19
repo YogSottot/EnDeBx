@@ -7,3 +7,4 @@
   roles:
     - name: Setup swap
       role: geerlingguy.swap
+      when: ansible_virtualization_type != 'lxc'

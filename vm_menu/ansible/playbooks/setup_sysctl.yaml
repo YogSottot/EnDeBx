@@ -14,6 +14,7 @@
 
   roles:
     - role: buluma.sysctl
+      when: ansible_virtualization_type != 'lxc'
       vars:
         sysctl_file: /etc/sysctl.d/50-vmmenu.conf
         sysctl_items:
@@ -113,6 +114,7 @@
             value: 1
 
     - role: buluma.ulimit
+      when: ansible_virtualization_type != 'lxc'
       vars:
         ulimit_dest: /etc/security/limits.d/20-nproc.conf
         ulimit_items:
