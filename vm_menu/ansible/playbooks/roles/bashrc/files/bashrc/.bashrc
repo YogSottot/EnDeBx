@@ -165,3 +165,6 @@ fi
 # shellcheck source=/dev/null
 source /usr/share/doc/fzf/examples/key-bindings.bash
 
+# User specific environment and startup programs
+PATH=$PATH:$HOME/.local/bin:$HOME/bin
+export PATH

@@ -77,9 +77,9 @@ if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
     if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
       cat << INSTALL_MENU >> /root/.profile
 
-    if [ -n "\$SSH_CONNECTION" ]; then
-      $FULL_PATH_MENU_FILE
-    fi
+if [ -n "\$SSH_CONNECTION" ]; then
+    $FULL_PATH_MENU_FILE
+fi
 
 INSTALL_MENU
     fi
