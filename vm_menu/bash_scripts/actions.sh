@@ -245,7 +245,7 @@ action_check_new_version_menu(){
 }
 
 function action_update_menu() {
-    bash <(curl -sL ${BS_URL_SCRIPT_UPDATE_MENU})
+    bash <(curl -sL "${BS_URL_SCRIPT_UPDATE_MENU}")
     exit;
 }
 
