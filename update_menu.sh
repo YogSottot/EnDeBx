@@ -40,20 +40,6 @@ rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
 
 chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
 
-# Check script in .profile and add to .profile if not exist
-if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
-    # Check script in .profile and add to .profile if not exist
-    if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
-      cat << INSTALL_MENU >> /root/.profile
-
-if [ -n "\$SSH_CONNECTION" ]; then
-    $FULL_PATH_MENU_FILE
-fi
-
-INSTALL_MENU
-    fi
-fi
-
 rm -f "/tmp/configs.tmp"
 rm -f "/tmp/new_version_menu.tmp"
 
