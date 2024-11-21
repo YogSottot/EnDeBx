@@ -97,8 +97,10 @@ if [ "$BS_SETUP_SWAP" == 'Y'  ]; then
     swap_file_size_mb=${BS_SWAP_SIZE}"
 fi
 
+if [ "$BS_SETUP_REPOS" == 'Y'  ]; then
 # setup repos
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+fi
 
 # install deps
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
