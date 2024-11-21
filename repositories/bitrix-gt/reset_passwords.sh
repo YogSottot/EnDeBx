@@ -109,3 +109,6 @@ fi
 
 echo "Password for the user ${BS_USER_SERVER_SITES}:" > /root/passwords.txt;
 echo "${site_user_password}" >> /root/passwords.txt;
+
+apt update -y
+apt upgrade -y --enable-upgrade
