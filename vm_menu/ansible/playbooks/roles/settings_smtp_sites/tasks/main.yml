@@ -7,8 +7,8 @@
       ansible.builtin.template:
         src: "local_scripts/msmtp_wrapper.j2"
         dest: "{{ smtp_path_wrapp_script_sh }}"
-        owner: "{{ smtp_file_user_config }}"
-        group: "{{ smtp_file_group_user_config }}"
+        owner: "root"
+        group: "root"
         mode: '0755'
 
 - name: Adding SMTP settings the site {{ site }}
@@ -78,32 +78,32 @@
         dest: "{{ smtp_file_sites_config }}"
         mode: '0644'
 
-    - name: Decode msmtprc_content.content
-      ansible.builtin.set_fact:
-        decoded_content: "{{ msmtprc_content.content | b64decode }}"
+#    - name: Decode msmtprc_content.content
+#      ansible.builtin.set_fact:
+#        decoded_content: "{{ msmtprc_content.content | b64decode }}"
 
-    - name: Check if config contains 'account default:' line and set account_default variable
-      ansible.builtin.set_fact:
-        account_default: >-
-          {% if 'account default:' in decoded_content %}
-            {% set default_account = decoded_content | regex_search('account default:\\s*(\\S+)', '\\1') %}
-            {% if default_account is not none and default_account | length > 0 %}
-              {% set default_account_value = default_account | first | trim %}
-              {% if default_account_value == account_name %}
-                Y
-              {% else %}
-                N
-              {% endif %}
-            {% else %}
-              N  # If the regex didn't return a valid match
-            {% endif %}
-          {% else %}
-            Y
-          {% endif %}
+#    - name: Check if config contains 'account default' line and set account_default variable
+#      ansible.builtin.set_fact:
+#        account_default: >-
+#          {% if 'account default' in decoded_content %}
+#            {% set default_account = decoded_content | regex_search('account default\\s*(\\S+)', '\\1') %}
+#            {% if default_account is not none and default_account | length > 0 %}
+#              {% set default_account_value = default_account | first | trim %}
+#              {% if default_account_value == account_name %}
+#                Y
+#              {% else %}
+#                N
+#              {% endif %}
+#            {% else %}
+#              N  # If the regex didn't return a valid match
+#            {% endif %}
+#          {% else %}
+#            Y
+#          {% endif %}
 
-    - name: Apply trim to account_default
-      ansible.builtin.set_fact:
-        account_default: "{{ account_default | trim }}"
+#    - name: Apply trim to account_default
+#      ansible.builtin.set_fact:
+#        account_default: "{{ account_default | trim }}"
 
     - name: Add new block configuration in SMTP config file
       ansible.builtin.blockinfile:
@@ -141,9 +141,6 @@
           {% endif %}
           tls_certcheck off
           tls_starttls off
-          {% if account_default == 'Y' %}
-          account default: {{ account_name }}
-          {% endif %}
         insertafter: EOF
 
 - block:

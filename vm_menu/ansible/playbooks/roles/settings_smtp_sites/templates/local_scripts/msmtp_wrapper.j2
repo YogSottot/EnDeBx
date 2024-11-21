@@ -10,13 +10,13 @@ ACCOUNT="$1"
 if command -v msmtp >/dev/null 2>&1; then
     if grep -q "^[^#]*account\s\+$ACCOUNT" "$CONFIG_FILE"; then
         # If the account found, use it
-        /usr/bin/msmtp -C "$CONFIG_FILE" -a "$ACCOUNT" -t -i
+        /usr/bin/msmtp -a "$ACCOUNT" -t -i
     elif grep -q "^[^#]*account default:" "$CONFIG_FILE"; then
         # If a default account is set, use it without specifying an account
-        /usr/bin/msmtp -C "$CONFIG_FILE" -t -i
+        /usr/bin/msmtp -t -i
     elif grep -q "^[^#]*account\s\+default" "$CONFIG_FILE"; then
         # If the account not found, but default account exists, use default account
-        /usr/bin/msmtp -C "$CONFIG_FILE" -a default -t -i
+        /usr/bin/msmtp -a default -t -i
     else
         # If no suitable account found, use standard sendmail
         /usr/sbin/sendmail -t -i

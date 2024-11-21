@@ -82,3 +82,46 @@ if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
     apt -y install "$package"
   done
 fi
+
+apt update -y
+apt upgrade -y --enable-upgrade
+
+# update menu to latest version
+BRANCH="feature/php-fpm"
+REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"
+
+DIR_NAME_MENU="vm_menu"
+DEST_DIR_MENU="/root"
+
+FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
+
+DEST_DIR_BACKUP_MENU="$DEST_DIR_MENU/backup_vm_menu"
+
+# Backup vm_menu
+current_date=$(date "+%d.%m.%Y %H:%M:%S")
+full_path_backup_menu="$DEST_DIR_BACKUP_MENU/$current_date"
+
+mkdir -p "${full_path_backup_menu}"
+mv -f "${DEST_DIR_MENU}/${DIR_NAME_MENU}" "${full_path_backup_menu}"
+
+
+# Clone directory vm_menu with repositories
+git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/DebianLikeBitrixVM"
+cd "$DEST_DIR_MENU/DebianLikeBitrixVM"
+git sparse-checkout set $DIR_NAME_MENU
+
+# Move vm_menu in /root and clean
+rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
+mv -f $DIR_NAME_MENU $DEST_DIR_MENU
+rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
+
+chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
+
+rm -f "/tmp/configs.tmp"
+rm -f "/tmp/new_version_menu.tmp"
+
+ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
+
+echo -e "\n\n";
+echo "Menu updated! Backup directory old menu: $full_path_backup_menu";
+echo -e "\n";

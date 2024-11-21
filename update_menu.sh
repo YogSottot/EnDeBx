@@ -43,7 +43,7 @@ chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
 rm -f "/tmp/configs.tmp"
 rm -f "/tmp/new_version_menu.tmp"
 
-ln -s $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
+ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
 
 echo -e "\n\n";
 echo "Menu updated! Backup directory old menu: $full_path_backup_menu";
