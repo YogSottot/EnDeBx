@@ -43,6 +43,7 @@ DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
 
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_RESET_PASSWORDS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "domain=${BS_DEFAULT_SITE_NAME} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
 
   db_name=${DB_NAME} \
   db_user=${DB_USER} \
@@ -148,7 +149,3 @@ rm -f "/tmp/configs.tmp"
 rm -f "/tmp/new_version_menu.tmp"
 
 ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
-
-echo -e "\n\n";
-echo "Menu updated! Backup directory old menu: $full_path_backup_menu" >> /root/update_menu.txt;
-echo -e "\n";
