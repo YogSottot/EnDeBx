@@ -157,9 +157,8 @@ innodb_log_file_size = {{ log_file_size }}M
 {% endif %}
 
 {% if '8.0.' in mysql_cli_version.stdout %}
-{% set mysql_innodb_redo_log_capacity_numeric = (mysql_innodb_redo_log_capacity | replace("M", "")) | int %}
 {% set innodb_redo_log_capacity = (matching_row.innodb_buffer_pool_size | int // 4) %}
-innodb_redo_log_capacity = {{ innodb_redo_log_capacity }}
+innodb_redo_log_capacity = {{ innodb_redo_log_capacity }}M
 {% endif %}
 innodb_log_buffer_size = {{ mysql_innodb_log_buffer_size | default(([ansible_memtotal_mb // 64, 64] | min ~ 'M')) }}
 innodb_flush_log_at_trx_commit = {{ mysql_innodb_flush_log_at_trx_commit }}
