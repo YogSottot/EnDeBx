@@ -135,6 +135,7 @@ action_get_lets_encrypt_certificate(){
 
   ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
   -e "domain=${domain} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
   path_site=${path_site} \
   email=${email} \
   is_www=${is_www} \

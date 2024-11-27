@@ -57,6 +57,11 @@
     nginx_config: "{{ domain }}"
   when: default_full_path_site != path_site
 
+- name: Checking is default site
+  ansible.builtin.set_fact:
+    nginx_config: "{{ default_domain }}"
+  when: default_full_path_site == path_site
+
 - name: Checking Nginx configuration file
   ansible.builtin.stat:
     path: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
