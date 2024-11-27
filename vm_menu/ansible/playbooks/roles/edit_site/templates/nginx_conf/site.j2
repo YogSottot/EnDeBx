@@ -33,7 +33,7 @@
 ###############################################################
 {% endif %}
 server {
-{% if domain == 'default' %}
+{% if domain == default_domain %}
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
@@ -166,7 +166,7 @@ server {
 
 
 server {
-{% if domain == 'default' %}
+{% if domain == default_domain %}
     {% if nginx_version is version('1.25.1', '>=') %}
     listen {{ item.listen | default('443') }} default_server ssl;
     listen [::]:443 default_server ssl;

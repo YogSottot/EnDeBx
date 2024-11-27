@@ -36,13 +36,13 @@
 - name: Configure pathes
   ansible.builtin.lineinfile:
     path: /usr/local/maldetect/monitor_paths
-    line: '/var/www/'
+    line: "{{ maldet_home_prefix }}"
     state: present
 
 - name: Cron custom exec
   ansible.builtin.lineinfile:
     path: /usr/local/maldetect/cron/custom.cron
-    line: "$inspath/maldet -b -r /var/www/ $scan_days >> /dev/null 2>&1"
+    line: "$inspath/maldet -b -r {{ maldet_home_prefix }} $scan_days >> /dev/null 2>&1"
     state: present
 
 - name: Start and enable maldet service

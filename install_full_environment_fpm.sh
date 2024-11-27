@@ -105,9 +105,14 @@ fi
 # install deps
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
-if [ "$BS_USER_SERVER_SITES" != 'www-data'  ]; then
-    useradd --user-group --create-home --home-dir "$BS_PATH_USER_HOME_PREFIX/$BS_PATH_USER_HOME" --shell /usr/bin/bash "$BS_PATH_USER_HOME"
+if [ "$BS_USER_SERVER_SITES" != 'www-data' ]; then
+    if ! id "$BS_PATH_USER_HOME" &>/dev/null; then
+        useradd --user-group --create-home --home-dir "$BS_PATH_USER_HOME_PREFIX/$BS_PATH_USER_HOME" --shell /usr/bin/bash "$BS_PATH_USER_HOME"
+    else
+        echo "User $BS_PATH_USER_HOME already exists. Skipping user creation."
+    fi
 fi
+
 if [ "$BS_INSTALL_BASH_ALIASES" == Y  ]; then
   # setup bashrc
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
@@ -126,7 +131,8 @@ fi
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_POSTFIX}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 # setup user / nginx / mysql / apache2 / firewalld / php-fpm
-extra_vars="domain=default \
+extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
   db_name=${DB_NAME} \
   db_user=${DB_USER} \
   db_password=${DBPASS} \
@@ -193,6 +199,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 # Full enviroment
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_NEW_FULL_ENVIRONMENT}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "domain=${BS_DEFAULT_SITE_NAME} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
 
   db_name=${DB_NAME} \
   db_user=${DB_USER} \
@@ -263,7 +270,8 @@ fi
 if [ "$BS_SETUP_MALDET" == Y  ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "maldet_action='INSTALL' \
-      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
+      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then

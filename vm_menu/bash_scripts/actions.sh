@@ -9,6 +9,7 @@ action_create_site(){
 
   ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "domain=${domain} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
 
   mode=${mode} \
 
@@ -79,6 +80,7 @@ action_edit_site(){
 
   ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "domain=${domain} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
 
   path_site_from_links=${path_site_from_links} \
   ssl_lets_encrypt=${ssl_lets_encrypt} \
@@ -267,7 +269,8 @@ function action_change_php_version(){
   default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
   server_timezone=${BS_SERVER_TIMEZONE} \
-  domain=default \
+  domain=${BS_DEFAULT_SITE_NAME} \
+  default_domain=${BS_DEFAULT_SITE_NAME} \
   htaccess_support=$((htaccess_support == 1))"
 
   if [ -n "${BX_ADDITIONAL_PHP_EXTENSIONS}" ]; then
@@ -398,7 +401,8 @@ function action_install_or_delete_maldet() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MALDET}")
   ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "maldet_action=${action} \
-      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
+      maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "

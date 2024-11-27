@@ -212,6 +212,19 @@
         group: root
         state: link
 
+    - name: Rename default directory to {{ domain }}
+      ansible.posix.synchronize:
+        src: "/etc/{{ service_nginx_name }}/custom_conf.d/site_settings/default/"
+        dest: "/etc/{{ service_nginx_name }}/custom_conf.d/site_settings/{{ domain }}/"
+        archive: true
+      when: domain != 'default'
+
+    - name: Delete default settings directory
+      ansible.builtin.file:
+        path: "/etc/{{ service_nginx_name }}/custom_conf.d/site_settings/default"
+        state: absent
+      when: domain != 'default'
+
     - name: Adding Nginx site_settings file
       ansible.builtin.template:
         src: "roles/create_site/templates/nginx_conf/bx_temp.j2"
