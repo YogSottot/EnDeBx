@@ -17,6 +17,7 @@ pm.max_spare_servers = {{ item.pool_pm_max_spare_servers | default(5, true) }}
 pm.max_requests = {{ item.pool_pm_max_requests | default(500, true) }}
 {% if item.pool_pm_status_path|length %}
 pm.status_path = {{ item.pool_pm_status_path }}
+ping.path = /ping
 {% endif %}
 php_flag[display_errors] = {{ item.pool_php_flag_display_errors }}
 php_admin_value[error_log] = {{ item.pool_php_admin_value_error_log }}
