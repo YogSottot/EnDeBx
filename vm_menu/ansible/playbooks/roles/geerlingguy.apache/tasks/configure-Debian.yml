@@ -25,6 +25,13 @@
   with_items: "{{ apache_mods_disabled }}"
   notify: restart apache
 
+- name: Disable Apache mods configs.
+  ansible.builtin.file:
+    path: "{{ apache_server_root }}/mods-enabled/{{ item }}.conf"
+    state: absent
+  with_items: "{{ apache_mods_disabled }}"
+  notify: restart apache
+
 - name: Check whether certificates defined in vhosts exist.
   ansible.builtin.stat:
     path: "{{ item.certificate_file }}"
