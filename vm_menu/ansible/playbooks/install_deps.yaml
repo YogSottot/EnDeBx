@@ -21,6 +21,7 @@
     - name: Install deps
       when: ansible_os_family == "Debian"
       ansible.builtin.apt:
+        update_cache: true
         name:
           - bind9-libs
           - catdoc
