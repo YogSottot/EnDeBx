@@ -22,6 +22,18 @@
         group: root
       when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
       tags: always
+    - name: Install gcc
+      ansible.builtin.apt:
+        name: gcc
+        state: present
+      when: postgresql_action == "INSTALL"
   roles:
     - name: "Postgresql {{ postgresql_action }}"
       role: claranet.postgresql
+
+  post_tasks:
+    - name: Remove gcc
+      ansible.builtin.apt:
+        name: gcc
+        state: absent
+        autoremove: true

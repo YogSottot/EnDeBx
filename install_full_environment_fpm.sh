@@ -293,6 +293,8 @@ find /etc/apache2/ -type f -print0 | xargs -0 sed -i 's/CustomLog/#CustomLog/g'
 if [ "$BS_HTACCESS_SUPPORT" == N  ]; then
   systemctl stop apache2.service
   systemctl disable apache2.service
+  systemctl stop apache-htcacheclean.service
+  systemctl disable apache-htcacheclean.service
 else
   systemctl restart apache2.service
 fi
