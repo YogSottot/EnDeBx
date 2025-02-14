@@ -48,6 +48,7 @@
           - postfix
           - psmisc
           - pwgen
+          - python3-jmespath
           - rsync
           - rsyslog
           - s-nail
