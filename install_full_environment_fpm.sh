@@ -290,7 +290,7 @@ fi
 # disable httpd access logs
 find /etc/apache2/ -type f -print0 | xargs -0 sed -i 's/CustomLog/#CustomLog/g'
 
-if [ "$BS_HTACCESS_SUPPORT" == N  ]; then
+if [ "$BS_HTACCESS_SUPPORT" == 0  ]; then
   systemctl stop apache2.service
   systemctl disable apache2.service
   systemctl stop apache-htcacheclean.service
