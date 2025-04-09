@@ -72,6 +72,12 @@ if [ -e /root/.env.menu ]; then
   source /root/.env.menu
 fi
 
+if [ "${BS_HTACCESS_SUPPORT}" == Y ]; then
+  htaccess_support=1
+else
+  htaccess_support=0
+fi
+
 if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
     # Check script in .profile and add to .profile if not exist
     if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
@@ -155,7 +161,7 @@ extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
   path_nginx=${BS_PATH_NGINX} \
   path_nginx_sites_conf=${BS_PATH_NGINX_SITES_CONF} \
   path_nginx_sites_enabled=${BS_PATH_NGINX_SITES_ENABLED} \
-  htaccess_support=${BS_HTACCESS_SUPPORT} \
+  htaccess_support=${htaccess_support} \
   service_apache_name=${BS_SERVICE_APACHE_NAME} \
   path_apache=${BS_PATH_APACHE} \
   path_apache_sites_conf=${BS_PATH_APACHE_SITES_CONF} \
@@ -229,7 +235,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   path_nginx=${BS_PATH_NGINX} \
   path_nginx_sites_conf=${BS_PATH_NGINX_SITES_CONF} \
   path_nginx_sites_enabled=${BS_PATH_NGINX_SITES_ENABLED} \
-  htaccess_support=${BS_HTACCESS_SUPPORT} \
+  htaccess_support=${htaccess_support} \
 
   service_apache_name=${BS_SERVICE_APACHE_NAME} \
   path_apache=${BS_PATH_APACHE} \
@@ -290,7 +296,7 @@ fi
 # disable httpd access logs
 find /etc/apache2/ -type f -print0 | xargs -0 sed -i 's/CustomLog/#CustomLog/g'
 
-if [ "$BS_HTACCESS_SUPPORT" == 0  ]; then
+if [ "$BS_HTACCESS_SUPPORT" == N ]; then
   systemctl stop apache2.service
   systemctl disable apache2.service
   systemctl stop apache-htcacheclean.service

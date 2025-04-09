@@ -16,7 +16,7 @@ __mysql_supports_innodb_large_prefix: false
 
 __mysql_percona_repo_baseurl: "https://repo.percona.com/apt"
 __mysql_percona_repo_release: "percona-release_latest"
-__mysql_percona_version: "8.0"
+__mysql_percona_version: "8.4lts"
 __mysql_percona_packages:
   - "percona-server-server"
 #  - "percona-toolkit"

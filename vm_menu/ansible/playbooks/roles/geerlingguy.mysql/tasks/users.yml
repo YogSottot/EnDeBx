@@ -11,3 +11,19 @@
     column_case_sensitive: "{{ item.column_case_sensitive | default('no') }}"
   with_items: "{{ mysql_users }}"
   no_log: "{{ mysql_hide_passwords }}"
+  when: mysql_flavor != 'percona'
+
+- name: Ensure MySQL users are present with caching_sha2_password plugin
+  community.mysql.mysql_user:
+    name: "{{ item.name }}"
+    host: "{{ item.host | default('localhost') }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ item.password }}"
+    priv: "{{ item.priv | default('*.*:USAGE') }}"
+    state: "{{ item.state | default('present') }}"
+    append_privs: "{{ item.append_privs | default('no') }}"
+    encrypted: "{{ item.encrypted | default('no') }}"
+    column_case_sensitive: "{{ item.column_case_sensitive | default('no') }}"
+  with_items: "{{ mysql_users }}"
+  no_log: "{{ mysql_hide_passwords }}"
+  when: mysql_flavor == 'percona'

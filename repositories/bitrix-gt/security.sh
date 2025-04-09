@@ -60,7 +60,7 @@ if [ "$BS_SETUP_SECURITY" == "Y" ]; then
       security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
 fi
 
-if [ "$BS_HTACCESS_SUPPORT" == 0  ]; then
+if [ "$BS_HTACCESS_SUPPORT" == N ]; then
   systemctl stop apache2.service
   systemctl disable apache2.service
 else

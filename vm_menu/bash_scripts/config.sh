@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034
 
 # General configs
-BS_VERSION_MENU="1.3.1"
+BS_VERSION_MENU="1.3.2"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
 BS_PATH_SITES="$BS_PATH_USER_HOME_PREFIX/$BS_PATH_USER_HOME"
@@ -107,7 +107,7 @@ BS_MAX_CHAR_DB_USER=20
 BS_CHAR_DB_PASSWORD=24
 # (mariadb / percona)
 BS_DB_FLAVOR=mariadb
-# percona version (5.7 / 8.0)
+# percona version (5.7 / 8.0 / 8.4)
 # mariadb version (5.5 / 10.11)
 BS_DB_VERSION=10.11
 BS_DB_CHARACTER_SET_SERVER=utf8mb4
@@ -121,7 +121,7 @@ BS_PATH_NGINX_SITES_ENABLED="$BS_PATH_NGINX/site_enabled"
 # Set Y/N
 # Y — nginx + apache + php-fpm
 # N — nginx + php-fpm
-BS_HTACCESS_SUPPORT="1"
+BS_HTACCESS_SUPPORT="Y"
 BS_NGINX_BASIC_AUTH_LOGIN=
 BS_NGINX_BASIC_AUTH_PASSWORD=
 

@@ -151,17 +151,17 @@
 - name: Define mysql_percona_version.
   ansible.builtin.set_fact:
     mysql_percona_version: "{{ __mysql_percona_version }}"
-  when: mysql_percona_version is not defined and mysql_flavor == 'percona'
+  when: mysql_flavor == 'percona'
 
-- name: Define mysql_percona_packages.
+- name: Define mysql_percona_packages 5.7.
   ansible.builtin.set_fact:
     mysql_percona_packages: "{{ __mysql_percona_packages_57 }}"
   when: mysql_percona_version == '5.7' and mysql_flavor == 'percona'
 
 - name: Define mysql_percona_packages.
   ansible.builtin.set_fact:
-    mysql_percona_packages: "{{ __mysql_percona_packages_80 }}"
-  when: mysql_percona_version == '8.0' and mysql_flavor == 'percona'
+    mysql_percona_packages: "{{ __mysql_percona_packages }}"
+  when: mysql_percona_version != '5.7' and mysql_flavor == 'percona'
 
 - name: Define mysql_mariadb_full_version.
   ansible.builtin.set_fact:
