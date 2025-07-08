@@ -9,9 +9,12 @@
       - gpg
 
 - name: Ensure nginx sury repo keyring is installed.
-  ansible.builtin.apt:
-    deb: "https://mirror.hoztnode.net/mirrors/deb.sury.org/debsuryorg-archive-keyring.deb"
-    state: present
+  ansible.builtin.get_url:
+    url: https://mirror.yandex.ru/mirrors/packages.sury.org/nginx-mainline/apt.gpg
+    dest: /etc/apt/keyrings/deb.sury.org.gpg
+    mode: "0644"
+    owner: root
+    group: root
   when: nginx_ppa_use | bool
 
 - name: Add sury repo

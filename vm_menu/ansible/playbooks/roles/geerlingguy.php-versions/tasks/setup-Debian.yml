@@ -34,7 +34,7 @@
 
 - name: Add Ondrej Sury's apt key (Debian).
   ansible.builtin.get_url:
-    url: https://mirror.hoztnode.net/mirrors/deb.sury.org/apt.gpg
+    url: https://mirror.yandex.ru/mirrors/packages.sury.org/php/apt.gpg
     dest: /etc/apt/keyrings/deb.sury.org.gpg
     mode: "0644"
     owner: root
@@ -43,7 +43,7 @@
 
 - name: Add Ondrej Sury's repo (Debian).
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deb.sury.org.gpg] https://mirror.hoztnode.net/mirrors/deb.sury.org/php {{ ansible_distribution_release }} main"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/deb.sury.org.gpg] https://mirror.yandex.ru/mirrors/packages.sury.org/php {{ ansible_distribution_release }} main"
     state: present
   register: php_ondrej_debian_repo
   when: ansible_distribution == "Debian"
