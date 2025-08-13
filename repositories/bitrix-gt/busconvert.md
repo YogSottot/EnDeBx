@@ -73,6 +73,8 @@ bitrix/html_pages/example.com
 
    Ровно в 20 таблицах пришлось менять тип поля с ```varchar(255)``` на ```varchar(191)```
 
+   Например ```ALTER TABLE `b_sale_discount_entities` MODIFY `FIELD_TABLE` VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;```
+
    Получется, что для хранения строки utf8 нужно 3 байта на символ, а utf8mb4 нужно 4 байта.  
    Предел для utf8 составляет 767/3 = ~255 символов, для utf8mb4 это 767/4 = ~191 символ.
 
