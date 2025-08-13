@@ -111,7 +111,7 @@ BS_DB_FLAVOR=mariadb
 # mariadb version (5.5 / 10.11)
 BS_DB_VERSION=10.11
 BS_DB_CHARACTER_SET_SERVER=utf8mb4
-BS_DB_COLLATION=utf8mb4_general_ci
+BS_DB_COLLATION=utf8mb4_unicode_ci
 
 # NGINX configs
 BS_SERVICE_NGINX_NAME="nginx"
