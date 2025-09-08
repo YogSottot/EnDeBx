@@ -1,6 +1,7 @@
 #!/bin/bash
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+BIN_DIR="$HOME/.local/bin"
+export PATH="$BIN_DIR:$PATH"
 
 action_create_site(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CREATE_SITE}")
@@ -133,7 +134,7 @@ action_edit_site(){
 action_get_lets_encrypt_certificate(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_GET_LETS_ENCRYPT_CERTIFICATE}")
 
-  ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+  ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
   -e "domain=${domain} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
   path_site=${path_site} \
@@ -275,10 +276,13 @@ function action_change_php_version(){
   htaccess_support=$((htaccess_support == 1))"
 
   if [ -n "${BX_ADDITIONAL_PHP_EXTENSIONS}" ]; then
-    extra_vars+=" php_packages_extra='${BX_ADDITIONAL_PHP_EXTENSIONS}'"
+    cat > /tmp/php_extra.yml <<EOF
+  php_packages_extra: ${BX_ADDITIONAL_PHP_EXTENSIONS}
+EOF
+    ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}" -e @/tmp/php_extra.yml
+  else
+    ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
   fi
-
-  ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
 
   press_any_key_to_return_menu;
 }
@@ -345,10 +349,10 @@ function action_install_or_delete_sphinx() {
 
 function action_install_or_delete_file_conversion_server() {
 
-    if [ $action = "INSTALL" ]; then
-      echo "Install community.rabbitmq collection";
-      ansible-galaxy collection install 'community.rabbitmq:==1.3.0';
-    fi
+    #if [ $action = "INSTALL" ]; then
+    #  echo "Install community.rabbitmq collection";
+    #  ansible-galaxy collection install 'community.rabbitmq:==1.3.0';
+    #fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_FILE_CONVERSION_SERVER}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \

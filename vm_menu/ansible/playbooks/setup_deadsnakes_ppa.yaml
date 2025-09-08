@@ -18,6 +18,14 @@
         - ansible_distribution == 'Debian'
         - ansible_distribution_release == 'bookworm'
 
+    - name: Set facts for Debian trixie
+      ansible.builtin.set_fact:
+        ansible_facts: "{{ ansible_facts | combine({'distribution_release': 'noble'}) }}"
+        ansible_distribution_release: "noble"
+      when:
+        - ansible_distribution == 'Debian'
+        - ansible_distribution_release == 'trixie'
+
   tasks:
     - name: Install deadsnakes PPA
       when: deadsnakes_action == "INSTALL"

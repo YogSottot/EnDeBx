@@ -50,6 +50,17 @@
   ansible.builtin.include_tasks: "delete_composite.yml"
   when: not nginx_composite | bool
 
+- name: Debug nginx vars
+  ansible.builtin.debug:
+    msg:
+      - php_version: "{{ php_version }}"
+      - php_current_default_version: "{{ php_current_default_version }}"
+      - php_default_version_debian: "{{ php_default_version_debian }}"
+      - user_server_sites: "{{ user_server_sites }}"
+      - default_user_server_sites: "{{ default_user_server_sites }}"
+      - php_fpm_pool_user: "{{ php_fpm_pool_user }}"
+      - php_fpm_listen: "{{ php_fpm_listen }}"
+
 - name: Adding Nginx configuration file
   ansible.builtin.template:
     dest: "{{ path_nginx_sites_conf }}/{{ domain }}.conf"

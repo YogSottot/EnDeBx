@@ -15,5 +15,3 @@
     name: maldet
     state: stopped
     enabled: false
-  when:
-    - maldet_default_monitor_mode is defined and maldet_default_monitor_mode

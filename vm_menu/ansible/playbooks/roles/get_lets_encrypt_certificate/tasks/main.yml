@@ -81,43 +81,31 @@
         src: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
       register: nginx_conf_data
 
-    - name: Processing Nginx configuration
+    - name: Check if old manual SSL block exists
       ansible.builtin.set_fact:
-        new_nginx_conf: |
-          {%- set start = {'word': false} -%}
-          {% for line in nginx_conf_data.content | b64decode | split('\n') %}
-            {%- set stripped_line = line.strip() -%}
-            {%- if stripped_line == "### START PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS. YOU CAN MAKE EDITS BETWEEN THESE COMMENTS ###" -%}
-              {%- if start.update({'word': true}) -%} {% endif -%}
-            {%- elif stripped_line == "### END PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS. YOU CAN MAKE EDITS BETWEEN THESE COMMENTS ###" -%}
-              {%- if start.update({'word': false}) -%} {% endif -%}
-            {%- endif -%}
-            {%- if start.word -%}
-                {%- if 'include ' in line -%}
-                  {%- set line = line.replace('#', '') -%}
-                  {%- set line = '#' + line -%}
-                {%- endif -%}
-                {%- if 'ssl_certificate ' in line -%}
-                  {%- set line = line.replace(line.split('ssl_certificate')[1], ' ' + ssl_cert_full_path + ';') -%}
-                  {%- set line = line.replace('#', '') -%}
-                {%- elif 'ssl_certificate_key ' in line -%}
-                  {%- set line = line.replace(line.split('ssl_certificate_key')[1], ' ' + ssl_cert_key_full_path + ';') -%}
-                  {%- set line = line.replace('#', '') -%}
-                {%- elif 'ssl_trusted_certificate ' in line -%}
-                  {%- set line = line.replace(line.split('ssl_trusted_certificate')[1], ' ' + ssl_trusted_certificate_full_path + ';') -%}
-                  {%- set line = line.replace('#', '') -%}
-                {%- endif -%}
-            {%- endif -%}
-            {{ line }}
-          {% endfor %}
+        old_ssl_block_found: "{{ (nginx_conf_data.content | b64decode) is search('### START PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS') }}"
 
-    - name: Saving new Nginx configuration
-      ansible.builtin.copy:
-        content: "{{ new_nginx_conf }}"
-        dest: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
-        owner: root
-        group: root
-        mode: '644'
+    - name: Remove old manual SSL blocks
+      ansible.builtin.replace:
+        path: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
+        regexp: '(?s)### START PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\..*?### END PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\. YOU CAN MAKE EDITS BETWEEN THESE COMMENTS ###'
+        replace: ''
+      when: old_ssl_block_found
+
+    - name: Manage SSL block in Nginx config
+      ansible.builtin.blockinfile:
+        path: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
+        marker: "### {mark} MANAGED SSL CERTS ###"
+        block: |
+          # HERE YOU CAN CONNECT YOUR CONFIG WITH AN SSL CERTIFICATE
+          ## include ssl_conf/ssl_{{ domain }}.conf;
+
+          # DONT DELETE THIS PARAMETERS - MANAGED SSL CERTS FROM Lets Encrypt
+          ssl_certificate {{ ssl_cert_full_path }};
+          ssl_certificate_key {{ ssl_cert_key_full_path }};
+          {% if ssl_trusted_certificate_full_path | default('') | trim != '' %}
+          ssl_trusted_certificate {{ ssl_trusted_certificate_full_path }};
+          {% endif %}
 
     - name: Restarting Nginx
       ansible.builtin.systemd:

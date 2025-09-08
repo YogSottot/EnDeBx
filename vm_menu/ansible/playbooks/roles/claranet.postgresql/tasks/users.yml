@@ -1,4 +1,13 @@
 ---
+- name: Retrieve postgresql user's info
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ postgresql_user }}"
+
+- name: Set fact for postgresql user's home directory
+  ansible.builtin.set_fact:
+    _postgresql_user_home_dir: "{{ ansible_facts.getent_passwd[postgresql_user][4] }}"
+
 - name: Ensure PostgreSQL users are configured correctly.
   community.postgresql.postgresql_user:
     name: "{{ item.name }}"

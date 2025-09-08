@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set +x
 set -euo pipefail
 # Install full environment
 # MASTER branch
@@ -42,6 +43,52 @@ apt update -y
 apt upgrade -y --enable-upgrade
 apt install -y pipx git locales-all
 
+ANSIBLE_REQUIRED_VERSION="11.9.0"
+# https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html
+BIN_DIR="$HOME/.local/bin"
+export PATH="$BIN_DIR:$PATH"
+
+# ensure pipx is installed
+#if ! command -v pipx >/dev/null 2>&1; then
+#    python3 -m pip install --user pipx
+#    python3 -m pipx ensurepath
+#    export PATH="$BIN_DIR:$PATH"
+#fi
+
+# check ansible installation
+if pipx list | grep -q "package ansible "; then
+    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
+    if [ "$ANSIBLE_INSTALLED_VERSION" != "$ANSIBLE_REQUIRED_VERSION" ]; then
+        echo "Reinstalling ansible $ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
+        pipx uninstall ansible
+        pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
+        pipx inject ansible jmespath passlib
+    else
+        echo "Ansible $ANSIBLE_REQUIRED_VERSION already installed."
+    fi
+else
+    echo "Installing ansible $ANSIBLE_REQUIRED_VERSION..."
+    pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
+    pipx inject ansible jmespath passlib
+fi
+
+# Получаем версию ansible-core
+# ansible_core_version_raw=$(ansible --version | awk '/ansible \[core/{print $3}')
+# Например: 2.19.0b6
+
+# Очищаем от суффиксов (оставляем только X.Y.Z)
+# ansible_core_version=$(echo "$ansible_core_version_raw" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+
+# Сравнение версии с 2.18.0
+#if dpkg --compare-versions "$ansible_core_version" lt "2.18.0"; then
+  # fix for mysql role
+#  ansible-galaxy collection install 'community.mysql:==3.10.3'
+#else
+#  echo "ansible-core $ansible_core_version_raw >= 2.18.0 → пропускаем установку community.mysql"
+#fi
+# Можно использовать переменную ansible_core_version дальше
+#echo "Detected ansible-core version: $ansible_core_version_raw (parsed: $ansible_core_version)"
+
 site_user_password=$(generate_password 24)
 
 # Clone directory vm_menu with repositories
@@ -65,29 +112,8 @@ ln -fs $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
 source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
 
 # shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-  source $DEST_DIR_MENU/.env.menu
-fi
-
-# https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html
-BIN_DIR="$HOME/.local/bin"
-export PATH="$BIN_DIR:$PATH"
-
-# check ansible installation
-if pipx list | grep -q "package ansible "; then
-    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
-    if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
-        echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
-        pipx uninstall ansible
-        pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib
-    else
-        echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
-    fi
-else
-    echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
-    pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib
+if [ -e /root/.env.menu ]; then
+  source /root/.env.menu
 fi
 
 if [ "${BS_HTACCESS_SUPPORT}" == Y ]; then

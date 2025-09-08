@@ -88,7 +88,12 @@
 - ansible.builtin.include_tasks: configure-fpm.yml # noqa name[missing]
 - ansible.builtin.include_tasks: configure-fpm-xdebug.yml # noqa name[missing]
 
-# Setup alterantives
-- name: Setup alterantives
+# Setup alternatives
+- name: Setup alternatives
   ansible.builtin.include_tasks: "setup-alternatives-{{ ansible_os_family }}.yml"
   when: php_set_manual | bool and ansible_os_family != 'RedHat'
+
+# Fix alternatives
+- name: Fix alternatives
+  ansible.builtin.include_tasks: "setup-alternatives-fix-{{ ansible_os_family }}.yml"
+  when: not php_set_manual | bool and ansible_os_family != 'RedHat'

@@ -401,6 +401,7 @@ add_site(){
               # Create the user if it doesn't exist
               if ! id "$BS_USER_SERVER_SITES" &>/dev/null; then
                   useradd -m -d "${BS_PATH_USER_HOME_PREFIX}/${BS_USER_SERVER_SITES}" -s /bin/bash "${BS_USER_SERVER_SITES}"
+                  chmod 775 "${BS_PATH_USER_HOME_PREFIX}/${BS_USER_SERVER_SITES}"
               fi
               echo "   Username: ${BS_USER_SERVER_SITES}"
 
@@ -1078,8 +1079,8 @@ enable_ip_blocking() {
 server {
     listen 80;
     listen [::]:80;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     
     server_name ${ip};
     

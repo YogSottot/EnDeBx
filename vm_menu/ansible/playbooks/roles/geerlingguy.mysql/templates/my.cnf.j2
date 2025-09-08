@@ -8,7 +8,7 @@ default-character-set = {{ mysql_character_set_server }}
 [mysqld]
 port = {{ mysql_port }}
 bind-address = {{ mysql_bind_address }}
-{% if '8.' in mysql_cli_version.stdout %}
+{% if mysql_normalized.version_major >= 8 and mysql_normalized.is_percona %}
 mysqlx_bind_address = {{ mysql_mysqlx_bind_address }}
 {% endif %}
 datadir = {{ mysql_datadir }}
@@ -74,7 +74,8 @@ relay-log-index = relay-bin.index
 {% endif %}
 
 # Disabling symbolic-links is recommended to prevent assorted security risks
-{% if '8.' not in mysql_cli_version.stdout %}
+{% if (mysql_normalized.is_mariadb) or
+    (mysql_normalized.is_percona and mysql_normalized.version_major < 8) %}
 symbolic-links = 0
 {% endif %}
 
@@ -88,7 +89,7 @@ performance_schema = {{ mysql_performance_schema }}
 key_buffer_size = {{ mysql_key_buffer_size | default(([ansible_memtotal_mb // 16, 16] | min ~ 'M')) }}
 max_allowed_packet = {{ mysql_max_allowed_packet | default(([ansible_memtotal_mb // 64, 64] | min ~ 'M')) }}
 table_open_cache = {{ mysql_table_open_cache | default(matching_row.table_open_cache) }}
-{% if mysql_flavor == 'mariadb' %}
+{% if mysql_normalized.is_mariadb %}
 table_definition_cache = {{ mysql_table_definition_cache }}
 {% endif %}
 sort_buffer_size = {{ mysql_sort_buffer_size | default(matching_row.sort_buffer_size | string + 'M') }}
@@ -97,7 +98,8 @@ read_buffer_size = {{ mysql_read_buffer_size | default(([ansible_memtotal_mb // 
 read_rnd_buffer_size = {{ mysql_read_rnd_buffer_size | default(([ansible_memtotal_mb // 512, 16] | min ~ 'M')) }}
 myisam_sort_buffer_size = {{ mysql_myisam_sort_buffer_size | default(([ansible_memtotal_mb // 512, 4] | min ~ 'M')) }}
 thread_cache_size = {{ mysql_thread_cache_size | default(matching_row.thread_cache_size) }}
-{% if '8.' not in mysql_cli_version.stdout %}
+{% if (mysql_normalized.is_mariadb) or
+    (mysql_normalized.is_percona and mysql_normalized.version_major < 8) %}
 query_cache_type = {{ mysql_query_cache_type | default(1) }}
 query_cache_size = {{ mysql_query_cache_size | default(matching_row.query_cache_size | string + 'M') }}
 query_cache_limit = {{ mysql_query_cache_limit | default(matching_row.query_cache_limit | string + 'M') }}
@@ -114,7 +116,7 @@ wait_timeout = {{ mysql_wait_timeout }}
 {% endif %}
 lower_case_table_names = {{ mysql_lower_case_table_names }}
 transaction_isolation = {{ mysql_transaction_isolation }}
-{% if mysql_flavor == 'percona' %}
+{% if (mysql_normalized.is_percona) %}
 log_timestamps = {{ mysql_log_timestamps }}
 {% endif %}
 {% if mysql_event_scheduler_state is defined and mysql_event_scheduler_state %}
@@ -141,26 +143,41 @@ thread_pool_size = {{ mysql_thread_pool_size }}
 {% endif %}
 
 # InnoDB settings.
+{% if (mysql_normalized.is_percona) or
+    (mysql_normalized.is_mariadb and mysql_normalized.version_major < 11) %}
 innodb_file_per_table = {{ mysql_innodb_file_per_table }}
+{% endif %}
 {% set default_buffer_pool_size = (ansible_memtotal_mb <= 2048) | ternary((ansible_memtotal_mb * 0.4) | int, (ansible_memtotal_mb * 0.7) | int) %}
 innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size | default(matching_row.innodb_buffer_pool_size | string + 'M') }}
 
+{% if (mysql_normalized.is_percona) %}
 {% set calculated_instances = [(matching_row.innodb_buffer_pool_size | int // 1024) | round | int, 64, ansible_processor_vcpus, 1] | sort %}
 innodb_buffer_pool_instances = {{ mysql_innodb_buffer_pool_instances | default(calculated_instances[1]) }}
+{% endif %}
 
-{% if '8.' not in mysql_cli_version.stdout %}
+{% if (mysql_normalized.is_mariadb) or
+    (mysql_normalized.is_percona and mysql_normalized.version_major < 8) %}
 {% set buffer_pool_size = mysql_innodb_buffer_pool_size | default(default_buffer_pool_size, true) %}
 {% set log_file_size = (matching_row.innodb_buffer_pool_size | int // 4) %}
 innodb_log_file_size = {{ log_file_size }}M
 {% endif %}
 
-{% if '8.' in mysql_cli_version.stdout %}
+{% if (mysql_normalized.is_percona and mysql_normalized.version_major < 8) %}
 {% set innodb_redo_log_capacity = (matching_row.innodb_buffer_pool_size | int // 4) %}
 innodb_redo_log_capacity = {{ innodb_redo_log_capacity }}M
 {% endif %}
 innodb_log_buffer_size = {{ mysql_innodb_log_buffer_size | default(([ansible_memtotal_mb // 64, 64] | min ~ 'M')) }}
 innodb_flush_log_at_trx_commit = {{ mysql_innodb_flush_log_at_trx_commit }}
+{% if (mysql_normalized.is_percona) or
+    (mysql_normalized.is_mariadb and mysql_normalized.version_major < 11) %}
 innodb_flush_method = {{ mysql_innodb_flush_method }}
+{% else %}
+### equivalent to innodb_flush_method = O_DIRECT 
+# innodb_log_file_write_through = 0
+# innodb_data_file_write_through = 0
+# innodb_data_file_buffering = 0
+###
+{% endif %}
 innodb_lock_wait_timeout = {{ mysql_innodb_lock_wait_timeout }}
 innodb_strict_mode = {{ mysql_innodb_strict_mode }}
 
@@ -168,7 +185,7 @@ innodb_strict_mode = {{ mysql_innodb_strict_mode }}
 {{ mysql_extra_config }}
 {% endif %}
 
-{% if '8.' in mysql_cli_version.stdout %}
+{% if (mysql_normalized.is_percona and mysql_normalized.version_major >= 8) %}
 # Disable Percona Telemetry
 percona_telemetry_disable = 1
 {% endif %}

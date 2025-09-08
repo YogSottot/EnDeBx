@@ -1,82 +1,75 @@
 ---
 # tasks file for install_or_delete_netdata
-- block:
+
+- name: Install netdata
+  when: netdata_action == 'INSTALL'
+  block:
     - name: Installing Netdata
-      shell: wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh && sh /tmp/netdata-kickstart.sh --non-interactive
+      ansible.builtin.shell: wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh && sh /tmp/netdata-kickstart.sh --non-interactive --stable-channel
 
     - name: Copying {{ service_nginx_name }} directory to /etc/{{ service_nginx_name }}
-      copy:
+      ansible.builtin.copy:
         src: "nginx/"
         dest: "/etc/{{ service_nginx_name }}/"
+        mode: '644'
 
     - name: Restarting Nginx
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ service_nginx_name }}"
         state: restarted
 
-  when: netdata_action == 'INSTALL'
-
-- block:
+- name: Delete netdata
+  when: netdata_action == 'DELETE'
+  block:
     - name: Find files deleting nginx configs
-      find:
+      ansible.builtin.find:
         paths: "{{ role_path }}/files/{{ service_nginx_name }}"
         file_type: file
-        recurse: yes
       register: found_files
 
     - name: Deleting files in /etc/{{ service_nginx_name }}
-      file:
+      ansible.builtin.file:
         path: "/etc/nginx/{{ item.path | regex_replace('^' + role_path + '/files/'+ service_nginx_name +'/', '') }}"
         state: absent
       loop: "{{ found_files.files }}"
 
-    - name: Stoping Netdata service
-      systemd:
+    - name: Stopping Netdata service
+      ansible.builtin.systemd:
         name: netdata
         state: stopped
 
     - name: Disable Netdata service
-      systemd:
+      ansible.builtin.systemd:
         name: netdata
-        enabled: no
+        enabled: false
 
     - name: Deleting Netdata package
-      apt:
+      ansible.builtin.apt:
         name: netdata
         state: absent
-        purge: yes
+        purge: true
 
     - name: Deleting Netdata directory
-      file:
+      ansible.builtin.file:
         path: /usr/sbin/netdata
         state: absent
 
     - name: Deleting Netdata configuration files
-      file:
+      ansible.builtin.file:
         path: /etc/netdata
         state: absent
-        recurse: yes
-      ignore_errors: yes
-
 
     - name: Deleting Netdata logs
-      file:
+      ansible.builtin.file:
         path: /var/log/netdata
         state: absent
-        recurse: yes
-      ignore_errors: yes
 
     - name: Deleting Netdata user
-      user:
+      ansible.builtin.user:
         name: netdata
         state: absent
-      ignore_errors: yes
 
     - name: Restarting Nginx
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ service_nginx_name }}"
         state: restarted
-
-  when: netdata_action == 'DELETE'
-
-

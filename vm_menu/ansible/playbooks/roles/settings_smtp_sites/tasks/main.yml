@@ -11,7 +11,7 @@
         group: "root"
         mode: '0755'
 
-- name: Adding SMTP settings the site {{ site }}
+- name: Adding SMTP settings the site {{ account_name }}
   when: is_actions_account is defined and is_actions_account == 'Y'
   block:
     - name: Installing MSMTP

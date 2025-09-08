@@ -115,12 +115,12 @@ LogLevel warn
 	{% if not php_enable_php_fpm_xdebug | bool %}
 	# Cause the PHP interpreter to handle files with a .php extension.
 	<FilesMatch "\.php$">
-		SetHandler "proxy:unix:{{ php_fpm_listen }}|fcgi://localhost"
+		SetHandler "proxy:unix:/run/php/php{{ php_version }}-{{ php_fpm_pool_user }}-fpm.sock|fcgi://localhost"
 	</FilesMatch>
     {% else %}
 	# Cause the PHP interpreter to handle files with a .php extension.
 	<FilesMatch "\.php$">
-		SetHandler "proxy:unix:{{ php_fpm_listen }}-xdebug|fcgi://localhost"
+		SetHandler "proxy:unix:/run/php/php{{ php_version }}-{{ php_fpm_pool_user }}-fpm.sock-xdebug|fcgi://localhost"
 	</FilesMatch>
 	{% endif %}
 

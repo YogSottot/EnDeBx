@@ -21,14 +21,21 @@
         - ansible_os_family == "Debian"
 
     - name: Add mydumper repo.
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mydumper.asc] https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main"
+      ansible.builtin.deb822_repository:
+        name: mydumper_github_io_mydumper_repo_apt_{{ ansible_distribution | lower }}
+        types: deb
+        uris: https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }}
+        suites: '{{ ansible_distribution_release }}'
+        components: main
+        architectures: amd64
+        signed_by: /etc/apt/keyrings/mydumper.asc
         state: present
       when:
         - ansible_os_family == "Debian"
 
     - name: Update apt caches after repo is added (Debian).
       ansible.builtin.apt:
+        update_cache: true
         name:
           - mydumper
       when:

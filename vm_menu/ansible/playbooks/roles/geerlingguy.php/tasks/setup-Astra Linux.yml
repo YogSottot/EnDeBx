@@ -6,7 +6,7 @@
 
 - name: Ensure PHP packages are installed. # noqa name[casing]
   ansible.builtin.apt:
-    name: "{{ php_packages + php_packages_extra }}"
+    name: "{{ php_packages + (php_packages_extra | default([]) | list) }}"
     state: "{{ php_packages_state }}"
     install_recommends: "{{ php_install_recommends }}"
   register: php_package_install

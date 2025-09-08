@@ -1,10 +1,21 @@
 ---
 # tasks file for setup_repositories
 - name: Setup repositories
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list"
+    state: absent
+  when: ansible_distribution == 'Debian'
+
+- name: Setup repositories
   ansible.builtin.template:
-    src: "sources.list_{{ ansible_distribution }}.j2"
-    dest: /etc/apt/sources.list
+    src: "{{ ansible_distribution }}.sources.j2"
+    dest: /etc/apt/sources.list.d/{{ ansible_distribution | lower }}.sources
     owner: root
     group: root
     mode: '0644'
+  when: ansible_distribution == 'Debian'
+
+- name: Update apt caches after repo is added (Debian).
+  ansible.builtin.apt:
+    update_cache: true
   when: ansible_distribution == 'Debian'

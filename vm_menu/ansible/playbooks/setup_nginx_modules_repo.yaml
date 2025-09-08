@@ -21,14 +21,21 @@
         - ansible_os_family == "Debian"
 
     - name: Add nginx modules repo.
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/yogsottot.asc] https://yogsottot.github.io/ppa/debian {{ ansible_distribution_release }} main"
+      ansible.builtin.deb822_repository:
+        name: yogsottot_github_io_ppa_{{ ansible_distribution | lower }}
+        types: deb
+        uris: https://yogsottot.github.io/ppa/debian
+        suites: '{{ ansible_distribution_release }}'
+        components: main
+        architectures: amd64
+        signed_by: /etc/apt/keyrings/yogsottot.asc
         state: present
       when:
         - ansible_os_family == "Debian"
 
-    - name: Update apt caches after repo is added (Debian).
+    - name: Install packages after repo is added (Debian).
       ansible.builtin.apt:
+        update_cache: true
         name:
           - libnginx-mod-http-zip
           - libnginx-mod-http-zstd
