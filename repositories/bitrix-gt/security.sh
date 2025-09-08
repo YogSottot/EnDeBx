@@ -6,10 +6,12 @@ set -euo pipefail
 apt update -y
 apt upgrade -y --enable-upgrade
 
-if dpkg -l | grep -q "^ii  ansible "; then
-    echo "Purging system ansible packages (apt)..."
+if dpkg -s ansible >/dev/null 2>&1; then
+    echo "Purging system ansible package..."
     apt purge -y ansible
     apt autoremove -y
+else
+    echo "No apt ansible package installed."
 fi
 
 # Make sure pipx itself exists
