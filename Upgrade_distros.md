@@ -60,4 +60,10 @@ https://www.debian.org/releases/trixie/release-notes/upgrading.en.html
      pipx inject ansible jmespath passlib
   ```
 
+  - Отключаем [новое поведение](https://www.debian.org/releases/trixie/release-notes/issues.en.html#the-temporary-files-directory-tmp-is-now-stored-in-a-tmpfs) для tmp
+
+  ```bash
+  systemctl mask tmp.mount
+  ```
+
   - Обновление завершено. Проверяйте работу сайтов

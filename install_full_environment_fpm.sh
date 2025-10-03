@@ -42,6 +42,13 @@ apt update -y
 apt upgrade -y --enable-upgrade
 apt install -y pipx git locales-all
 
+if [ -f /etc/debian_version ]; then
+    ver=$(cut -d. -f1 /etc/debian_version)
+    if [ "$ver" -ge 13 ]; then
+        systemctl mask tmp.mount
+    fi
+fi
+
 site_user_password=$(generate_password 24)
 
 # Clone directory vm_menu with repositories
