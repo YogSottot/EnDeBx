@@ -34,6 +34,7 @@
     dest: "{{ nginx_conf_main_directory }}"
     owner: root
     group: "{{ root_group }}"
+    local_follow: false
     mode: "0644"
   notify:
     - reload nginx
