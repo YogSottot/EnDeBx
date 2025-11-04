@@ -69,6 +69,8 @@ else
     echo "No apt ansible package installed."
 fi
 
+# make sure apache modules disabled
+a2dismod --force deflate filter negotiation ssl
 
 # Make sure pipx itself exists
 if ! command -v pipx >/dev/null 2>&1; then

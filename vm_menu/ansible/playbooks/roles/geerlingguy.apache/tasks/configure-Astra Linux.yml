@@ -10,18 +10,18 @@
   notify: restart apache
 
 - name: Enable Apache mods.
-  ansible.builtin.file:
-    src: "{{ apache_server_root }}/mods-available/{{ item }}.load"
-    dest: "{{ apache_server_root }}/mods-enabled/{{ item }}.load"
-    state: link
-    mode: '0644'
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+    force: true
   with_items: "{{ apache_mods_enabled }}"
   notify: restart apache
 
 - name: Disable Apache mods.
-  ansible.builtin.file:
-    path: "{{ apache_server_root }}/mods-enabled/{{ item }}.load"
+  community.general.apache2_module:
+    name: "{{ item }}"
     state: absent
+    force: true
   with_items: "{{ apache_mods_disabled }}"
   notify: restart apache
 
