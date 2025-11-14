@@ -1,4 +1,10 @@
 ---
+- name: Install maldet dependency
+  ansible.builtin.apt:
+    name:
+      - ed
+      - inotify-tools
+    state: present
 
 - name: Get maldet installer archive
   ansible.builtin.get_url:
