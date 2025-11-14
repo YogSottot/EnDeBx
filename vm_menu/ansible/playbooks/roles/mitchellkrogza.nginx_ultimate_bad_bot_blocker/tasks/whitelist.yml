@@ -12,6 +12,7 @@
         "~*\bMail.ru\b"         0;
         "~*(?:\b)Mail.RU_Bot(?:\b)"   0;
         "~*\bbingbot\b"         3;
+        "~*\bmeta-externalagent\b"     3;
     create: true
     owner: root
     group: root
