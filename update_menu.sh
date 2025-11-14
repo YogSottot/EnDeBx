@@ -83,14 +83,14 @@ if pipx list | grep -q "package ansible "; then
         echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
         pipx uninstall ansible
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib
+        pipx inject ansible jmespath passlib python-debian
     else
         echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
     fi
 else
     echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
     pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib
+    pipx inject ansible jmespath passlib python-debian
 fi
 
 echo -e "\n\n";
