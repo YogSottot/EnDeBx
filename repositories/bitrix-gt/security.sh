@@ -6,35 +6,6 @@ set -euo pipefail
 apt update -y
 apt upgrade -y --enable-upgrade
 
-if dpkg -s ansible >/dev/null 2>&1; then
-    echo "Purging system ansible package..."
-    apt purge -y ansible
-    apt autoremove -y
-else
-    echo "No apt ansible package installed."
-fi
-
-# Make sure pipx itself exists
-if ! command -v pipx >/dev/null 2>&1; then
-    apt update && apt install -y pipx
-    python3 -m pipx ensurepath
-fi
-if pipx list | grep -q "package ansible "; then
-    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
-    if [ "$ANSIBLE_INSTALLED_VERSION" != "$ANSIBLE_REQUIRED_VERSION" ]; then
-        echo "Reinstalling ansible $ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
-        pipx uninstall ansible
-        pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib
-    else
-        echo "Ansible $ANSIBLE_REQUIRED_VERSION already installed."
-    fi
-else
-    echo "Installing ansible $ANSIBLE_REQUIRED_VERSION..."
-    pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib
-fi
-
 DIR_NAME_MENU="vm_menu"
 DEST_DIR_MENU="/root"
 
@@ -85,13 +56,33 @@ rm -f "/tmp/new_version_menu.tmp"
 
 ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
 
-# update nginx bitrix_general.conf
-# shellcheck source=/dev/null
-source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
+if dpkg -s ansible >/dev/null 2>&1; then
+    echo "Purging system ansible package..."
+    apt purge -y ansible
+    apt autoremove -y
+else
+    echo "No apt ansible package installed."
+fi
 
-# shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-    source $DEST_DIR_MENU/.env.menu
+# Make sure pipx itself exists
+if ! command -v pipx >/dev/null 2>&1; then
+    apt update && apt install -y pipx
+    python3 -m pipx ensurepath
+fi
+if pipx list | grep -q "package ansible "; then
+    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
+    if [ "$ANSIBLE_INSTALLED_VERSION" != "$ANSIBLE_REQUIRED_VERSION" ]; then
+        echo "Reinstalling ansible $ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
+        pipx uninstall ansible
+        pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
+        pipx inject ansible jmespath passlib
+    else
+        echo "Ansible $ANSIBLE_REQUIRED_VERSION already installed."
+    fi
+else
+    echo "Installing ansible $ANSIBLE_REQUIRED_VERSION..."
+    pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
+    pipx inject ansible jmespath passlib
 fi
 
 cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" "$BS_PATH_NGINX/conf/bitrix_general.conf"
