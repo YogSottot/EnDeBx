@@ -64,6 +64,9 @@ else
     echo "No apt ansible package installed."
 fi
 
+# make sure apache modules disabled
+a2dismod --force deflate filter negotiation ssl
+
 # Make sure pipx itself exists
 if ! command -v pipx >/dev/null 2>&1; then
     apt update && apt install -y pipx
@@ -71,18 +74,18 @@ if ! command -v pipx >/dev/null 2>&1; then
 fi
 if pipx list | grep -q "package ansible "; then
     ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
-    if [ "$ANSIBLE_INSTALLED_VERSION" != "$ANSIBLE_REQUIRED_VERSION" ]; then
-        echo "Reinstalling ansible $ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
+    if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
+        echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
         pipx uninstall ansible
-        pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib
+        pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+        pipx inject ansible jmespath passlib python-debian
     else
-        echo "Ansible $ANSIBLE_REQUIRED_VERSION already installed."
+        echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
     fi
 else
-    echo "Installing ansible $ANSIBLE_REQUIRED_VERSION..."
-    pipx install --include-deps "ansible==$ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib
+    echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
+    pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+    pipx inject ansible jmespath passlib python-debian
 fi
 
 cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" "$BS_PATH_NGINX/conf/bitrix_general.conf"
