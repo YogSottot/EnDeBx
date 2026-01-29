@@ -17,6 +17,7 @@ action_create_site(){
   db_name=${db_name} \
   db_user=${db_user} \
   db_password=${db_password} \
+  mysql_flavor=${BS_DB_FLAVOR} \
   mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
   mysql_collation_server=${BS_DB_COLLATION} \
 
