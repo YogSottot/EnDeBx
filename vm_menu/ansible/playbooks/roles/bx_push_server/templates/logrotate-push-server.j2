@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+# rotate info.log and error.log for push server service
+/var/log/push-server/*.log
+{
+        su {{ bx_push_server_user }} {{ bx_push_server_group }}
+        create 0644 {{ bx_push_server_user }} {{ bx_push_server_group }}"
+        copytruncate
+        ifempty
+        daily
+        rotate 10
+        maxage 30
+        missingok
+        notifempty
+        compress
+        delaycompress
+        sharedscripts
+        postrotate
+        /bin/systemctl restart push-server.service > /dev/null 2>/dev/null || true
+        endscript
+}
