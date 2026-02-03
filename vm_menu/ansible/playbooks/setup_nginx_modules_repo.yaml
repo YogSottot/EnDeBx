@@ -38,6 +38,5 @@
         update_cache: true
         name:
           - libnginx-mod-http-zip
-          - libnginx-mod-http-zstd
       when:
         - ansible_os_family == "Debian"

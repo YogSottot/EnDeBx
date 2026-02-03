@@ -59,6 +59,10 @@ cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_c
 cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" "$BS_PATH_NGINX/conf_fpm/bitrix_general.conf"
 nginx -t && systemctl reload "$BS_SERVICE_NGINX_NAME.service"
 
+# Removed zstd. It breaks Bitrix24.
+rm -f /etc/nginx/custom_conf.d/section_http/zstd.conf
+apt purge -y libnginx-mod-http-zstd
+
 # check ansible installation
 # --- remove ansible if installed via apt ---
 if dpkg -s ansible >/dev/null 2>&1; then
