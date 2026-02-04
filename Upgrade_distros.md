@@ -2,7 +2,7 @@
 
 ## Debian 12 до Debian 13
 
-### ВНИМАНИЕ: Если у вас используется Percona MySQL, то пока не обновляйтесь. Пакеты для debian 13 пока что не добавлены в репозиторий percona
+### ВНИМАНИЕ: Если у вас используется Percona MySQL, то для Debian 13 есть только версия 8.4. Обновитесь с 8.0 перед обновлением Debian
 
 https://gist.github.com/yorickdowne/3cecc7b424ce241b173510e36754af47
 https://www.debian.org/releases/trixie/release-notes/upgrading.en.html

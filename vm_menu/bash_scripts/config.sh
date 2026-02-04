@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034
 
 # General configs
-BS_VERSION_MENU="1.3.4"
+BS_VERSION_MENU="1.3.5"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
@@ -30,7 +30,7 @@ BS_BX_CRON_LOGS_PATH_DIR="/var/log/bitrix_cron_agents"
 BS_BX_CRON_LOGS_PATH_FILE="agents_cron.log"
 
 # PHP configs (VER#0.0 - it will be automatically replaced when the version is selected)
-BX_PHP_DEFAULT_VERSION="8.2"
+BX_PHP_DEFAULT_VERSION="8.4"
 BS_PHP_INSTALL_TEMPLATE=(
   "phpVER#0.0"
   "phpVER#0.0-bcmath"
