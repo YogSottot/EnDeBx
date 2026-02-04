@@ -105,7 +105,6 @@
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      no_log: "{{ mysql_hide_passwords }}"
       when: mysql_flavor != 'percona'
 
     - name: Ensure MySQL users are present with caching_sha2_password plugin
@@ -116,7 +115,6 @@
         plugin_auth_string: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      no_log: "{{ mysql_hide_passwords }}"
       when: mysql_flavor == 'percona'
 
     - name: Creating directory bitrix/php_interface
