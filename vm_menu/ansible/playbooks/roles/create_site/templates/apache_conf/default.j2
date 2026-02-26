@@ -1,7 +1,5 @@
-ServerName redos
+<VirtualHost 127.0.0.1:8090>
 ServerAdmin webmaster@localhost
-
-<VirtualHost *:8090>
 DocumentRoot  {{ document_root }}
 
 ErrorLog ${APACHE_LOG_DIR}/{{ domain }}_error.log
