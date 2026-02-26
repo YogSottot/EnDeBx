@@ -162,7 +162,7 @@ innodb_buffer_pool_instances = {{ mysql_innodb_buffer_pool_instances | default(c
 innodb_log_file_size = {{ log_file_size }}M
 {% endif %}
 
-{% if (mysql_normalized.is_percona and mysql_normalized.version_major < 8) %}
+{% if (mysql_normalized.is_percona and mysql_normalized.version_major >= 8) %}
 {% set innodb_redo_log_capacity = (matching_row.innodb_buffer_pool_size | int // 4) %}
 innodb_redo_log_capacity = {{ innodb_redo_log_capacity }}M
 {% endif %}
