@@ -65,7 +65,7 @@
 
 - name: Make sessions settings file
   ansible.builtin.blockinfile:
-    path: "{{ item }}/sessions_settings.ini"
+    path: "/etc/php/{{ php_default_version_debian }}/cli/conf.d/sessions_settings.ini"
     marker: "; {mark} {{ document_root }} "
     block: |
       [PATH={{ document_root }}]
@@ -76,6 +76,16 @@
     owner: root
     group: root
     mode: "0644"
+  when: not php_use_managed_bitrixenv_ini
+  notify: restart php-fpm
+
+- name: Adding symlink to sessions settings file
+  ansible.builtin.file:
+    src: "/etc/php/{{ php_default_version_debian }}/cli/conf.d/sessions_settings.ini"
+    dest: "/etc/php/{{ php_default_version_debian }}/fpm/conf.d/sessions_settings.ini"
+    owner: root
+    group: root
+    state: link
   when: not php_use_managed_bitrixenv_ini
   notify: restart php-fpm
   with_items: "{{ php_extension_conf_paths }}"
