@@ -1,12 +1,18 @@
 ---
-- name: Configure Apache.
+- name: Remove all Listen directives
   ansible.builtin.lineinfile:
-    dest: "{{ apache_server_root }}/ports.conf"
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-    state: present
-    mode: '0644'
-  with_items: "{{ apache_ports_configuration_items }}"
+    path: "{{ apache_server_root }}/ports.conf"
+    regexp: "^Listen "
+    state: absent
+    firstmatch: true
+  notify: restart apache
+
+- name: Add required Listen directives
+  ansible.builtin.blockinfile:
+    path: "{{ apache_server_root }}/ports.conf"
+    block: |
+      Listen 127.0.0.1:{{ apache_listen_port }}
+      Listen 127.0.0.1:8091
   notify: restart apache
 
 - name: Enable Apache mods.
