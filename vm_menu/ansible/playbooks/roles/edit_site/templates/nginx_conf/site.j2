@@ -64,8 +64,11 @@ server {
     set $is_global_cache  1;
     
     proxy_ignore_client_abort off;
-
+{% if domain == default_domain %}
+    set $proxyserver	"http://127.0.0.1:8091";
+{% else %}
     set $proxyserver	"http://127.0.0.1:8090";
+{% endif %}
 
     proxy_redirect ~^(http://[^:]+):\d+(/.+)$ $1$2;
     proxy_redirect ~^(https://[^:]+):\d+(/.+)$ $1$2;
@@ -207,7 +210,11 @@ server {
     proxy_set_header    X-Forwarded-Proto   https;
     set                 $is_global_cache    1;
 
+{% if domain == default_domain %}
+    set $proxyserver	"http://127.0.0.1:8091";
+{% else %}
     set $proxyserver	"http://127.0.0.1:8090";
+{% endif %}
 
     proxy_redirect ~^(http://[^:]+):\d+(/.+)$ $1$2;
     proxy_redirect ~^(https://[^:]+):\d+(/.+)$ $1$2;

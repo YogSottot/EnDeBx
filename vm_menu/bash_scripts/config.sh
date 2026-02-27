@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034
 
 # General configs
-BS_VERSION_MENU="1.3.7"
+BS_VERSION_MENU="1.3.8"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"

@@ -33,7 +33,7 @@
     mode: "0755"
   when: php_fpm_pool_conf_path_dir_stat.stat.islnk is not defined
 
-- name: Create fpm pools no overwrite. # noqa name[casing]
+- name: Create fpm pools no overwrite
   ansible.builtin.template:
     src: "{{ item.pool_template | default('www.conf.j2', true) }}"
     dest: "{{ php_fpm_pool_conf_path | dirname }}/{{ item.pool_config_filename }}"
@@ -46,7 +46,7 @@
   notify: restart php-fpm
 
 
-- name: Create fpm pools overwrite. # noqa name[casing]
+- name: Create fpm pools overwrite
   ansible.builtin.template:
     src: "{{ item.pool_template | default('www.conf.j2', true) }}"
     dest: "{{ php_fpm_pool_conf_path | dirname }}/{{ item.pool_config_filename }}"

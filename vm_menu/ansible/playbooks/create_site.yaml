@@ -63,6 +63,13 @@
       when:
         - user_server_sites != default_user_server_sites
         - mode == "link"
+    - role: geerlingguy.php
+      vars:
+        php_fpm_listen: "/run/php/php{{ php_version }}-fpm.sock"
+        php_use_managed_bitrixenv_ini: false
+        php_enable_php_fpm: false
+      when:
+        - user_server_sites == default_user_server_sites
     - role: tmpfiles
 
   post_tasks:

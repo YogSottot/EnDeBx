@@ -1,6 +1,10 @@
-<VirtualHost *:8090>
+{% if domain == default_domain %}
+<VirtualHost 127.0.0.1:8091>
+{% else %}
+<VirtualHost 127.0.0.1:8090>
 ServerName  {{ domain }}
 ServerAlias www.{{ domain }}
+{% endif %}
 ServerAdmin webmaster@localhost
 
 DocumentRoot  {{ path_sites }}/{{ domain }}
