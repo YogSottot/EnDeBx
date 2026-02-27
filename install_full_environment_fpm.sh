@@ -365,6 +365,13 @@ else
   systemctl restart redis-server.service
 fi
 
+if systemctl is-active --quiet percona-telemetry-agent.service; then
+    systemctl stop percona-telemetry-agent.service
+    systemctl disable percona-telemetry-agent.service
+else
+    echo "percona-telemetry-agent not running..."
+fi
+
 if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
   for package in ${BX_ADDITIONAL_PACKAGES}; do
     apt -y install "$package"
