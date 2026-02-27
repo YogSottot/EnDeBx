@@ -81,12 +81,18 @@
   when: php_install_from_source
 
 # Configure PHP.
-- ansible.builtin.include_tasks: configure.yml # noqa name[missing]
-- ansible.builtin.include_tasks: configure-apcu.yml # noqa name[missing]
-- ansible.builtin.include_tasks: configure-opcache.yml # noqa name[missing]
-- ansible.builtin.include_tasks: configure-fpm-override.yml # noqa name[missing]
-- ansible.builtin.include_tasks: configure-fpm.yml # noqa name[missing]
-- ansible.builtin.include_tasks: configure-fpm-xdebug.yml # noqa name[missing]
+- name: Include_tasks configure.yml
+  ansible.builtin.include_tasks: configure.yml
+- name: Include_tasks configure-apcu.yml
+  ansible.builtin.include_tasks: configure-apcu.yml
+- name: Include_tasks configure-opcache.yml
+  ansible.builtin.include_tasks: configure-opcache.yml
+- name: Include_tasks configure-fpm-override.yml
+  ansible.builtin.include_tasks: configure-fpm-override.yml
+- name: Include_tasks configure-fpm.yml
+  ansible.builtin.include_tasks: configure-fpm.yml
+- name: Include_tasks configure-fpm-xdebug.yml
+  ansible.builtin.include_tasks: configure-fpm-xdebug.yml
 
 # Setup alternatives
 - name: Setup alternatives

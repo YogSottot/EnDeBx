@@ -1,102 +1,147 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Update menu
-# MASTER branch
+readonly BRANCH="feature/php-fpm"
+readonly REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"
 
-# use curl
-# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/update_menu.sh)
+readonly DIR_NAME="vm_menu"
+readonly DEST_DIR="/root"
+readonly BACKUP_DIR="${DEST_DIR}/backup_vm_menu"
+readonly TMP_CLONE_DIR="${DEST_DIR}/DebianLikeBitrixVM"
 
-# use wget
-# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/update_menu.sh)
+readonly FULL_MENU_PATH="${DEST_DIR}/${DIR_NAME}/menu.sh"
 
-BRANCH="feature/php-fpm"
-REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"
+log() {
+    echo "[INFO] $*"
+}
 
-DIR_NAME_MENU="vm_menu"
-DEST_DIR_MENU="/root"
+die() {
+    echo "[ERROR] $*" >&2
+    exit 1
+}
 
-FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
+require_root() {
+    [[ $EUID -eq 0 ]] || die "Run as root"
+}
 
-DEST_DIR_BACKUP_MENU="$DEST_DIR_MENU/backup_vm_menu"
+timestamp() {
+    date "+%Y-%m-%d_%H-%M-%S"
+}
 
-# Backup vm_menu
-current_date=$(date "+%d.%m.%Y %H:%M:%S")
-full_path_backup_menu="$DEST_DIR_BACKUP_MENU/$current_date"
+backup_menu() {
+    if [[ -d "${DEST_DIR}/${DIR_NAME}" ]]; then
+        backup_path="${BACKUP_DIR}/$(timestamp)"
+        mkdir -p "${backup_path}"
+        mv "${DEST_DIR}/${DIR_NAME}" "${backup_path}/"
+        log "Backup created: ${backup_path}"
+    else
+        log "No existing menu to backup"
+    fi
+}
 
-mkdir -p "${full_path_backup_menu}"
-mkdir -p "${DEST_DIR_MENU}/${DIR_NAME_MENU}"
-mv -f "${DEST_DIR_MENU}/${DIR_NAME_MENU}" "${full_path_backup_menu}"
+clone_repo() {
+    rm -rf "${TMP_CLONE_DIR}"
 
-# Clone directory vm_menu with repositories
-rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/DebianLikeBitrixVM"
-cd "$DEST_DIR_MENU/DebianLikeBitrixVM"
-git sparse-checkout set $DIR_NAME_MENU
+    git clone \
+        --branch="${BRANCH}" \
+        --depth=1 \
+        --filter=blob:none \
+        --sparse \
+        "${REPO_URL}" \
+        "${TMP_CLONE_DIR}"
 
-# Move vm_menu in /root and clean
-rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
-mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-cd "$DEST_DIR_MENU"
-rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
-chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
+    cd "${TMP_CLONE_DIR}"
+    git sparse-checkout set "${DIR_NAME}"
+}
 
-rm -f "/tmp/configs.tmp"
-rm -f "/tmp/new_version_menu.tmp"
+deploy_menu() {
+    rm -rf "${DEST_DIR:?}/${DIR_NAME:?}"
+    mv "${TMP_CLONE_DIR}/${DIR_NAME}" "${DEST_DIR}/"
+    chmod -R +x "${DEST_DIR}/${DIR_NAME}"
+    rm -rf "${TMP_CLONE_DIR}"
 
-ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
+    ln -sf "${FULL_MENU_PATH}" "${DEST_DIR}/menu.sh"
+    cd "$DEST_DIR"
+}
 
-# update nginx bitrix_general.conf
-# shellcheck source=/dev/null
-source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
+load_config() {
+    # shellcheck source=/dev/null
+    source "${DEST_DIR}/${DIR_NAME}/bash_scripts/config.sh"
 
-# shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-    source $DEST_DIR_MENU/.env.menu
-fi
+    if [[ -f "${DEST_DIR}/.env.menu" ]]; then
+        # shellcheck source=/dev/null
+        source "${DEST_DIR}/.env.menu"
+    fi
+}
 
-cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" "$BS_PATH_NGINX/conf/bitrix_general.conf"
-cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" "$BS_PATH_NGINX/conf_fpm/bitrix_general.conf"
-nginx -t && systemctl reload "$BS_SERVICE_NGINX_NAME.service"
+update_nginx() {
+    cp -f \
+        "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" \
+        "${BS_PATH_NGINX}/conf/bitrix_general.conf"
 
-# Removed zstd. It breaks Bitrix24.
-rm -f /etc/nginx/custom_conf.d/section_http/zstd.conf
-apt purge -y libnginx-mod-http-zstd
+    cp -f \
+        "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" \
+        "${BS_PATH_NGINX}/conf_fpm/bitrix_general.conf"
 
-# check ansible installation
-# --- remove ansible if installed via apt ---
-if dpkg -s ansible >/dev/null 2>&1; then
-    echo "Purging system ansible package..."
-    apt purge -y ansible
-    apt autoremove -y
-else
-    echo "No apt ansible package installed."
-fi
+    "${BS_SERVICE_NGINX_NAME}" -t
+    systemctl reload "${BS_SERVICE_NGINX_NAME}.service"
+}
 
-# make sure apache modules disabled
-a2dismod --force deflate filter negotiation ssl
+remove_zstd() {
+    rm -f "/etc/${BS_SERVICE_NGINX_NAME}/custom_conf.d/section_http/zstd.conf"
+    apt purge -y libnginx-mod-http-zstd || true
+}
 
-# Make sure pipx itself exists
-if ! command -v pipx >/dev/null 2>&1; then
-    apt update && apt install -y pipx
-    python3 -m pipx ensurepath
-fi
-if pipx list | grep -q "package ansible "; then
-    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
-    if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
-        echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
-        pipx uninstall ansible
+setup_ansible() {
+    # check ansible installation
+    # --- remove ansible if installed via apt ---
+    if dpkg -s ansible >/dev/null 2>&1; then
+        echo "Purging system ansible package..."
+        apt purge -y ansible
+        apt autoremove -y
+    else
+        echo "No apt ansible package installed."
+    fi
+
+    # Make sure pipx itself exists
+    if ! command -v pipx >/dev/null 2>&1; then
+        apt update && apt install -y pipx
+        python3 -m pipx ensurepath
+    fi
+    if pipx list | grep -q "package ansible "; then
+        ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
+        if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
+            echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
+            pipx uninstall ansible
+            pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+            pipx inject ansible jmespath passlib python-debian
+        else
+            echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
+        fi
+    else
+        echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
         pipx inject ansible jmespath passlib python-debian
-    else
-        echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
     fi
-else
-    echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
-    pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib python-debian
-fi
+}
 
-echo -e "\n\n";
-echo "Menu updated! Backup directory old menu: $full_path_backup_menu";
-echo -e "\n";
+run_a2dismod() {
+    # make sure apache modules disabled
+    a2dismod --force deflate filter negotiation ssl
+}
+
+main() {
+    require_root
+    backup_menu
+    clone_repo
+    deploy_menu
+    load_config
+    update_nginx
+    remove_zstd
+    setup_ansible
+    run_a2dismod
+
+    log "Menu updated! Backup directory old menu: $backup_path";
+}
+
+main "$@"
