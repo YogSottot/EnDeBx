@@ -106,6 +106,14 @@
 
      - `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
 
+   `12) MySQL`
+
+     - `1) Re-generate MySQL config` — повторная генерация конфига mysql
+
+     - `2) Upgrade percona 5.7 to 8.0` — обновление percona mysql с 5.7 до 8.0
+
+     - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
+
 `9) Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
 `R) Restart the server` — перезагрузка сервера. Запуск команды `reboot`.  
