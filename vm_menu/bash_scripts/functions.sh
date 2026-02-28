@@ -103,6 +103,7 @@ menu_install_extensions(){
     echo "          9) Install/Delete Docker";
     echo "          10) PostgreSQL";
     echo "          11) Install/Delete Debian repo on Astra Linux";
+    echo "          12) MySQL";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -121,6 +122,7 @@ menu_install_extensions(){
     "9") install_docker ;;
     "10") menu_postgresql ;;
     "11") install_debian_repo_on_astra_linux ;;
+    "12") menu_mysql ;;
 
     0|z)  main_menu
     ;;
@@ -193,6 +195,41 @@ menu_postgresql(){
       "3") add_user_and_db_postgresql ;;
       "4") delete_user_and_db_postgresql ;;
       "5") install_delete_pgbouncer ;;
+
+    0|z)  main_menu
+    ;;
+     *)
+      echo "Error unknown command"
+      ;;
+
+    esac
+    done
+}
+
+menu_mysql(){
+    comand=;
+    until [[ "$comand" == "0" ]]; do
+    #clear;
+    detect_mysql_version;
+
+    echo -e "\n          Menu -> MySQL:\n";
+    echo "          1) Re-generate MySQL config";
+  if [ "$MYSQL_VERSION_MAJOR" == 5.7 ] ; then
+    echo "          2) Upgrade percona 5.7 to 8.0";
+  fi
+  if [ "$MYSQL_FLAVOR" == "Percona" ] && [ "$MYSQL_VERSION_MAJOR" == 8.0 ] ; then
+    echo "          3) Upgrade percona 8.0 to 8.4";
+  fi
+    echo "          0) Return to main menu";
+    echo -e "\n\n";
+    echo -n "Enter command: "
+    read -r comand
+
+    case $comand in
+
+      "1") re-generate_mysql_config ;;
+      "2") upgrade_percona_5.7_to_8.0 ;;
+      "3") upgrade_percona_8.0_to_8.4  ;;
 
     0|z)  main_menu
     ;;
@@ -1595,7 +1632,7 @@ get_postgresql_info() {
     local port socket
     port=$(grep -r "/var/lib/postgresql/$version/main" /run/postgresql/ | grep -oP '(?<=PGSQL.)\d+')
     socket="/run/postgresql/.s.PGSQL.$port"
-    
+
     if [ -n "$port" ] && [ -S "$socket" ]; then
         printf "   \n   Version: %s\n   Port: %s\n   Unix socket: %s\n\n" "$version" "$port" "$socket"
         export postgresql_port="$port"
@@ -1770,6 +1807,79 @@ function install_debian_repo_on_astra_linux() {
       * ) echo "   Please enter Y or N.";;
     esac
   done
+}
+
+detect_mysql_version() {
+    local output version major flavor
+
+    output="$(mysql --version 2>/dev/null)" || {
+        echo "mysql not found"
+        return 1
+    }
+
+    # Extract first X.Y.Z
+    if [[ $output =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+        version="${BASH_REMATCH[1]}"
+    else
+        version="0.0.0"
+    fi
+
+    # Detect flavor
+    if [[ $output == *MariaDB* ]]; then
+        flavor="MariaDB"
+    elif [[ $output == *Percona* ]]; then
+        flavor="Percona"
+    else
+        flavor="MySQL"
+    fi
+
+    major="${version%.*}"
+
+    # Export as global vars (like set_fact)
+    MYSQL_FLAVOR="$flavor"
+    MYSQL_VERSION="$version"
+    MYSQL_VERSION_MAJOR="$major"
+}
+
+function re-generate_mysql_config() {
+    clear;
+    while true; do
+    read -r -p "   Do you really want to re-generate MySQL config? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_re-generate_mysql_config; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+
+}
+
+function upgrade_percona_5.7_to_8.0() {
+    clear;
+    while true; do
+    echo -e "   You confirm that you have made a complete backup of the database. \n"
+    read -r -p "   Do you really want to Upgrade Percona MySQL from 5.7 to 8.0?(Y/N): " answer
+    case $answer in
+      [Yy]* ) action_upgrade_percona_5.7_to_8.0; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+
+}
+
+function upgrade_percona_8.0_to_8.4() {
+    clear;
+    while true; do
+    echo -e "   You confirm that you have made a complete backup of the database. \n"
+    read -r -p "   Do you really want to Upgrade Percona MySQL from 8.0 to 8.4? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_upgrade_percona_8.0_to_8.4; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+
 }
 
 function delete_site() {

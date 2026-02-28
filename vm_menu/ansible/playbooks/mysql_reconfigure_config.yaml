@@ -1,0 +1,10 @@
+---
+- name: Reset passwords
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Reconfigure mysql
+      ansible.builtin.include_role:
+        name: geerlingguy.mysql.reconfigure

@@ -1,0 +1,100 @@
+---
+- name: Add mysql group
+  ansible.builtin.group:
+    name: mysql
+    state: present
+
+- name: Add mysql user
+  ansible.builtin.user:
+    name: mysql
+    group: mysql
+    shell: /bin/false
+    home: /var/lib/mysql
+    create_home: false
+
+- name: Download MariaDB 5.5 archive
+  ansible.builtin.get_url:
+    url: "https://archive.mariadb.org//mariadb-5.5.68/bintar-linux-systemd-x86_64/mariadb-{{ mysql_mariadb_full_version }}.tar.gz"
+    checksum: sha256:"{{ mysql_mariadb_checksum }}"
+    owner: root
+    mode: "0644"
+    dest: "/tmp/mariadb-{{ mysql_mariadb_full_version }}.tar.gz"
+
+- name: Extract MariaDB 5.5 archive
+  ansible.builtin.unarchive:
+    src: "/tmp/mariadb-{{ mysql_mariadb_full_version }}.tar.gz"
+    dest: /usr/local
+    remote_src: true
+    creates: "/usr/local/mariadb-{{ mysql_mariadb_full_version }}"
+
+- name: Create symlink to mysql folder
+  ansible.builtin.file:
+    src: "/usr/local/mariadb-{{ mysql_mariadb_full_version }}"
+    path: "{{ mysql_mariadb_dir }}"
+    owner: root
+    group: root
+    state: link
+
+- name: Change owner to mysql on mysql folder
+  ansible.builtin.file:
+    recurse: true
+    path: "{{ mysql_mariadb_dir }}"
+    owner: mysql
+    group: mysql
+    state: directory
+
+- name: Execute mysql installation script
+  ansible.builtin.shell: cd "{{ mysql_mariadb_dir }}" && scripts/mysql_install_db --user=mysql --ldata=/var/lib/mysql
+  changed_when: true
+
+- name: Change owner to root on mysql folder
+  ansible.builtin.file:
+    recurse: true
+    path: "{{ mysql_mariadb_dir }}"
+    owner: root
+    state: directory
+
+- name: Change owner to mysql on data folder
+  ansible.builtin.file:
+    recurse: true
+    path: "{{ mysql_mariadb_dir }}/data"
+    owner: mysql
+    state: directory
+
+- name: Create systemd unit file
+  ansible.builtin.copy:
+    src: mariadb.service
+    dest: /etc/systemd/system/mariadb.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add mysql logrotate rules
+  ansible.builtin.copy:
+    src: mysql-log-rotate
+    dest: /etc/logrotate.d/mariadb
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add mysql dir to system-wide $PATH.
+  ansible.builtin.copy:
+    dest: /etc/profile.d/mariadb-path.sh
+    content: 'PATH=$PATH:{{ mysql_mariadb_path }}'
+    owner: root
+    mode: "0644"
+  when: ansible_env.PATH is not search(mysql_mariadb_path)
+
+- name: Reload environment to apply updated PATH
+  ansible.builtin.shell: source /etc/profile.d/mariadb-path.sh
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Create symlink to mysql binary, ansible not apply updated PATH
+  ansible.builtin.file:
+    src: "{{ mysql_mariadb_path }}/mysql"
+    path: "/usr/bin/mysql"
+    owner: root
+    group: root
+    state: link

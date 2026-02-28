@@ -654,3 +654,24 @@ function action_setup_debian_repositories_for_astra() {
 
     press_any_key_to_return_menu
 }
+
+function action_re-generate_mysql_config() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_RECONFIGURE_MYSQL_CONFIG}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
+        mysql_collation_server=${BS_DB_COLLATION}"
+}
+
+function action_upgrade_percona_5.7_to_8.0() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
+        mysql_collation_server=${BS_DB_COLLATION}"
+}
+
+function action_upgrade_percona_8.0_to_8.4() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
+        mysql_collation_server=${BS_DB_COLLATION}"
+}

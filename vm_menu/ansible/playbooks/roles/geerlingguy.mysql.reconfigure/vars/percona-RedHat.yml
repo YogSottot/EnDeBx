@@ -1,0 +1,27 @@
+---
+__mysql_daemon: mysql
+__mysql_packages:
+  - "python3-PyMySQL"
+  - "perl-DBD-MySQL"
+mysql_log_file_group: adm
+__mysql_log_dir: /var/log/mysql
+__mysql_slow_query_log_file: /var/log/mysql/slow.log
+__mysql_log_error: /var/log/mysql/mysql.log
+__mysql_syslog_tag: mysqld
+__mysql_pid_file: /run/mysqld/mysqld.pid
+__mysql_config_file: /etc/mysql/my.cnf
+__mysql_config_include_dir: /etc/mysql/percona-server.conf.d/
+__mysql_socket: /run/mysqld/mysqld.sock
+__mysql_supports_innodb_large_prefix: false
+
+__mysql_percona_repo_baseurl: "https://repo.percona.com/yum"
+__mysql_percona_repo_release: "percona-release-latest"
+__mysql_percona_version: "5.7"
+__mysql_percona_packages_57:
+  - "Percona-Server-server-57"
+  - "percona-toolkit"
+  - "percona-xtrabackup-24"
+__mysql_percona_packages_80:
+  - "percona-server-server"
+  - "percona-toolkit"
+  - "percona-xtrabackup-{{ mysql_percona_version | regex_replace('[.~]', '') }}"

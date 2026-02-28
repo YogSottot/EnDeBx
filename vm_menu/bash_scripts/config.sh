@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034
 
 # General configs
-BS_VERSION_MENU="1.3.8"
+BS_VERSION_MENU="1.4.0"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
@@ -101,6 +101,9 @@ BS_ANSIBLE_PS_PGBOUNCER="install_or_delete_pgbouncer.yaml"
 BS_ANSIBLE_PS_BOTBLOCKER="enable_or_disable_nginx_ultimate_bot_blocker.yaml"
 BS_ANSIBLE_PS_SETUP_DEBIAN_REPO_ON_ASTRA="setup_tmp_debian_repositories_for_astra.yaml"
 BS_ANSIBLE_PS_RESET_PASSWORDS="reset_passwords.yaml"
+BS_ANSIBLE_PS_RECONFIGURE_MYSQL_CONFIG="mysql_reconfigure_config.yaml"
+BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80="upgrade_mysql_from57_to80.yaml"
+BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84="upgrade_mysql_from80_to84.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

@@ -1,0 +1,20 @@
+---
+__mysql_daemon: mariadb
+__mysql_packages:
+  - libncurses5
+mysql_log_file_group: adm
+__mysql_log_dir: /var/log/mysql
+__mysql_slow_query_log_file: /var/log/mysql/mariadb-slow.log
+__mysql_log_error: /var/log/mysql/mysql.log
+__mysql_syslog_tag: mysqld
+__mysql_pid_file: /run/mysqld/mysqld.pid
+__mysql_config_file: /etc/mysql/mariadb.cnf
+__mysql_config_include_dir: /etc/mysql/mariadb.conf.d
+__mysql_socket: /run/mysqld/mysqld.sock
+__mysql_supports_innodb_large_prefix: false
+
+__mysql_mariadb_full_version: "{% if mysql_mariadb_version == '5.5' %}5.5.68-linux-systemd-x86_64{% endif %}"
+__mysql_mariadb_checksum: "{% if mysql_mariadb_version == '5.5' %}a4b5661916047bcc24e08d106a1ff42d7315598eebe04e41f48b5e086f6349ad{% endif %}"
+
+__mysql_mariadb_dir: "/usr/local/mysql"
+__mysql_mariadb_path: "/usr/local/mysql/bin"

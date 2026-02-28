@@ -1,0 +1,58 @@
+---
+- name: Get MySQL version
+  ansible.builtin.command: 'mysql --version'
+  register: mysql_cli_version
+  changed_when: false
+  check_mode: false
+
+- name: Extract MySQL version
+  ansible.builtin.set_fact:
+    mysql_version_detected: "{{ (mysql_cli_version.stdout | regex_search('\\s+([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') | first) | default('0.0.0') }}"
+
+- name: Debug MySQL version
+  ansible.builtin.debug:
+    var: mysql_version_detected
+
+- name: Normalize MySQL version and flavor
+  ansible.builtin.set_fact:
+    mysql_normalized:
+      flavor: >-
+        {% if 'MariaDB' in mysql_cli_version.stdout %}MariaDB
+        {% elif 'Percona' in mysql_cli_version.stdout %}Percona
+        {% else %}MySQL{% endif %}
+      is_mariadb: "{{ 'MariaDB' in mysql_cli_version.stdout }}"
+      is_percona: "{{ 'Percona' in mysql_cli_version.stdout }}"
+      is_mysql: "{{ 'MariaDB' not in mysql_cli_version.stdout and 'Percona' not in mysql_cli_version.stdout }}"
+      version: "{{ mysql_version_detected }}"  # Now a string, not a list
+
+- name: Compute version_major
+  ansible.builtin.set_fact:
+    mysql_normalized: "{{ mysql_normalized | combine({
+        'version': mysql_version_detected,
+        'version_major': (mysql_version_detected.split('.')[:2] | join('.'))
+      }) }}"
+
+- name: Debug MySQL version and flavor
+  ansible.builtin.debug:
+    var: mysql_normalized
+
+- name: Debug MySQL version and flavor
+  ansible.builtin.debug:
+    msg:
+      flavor: "{{ mysql_normalized.flavor }}"
+      version: "{{ mysql_normalized.version }}"
+      is_mariadb: "{{ mysql_normalized.is_mariadb }}"
+      is_percona: "{{ mysql_normalized.is_percona }}"
+      version_major: "{{ mysql_normalized.version_major }}"
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    mysql_flavor: mariadb
+    mysql_version: "{{ mysql_version_detected.split('.')[:2] | join('.') }}"
+  when: mysql_normalized.is_mariadb is true
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    mysql_flavor: percona
+    mysql_version: "{{ mysql_version_detected.split('.')[:2] | join('.') }}"
+  when: mysql_normalized.is_mariadb is false

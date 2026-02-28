@@ -1,0 +1,20 @@
+[Unit]
+Description=MariaDB database server
+After=syslog.target
+After=network.target
+
+[Service]
+Type=forking
+User=mysql
+Group=mysql
+Restart=on-failure
+RestartSec=3
+
+
+ExecStart=/etc/init.d/mysql start
+ExecStop=/etc/init.d/mysql stop
+
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

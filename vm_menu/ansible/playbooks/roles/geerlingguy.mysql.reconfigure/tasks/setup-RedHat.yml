@@ -1,0 +1,30 @@
+---
+- name: Ensure MySQL repo is installed.
+  ansible.builtin.package:
+    name: "{{ mysql_percona_repo_baseurl }}/{{ mysql_percona_repo_release }}.noarch.rpm"
+    state: present
+  when: mysql_flavor == 'percona'
+
+- name: Setup Percona release
+  ansible.builtin.command: percona-release setup ps{{ mysql_percona_version | regex_replace('[.~]', '') }}
+  changed_when: false
+  when: mysql_flavor == 'percona'
+
+- name: Ensure MySQL packages are installed.
+  ansible.builtin.dnf:
+    name: "{{ mysql_packages }}"
+    state: present
+    enablerepo: "{{ mysql_enablerepo | default(omit, true) }}"
+  register: rh_mysql_install_packages
+
+- name: Ensure MySQL percona packages are installed.
+  ansible.builtin.dnf:
+    name: "{{ mysql_percona_packages }}"
+    state: present
+  when: mysql_flavor == 'percona'
+  register: rh_percona_install_packages
+
+- name: Ensure MySQL mariadbb-5.5 packages are installed.
+  ansible.builtin.include_tasks:
+    file: mariadb-5.5.yml
+  when: mysql_flavor =='mariadb' and mysql_mariadb_version == '5.5' and not mysql_installed.stat.exists

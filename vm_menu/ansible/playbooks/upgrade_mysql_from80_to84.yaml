@@ -1,0 +1,69 @@
+---
+- name: Percona MySQL upgrade 8.0 to 8.4
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  vars:
+    mysql_socket: /run/mysqld/mysqld.sock
+  tasks:
+    - name: Ensure MySQL is running before upgrade
+      ansible.builtin.systemd:
+        name: mysql
+        state: started
+
+    - name: Check MySQL is responsive (not crashed)
+      ansible.builtin.command: >
+        mysqladmin --socket={{ mysql_socket }} ping
+      register: mysql_ping
+      changed_when: false
+      failed_when: "'mysqld is alive' not in mysql_ping.stdout"
+
+    - name: Set innodb_fast_shutdown=0 (slow shutdown required)
+      ansible.builtin.command: >
+        mysql --socket={{ mysql_socket }} -e
+        "SET GLOBAL innodb_fast_shutdown=0;"
+      changed_when: true
+
+    - name: Verify innodb_fast_shutdown is 0
+      ansible.builtin.command: >
+        mysql --socket={{ mysql_socket }} -Nse
+        "SELECT @@GLOBAL.innodb_fast_shutdown;"
+      register: innodb_fast_shutdown_value
+      changed_when: false
+      failed_when: innodb_fast_shutdown_value.stdout != "0"
+
+    - name: Stop mysql with slow shutdown
+      ansible.builtin.systemd:
+        name: mysql
+        state: stopped
+
+    - name: Delete old config
+      ansible.builtin.file:
+        path: /etc/mysql/mysql.conf.d/x_server.cnf
+        state: absent
+
+    - name: Enable Percona 8.4 repository
+      ansible.builtin.command: percona-release setup ps-84-lts
+      changed_when: false
+
+    - name: Install percona-server 8.4
+      ansible.builtin.apt:
+        name: percona-server-server
+        state: latest
+        update_cache: true
+
+    - name: Start mysql after upgrade
+      ansible.builtin.systemd:
+        name: mysql
+        state: started
+
+    - name: Generate new config for mysql
+      ansible.builtin.include_role:
+        name: geerlingguy.mysql.reconfigure
+
+    - name: Disable percona-telemetry-agent
+      ansible.builtin.systemd:
+        name: percona-telemetry-agent
+        state: stopped
+        enabled: false

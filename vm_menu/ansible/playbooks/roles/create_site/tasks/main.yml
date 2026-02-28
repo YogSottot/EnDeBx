@@ -105,7 +105,7 @@
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: mysql_flavor != 'percona'
+      when: (mysql_flavor == 'mariadb') or (mysql_flavor == 'percona' and mysql_percona_version == '5.7')
 
     - name: Ensure MySQL users are present with caching_sha2_password plugin
       community.mysql.mysql_user:
@@ -115,7 +115,7 @@
         plugin_auth_string: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: mysql_flavor == 'percona'
+      when: mysql_flavor == 'percona' and mysql_percona_version != '5.7'
 
     - name: Creating directory bitrix/php_interface
       ansible.builtin.file:

@@ -1,0 +1,7 @@
+---
+# Detect version
+- ansible.builtin.include_tasks: detect_mysql_version.yml # noqa name[missing]
+# Variable configuration.
+- ansible.builtin.include_tasks: variables.yml # noqa name[missing]
+# Configure MySQL.
+- ansible.builtin.include_tasks: configure.yml # noqa name[missing]
