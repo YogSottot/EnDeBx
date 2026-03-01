@@ -323,6 +323,11 @@ if [ "$BS_SETUP_SECURITY" == "Y" ]; then
       security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
 fi
 
+if [ "$BS_DELETE_SNAPD" == "Y" ]; then
+  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "snapd_action=DELETE"
+fi
+
 # disable httpd access logs
 find /etc/apache2/ -type f -print0 | xargs -0 sed -i 's/CustomLog/#CustomLog/g'
 

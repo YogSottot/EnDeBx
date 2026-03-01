@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034
 
 # General configs
-BS_VERSION_MENU="1.3.9"
+BS_VERSION_MENU="1.3.10"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
@@ -104,6 +104,7 @@ BS_ANSIBLE_PS_RESET_PASSWORDS="reset_passwords.yaml"
 BS_ANSIBLE_PS_RECONFIGURE_MYSQL_CONFIG="mysql_reconfigure_config.yaml"
 BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80="upgrade_mysql_from57_to80.yaml"
 BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84="upgrade_mysql_from80_to84.yaml"
+BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD="install_or_delete_snapd.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
@@ -229,3 +230,6 @@ BX_ADDITIONAL_PHP_EXTENSIONS=
 
 # Setup debian repo by default (Y/N)
 BS_SETUP_REPOS=N
+
+# Delete snapd
+BS_DELETE_SNAPD=Y=N

@@ -1,0 +1,19 @@
+---
+
+
+    - name: Unblock installation
+      block:
+        - name: unblock later installations of snapd
+          ansible.builtin.file:
+            path: /etc/apt/preferences.d/snapd.pref
+            state: absent
+          notify:
+            - clean apt cache
+            - update package cache
+
+    - name: Install snapd package
+      ansible.builtin.package:
+        name: snapd
+        state: present
+
+...

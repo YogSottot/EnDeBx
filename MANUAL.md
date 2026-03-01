@@ -114,6 +114,8 @@
 
      - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
 
+   `13) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
+
 `9) Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
 `R) Restart the server` — перезагрузка сервера. Запуск команды `reboot`.  

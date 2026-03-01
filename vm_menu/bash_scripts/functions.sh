@@ -90,6 +90,7 @@ menu_install_extensions(){
     comand=;
     until [[ "$comand" == "0" ]]; do
     clear;
+    detect_os;
 
     echo -e "\n          Menu -> Installing Extensions:\n";
     echo "          1) Install/Delete Sphinx";
@@ -99,11 +100,16 @@ menu_install_extensions(){
     echo "          5) Install/Delete Rkhunter";
     echo "          6) Install/Delete Linux Malware Detect ";
     echo "          7) Install/Delete Memcached";
+if [ "$OS_DISTRO" == ubuntu ] ; then
     echo "          8) Install/Delete Deadsnakes PPA";
+fi
     echo "          9) Install/Delete Docker";
     echo "          10) PostgreSQL";
+if [ "$OS_DISTRO" == astra ] ; then
     echo "          11) Install/Delete Debian repo on Astra Linux";
+fi
     echo "          12) MySQL";
+    echo "          13) Install/Delete Snapd";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -123,6 +129,7 @@ menu_install_extensions(){
     "10") menu_postgresql ;;
     "11") install_debian_repo_on_astra_linux ;;
     "12") menu_mysql ;;
+    "13") purge_snapd ;;
 
     0|z)  main_menu
     ;;
@@ -209,7 +216,7 @@ menu_postgresql(){
 menu_mysql(){
     comand=;
     until [[ "$comand" == "0" ]]; do
-    #clear;
+    clear;
     detect_mysql_version;
 
     echo -e "\n          Menu -> MySQL:\n";
@@ -300,6 +307,17 @@ extract_username_from_path() {
 
         BS_GROUP_USER_SERVER_SITES="${BS_USER_SERVER_SITES}"
         BS_PATH_SITES="${BS_PATH_USER_HOME_PREFIX}/${BS_PATH_USER_HOME}"
+}
+
+detect_os() {
+    local id=""
+
+    if [[ -r /etc/os-release ]]; then
+        . /etc/os-release
+        id="$ID"
+    fi
+
+    OS_DISTRO="$id"
 }
 
 add_site(){
@@ -1880,6 +1898,27 @@ function upgrade_percona_8.0_to_8.4() {
     esac
   done
 
+}
+
+function purge_snapd() {
+  clear
+
+  is_purge_snapd=$(which snap);
+  action="INSTALL"
+  if [ ! -z "$is_purge_snapd" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")Snapd? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_snapd; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
 }
 
 function delete_site() {

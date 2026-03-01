@@ -1,0 +1,15 @@
+---
+
+- name: run only for debian based
+  when:
+    - ansible_os_family | lower == "debian"
+  block:
+    - name: Purge snapd
+      ansible.builtin.include_tasks: purge.yml
+      when: snapd_action == 'DELETE'
+
+    - name: Install snapd
+      ansible.builtin.include_tasks: install.yml
+      when: snapd_action == 'INSTALL'
+
+...

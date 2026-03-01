@@ -1,0 +1,8 @@
+---
+- name: "{{ snapd_action }} snapd"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - role: bodsch.ansible-snapd
