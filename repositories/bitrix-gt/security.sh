@@ -94,13 +94,13 @@ nginx -t && systemctl reload "$BS_SERVICE_NGINX_NAME.service"
 
 # setup swap
 if [ "$BS_SETUP_SWAP" == 'Y'  ]; then
-    ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+    /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "swap_file_state='present' \
     swap_file_size_mb=${BS_SWAP_SIZE}"
 fi
 
 if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e 'crowdsec_action="'"INSTALL"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
@@ -109,20 +109,20 @@ if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
 fi
 
 if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "rkhunter_action='INSTALL' \
       rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
 fi
 
 if [ "$BS_SETUP_MALDET" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "maldet_action='INSTALL' \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "security_ssh_port=${BS_SSH_PORT} \
       security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
       security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
