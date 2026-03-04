@@ -1,6 +1,14 @@
 ---
+# Variable configuration.
 - name: Include OS-specific variables.
-  include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "vars/{{ ansible_facts.distribution }}-{{ ansible_facts.distribution_major_version }}.yml"
+        - "vars/{{ ansible_facts.distribution }}.yml"
+        - "vars/{{ ansible_facts.os_family }}-{{ ansible_facts.distribution_major_version }}.yml"
+        - "vars/{{ ansible_facts.os_family }}.yml"
+      skip: true
 
 # Fail2Ban
 - include_tasks: fail2ban.yml
