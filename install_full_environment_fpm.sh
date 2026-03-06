@@ -117,7 +117,7 @@ INSTALL_MENU
 fi
 
 # set timezone
-timedatectl set-timezone "${BS_SERVER_TIMEZONE}"
+ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" -e "server_timezone=${BS_SERVER_TIMEZONE}"
 
 DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
 

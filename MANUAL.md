@@ -116,6 +116,8 @@
 
    `13) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
 
+   `14) Change server timezone` — Изменение таймзоны. Внимание: Будут перезапущены mysql и postgresql
+
 `9) Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
 `R) Restart the server` — перезагрузка сервера. Запуск команды `reboot`.  

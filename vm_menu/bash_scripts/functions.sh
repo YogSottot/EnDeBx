@@ -110,6 +110,7 @@ if [ "$OS_DISTRO" == astra ] ; then
 fi
     echo "          12) MySQL";
     echo "          13) Install/Delete Snapd";
+    echo "          14) Change server timezone";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -130,6 +131,7 @@ fi
     "11") install_debian_repo_on_astra_linux ;;
     "12") menu_mysql ;;
     "13") purge_snapd ;;
+    "14") change_timezone ;;
 
     0|z)  main_menu
     ;;
@@ -1919,6 +1921,27 @@ function purge_snapd() {
       * ) echo "   Please enter Y or N.";;
     esac
   done
+}
+
+function change_timezone() {
+    clear;
+    server_timezone=${BS_SERVER_TIMEZONE}
+
+        read_by_def "   Enter new timezone: (current TZ: ${server_timezone} ): " server_timezone ${server_timezone};
+
+    server_timezone="${server_timezone}"
+
+
+    echo -e "\n   Selected TZ: ${server_timezone}\n"
+
+    while true; do
+      read -r -p "   Do you really want to change_timezone? (Y/N): " answer
+      case ${answer,,} in
+        y ) action_change_timezone; break;;
+        n ) break;;
+        * ) echo "   Please enter Y or N.";;
+      esac
+    done
 }
 
 function delete_site() {

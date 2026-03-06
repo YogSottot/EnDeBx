@@ -1,0 +1,76 @@
+---
+- name: Configure timezone everywhere
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+
+    - name: Set system timezone
+      community.general.timezone:
+        name: "{{ server_timezone }}"
+      notify:
+        - Restart services
+
+    - name: Find PHP ini files
+      ansible.builtin.find:
+        paths: /etc/php
+        patterns: bitrixenv.ini
+        recurse: true
+      register: php_ini_files
+
+    - name: Update PHP timezone
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^date\.timezone'
+        line: "date.timezone = {{ server_timezone }}"
+      loop: "{{ php_ini_files.files }}"
+      when: php_ini_files.matched > 0
+      notify:
+        - Reload services
+
+    - name: Find PostgreSQL conf files
+      ansible.builtin.find:
+        paths: /etc/postgresql
+        patterns: postgresql.conf
+        recurse: true
+      register: pg_conf_files
+
+    - name: Update postgres timezone
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: '^(log_timezone|timezone)\s*=.*'
+        replace: "\\1 = '{{ server_timezone }}'"
+      loop: "{{ pg_conf_files.files }}"
+      when: pg_conf_files.matched > 0
+      notify:
+        - Restart services
+
+    - name: Update Bitrix menu env
+      ansible.builtin.lineinfile:
+        path: /root/.env.menu
+        regexp: '^BS_SERVER_TIMEZONE='
+        line: 'BS_SERVER_TIMEZONE="{{ server_timezone }}"'
+
+  handlers:
+
+    - name: Restart services
+      ansible.builtin.shell: |
+        systemctl list-units --type=service --state=running --no-legend --no-pager \
+          'postgresql@*-main.service' \
+          'mysql.service' \
+          'pgbouncer.service' \
+          'rsyslog.service' \
+          'cron.service' \
+          'chronyd.service' \
+          'postfix@-.service' \
+          'docker.service' \
+        | awk '{print $1}' | xargs -r systemctl restart
+      changed_when: true
+
+    - name: Reload services
+      ansible.builtin.shell: |
+        systemctl list-units --type=service --state=running --no-legend --no-pager \
+          'php*-fpm.service' \
+        | awk '{print $1}' | xargs -r systemctl reload
+      changed_when: true

@@ -698,3 +698,15 @@ function action_install_or_delete_snapd() {
     press_any_key_to_return_menu;
 
 }
+
+function action_change_timezone() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}")
+    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "server_timezone=${server_timezone}"
+
+      echo -e "
+      timezone is changed to ${server_timezone}"
+
+    press_any_key_to_return_menu;
+
+}
