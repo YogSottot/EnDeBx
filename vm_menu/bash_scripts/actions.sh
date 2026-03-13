@@ -370,16 +370,17 @@ function action_install_or_delete_file_conversion_server() {
 function action_install_or_delete_crowdsec() {
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CROWDSEC}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
       -e 'crowdsec_action="'"${action}"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
+      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "
-      Crowdsec is installed and configured. If you have provided a key, be sure to restart crowdsec after accepting the request in the web console."
+      Crowdsec is installed and configured. If you have provided a key, be sure to restart crowdsec after accepting the request in the web console. Whitelist in /etc/crowdsec/parsers/s02-enrich/whitelists.custom.yaml"
     fi
 
     press_any_key_to_return_menu;

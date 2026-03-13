@@ -103,6 +103,7 @@ if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
   /root/.local/bin/ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e 'crowdsec_action="'"INSTALL"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
+      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
