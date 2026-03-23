@@ -83,6 +83,8 @@ update_nginx() {
         "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" \
         "${BS_PATH_NGINX}/conf_fpm/bitrix_general.conf"
 
+    touch "${BS_PATH_NGINX}/custom_ip.conf"
+
     "${BS_SERVICE_NGINX_NAME}" -t
     systemctl reload "${BS_SERVICE_NGINX_NAME}.service"
 }
