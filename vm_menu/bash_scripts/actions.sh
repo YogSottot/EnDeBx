@@ -65,7 +65,7 @@ action_create_site(){
   php_current_default_version=${default_version} \
   php_enable_php_fpm_xdebug=$((php_enable_php_fpm_xdebug == 1)) \
   php_force_install='true' \
-  server_timezone=${BS_SERVER_TIMEZONE} \
+  server_timezone=$(get_server_timezone) \
 
   ansible_run_playbooks_params=${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}"
 
@@ -122,7 +122,7 @@ action_edit_site(){
   php_current_default_version=${default_version} \
   php_enable_php_fpm_xdebug=$((php_enable_php_fpm_xdebug == 1)) \
   php_force_install='false' \
-  server_timezone=${BS_SERVER_TIMEZONE} \
+  server_timezone=$(get_server_timezone) \
 
   ansible_run_playbooks_params=${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}"
 
@@ -268,7 +268,7 @@ function action_change_php_version(){
   user_server_sites=${BS_USER_SERVER_SITES} \
   default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
   group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
-  server_timezone=${BS_SERVER_TIMEZONE} \
+  server_timezone=$(get_server_timezone) \
   domain=${BS_DEFAULT_SITE_NAME} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
   htaccess_support=$((htaccess_support == 1))"
@@ -707,4 +707,20 @@ function action_change_timezone() {
 
     press_any_key_to_return_menu;
 
+}
+
+function get_server_timezone() {
+    local tz
+    tz=$(timedatectl show -p Timezone --value 2>/dev/null)
+
+    if [ -z "$tz" ]; then
+        # fallback (non-systemd or broken timedatectl)
+        if [ -f /etc/timezone ]; then
+            tz=$(cat /etc/timezone)
+        elif [ -L /etc/localtime ]; then
+            tz=$(readlink /etc/localtime | sed 's#.*/zoneinfo/##')
+        fi
+    fi
+
+    echo "$tz"
 }
