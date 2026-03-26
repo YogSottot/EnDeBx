@@ -98,6 +98,31 @@
         name: "{{ db_name }}"
         state: present
 
+    - name: Check if caching_sha2_password plugin exists
+      community.mysql.mysql_query:
+        query: |
+          SELECT COUNT(*) AS cnt
+          FROM INFORMATION_SCHEMA.PLUGINS
+          WHERE PLUGIN_NAME = 'caching_sha2_password';
+      register: mysql_plugin_check
+
+    - name: Set fact if caching_sha2_password exists
+      ansible.builtin.set_fact:
+        has_caching_sha2: "{{ mysql_plugin_check.query_result[0][0].cnt | int > 0 }}"
+
+    - name: Get MySQL charset and collation
+      community.mysql.mysql_query:
+        query: |
+          SELECT
+            @@character_set_server AS mysql_character_set_server,
+            @@collation_server AS mysql_collation_server;
+      register: mysql_vars
+
+    - name: Set MySQL charset and collation facts
+      ansible.builtin.set_fact:
+        mysql_character_set_server: "{{ mysql_vars.query_result[0][0].mysql_character_set_server }}"
+        mysql_collation_server: "{{ mysql_vars.query_result[0][0].mysql_collation_server }}"
+
     - name: Ensure MySQL users are present.
       community.mysql.mysql_user:
         name: "{{ db_user }}"
@@ -105,7 +130,7 @@
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: (mysql_flavor == 'mariadb') or (mysql_flavor == 'percona' and mysql_version == '5.7')
+      when: not has_caching_sha2
 
     - name: Ensure MySQL users are present with caching_sha2_password plugin
       community.mysql.mysql_user:
@@ -115,7 +140,7 @@
         plugin_auth_string: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: mysql_flavor == 'percona' and mysql_version != '5.7'
+      when: has_caching_sha2
 
     - name: Creating directory bitrix/php_interface
       ansible.builtin.file:
