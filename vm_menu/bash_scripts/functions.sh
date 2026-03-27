@@ -47,7 +47,9 @@ main_menu(){
     echo "          6) Add/Change global PHP version";
     echo "          7) Settings SMTP sites";
     echo "          8) Installing Extensions";
-    echo "          9) Update server";
+    echo "          9) Security settings";
+    echo "          10) Change server timezone";
+    echo "          11) Update server";
     echo "          R) Restart the server";
     echo "          P) Turn off the server";
     echo "          DELETE_SITE) Delete a site";
@@ -70,7 +72,9 @@ main_menu(){
       "6") change_php_version ;;
       "7") settings_smtp_sites ;;
       "8") menu_install_extensions ;;
-      "9") update_server ;;
+      "9") menu_security_settings ;;
+      "10") change_timezone ;;
+      "11") update_server ;;
       "R") reboot_server ;;
       "P") power_off_server ;;
       "DELETE_SITE") delete_site ;;
@@ -93,25 +97,21 @@ menu_install_extensions(){
     detect_os;
 
     echo -e "\n          Menu -> Installing Extensions:\n";
-    echo "          1) Install/Delete Sphinx";
-    echo "          2) Install/Delete File Conversion Server (transformer)";
-    echo "          3) Install/Delete Netdata";
-    echo "          4) Install/Delete Crowdsec";
-    echo "          5) Install/Delete Rkhunter";
-    echo "          6) Install/Delete Linux Malware Detect ";
-    echo "          7) Install/Delete Memcached";
+    echo "          1) Install/Delete Memcached";
+    echo "          2) Install/Delete Push server";
+    echo "          3) Install/Delete Sphinx";
+    echo "          4) Install/Delete File Conversion Server (transformer)";
+    echo "          5) Install/Delete Netdata";
+    echo "          6) Install/Delete Docker";
+    echo "          7) PostgreSQL";
+    echo "          8) MySQL";
+    echo "          9) Install/Delete Snapd";
 if [ "$OS_DISTRO" == ubuntu ] ; then
-    echo "          8) Install/Delete Deadsnakes PPA";
+    echo "          10) Install/Delete Deadsnakes PPA";
 fi
-    echo "          9) Install/Delete Docker";
-    echo "          10) PostgreSQL";
 if [ "$OS_DISTRO" == astra ] ; then
     echo "          11) Install/Delete Debian repo on Astra Linux";
 fi
-    echo "          12) MySQL";
-    echo "          13) Install/Delete Snapd";
-    echo "          14) Install/Delete Push server";
-    echo "          15) Change server timezone";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -119,21 +119,61 @@ fi
 
     case $comand in
 
-    "1") install_sphinx ;;
-    "2") install_file_conversion_server ;;
-    "3") install_netdata ;;
-    "4") install_crowdsec ;;
-    "5") install_rkhunter ;;
-    "6") install_linux_malware_detect ;;
-    "7") install_memcached ;;
-    "8") install_deadsnakes_ppa ;;
-    "9") install_docker ;;
-    "10") menu_postgresql ;;
-    "11") install_debian_repo_on_astra_linux ;;
-    "12") menu_mysql ;;
-    "13") purge_snapd ;;
-    "14") install_push_server ;;
-    "15") change_timezone ;;
+    "1") install_memcached ;;
+    "2") install_push_server ;;
+    "3") install_sphinx ;;
+    "4") install_file_conversion_server ;;
+    "5") install_netdata ;;
+    "6") install_docker ;;
+    "7") menu_postgresql ;;
+    "8") menu_mysql ;;
+    "9") purge_snapd ;;
+    "10")
+      if [ "$OS_DISTRO" == ubuntu ] ; then
+        install_deadsnakes_ppa
+      else
+        echo "Error unknown command"
+      fi
+      ;;
+    "11")
+      if [ "$OS_DISTRO" == astra ] ; then
+        install_debian_repo_on_astra_linux
+      else
+        echo "Error unknown command"
+      fi
+      ;;
+
+    0|z)  main_menu
+    ;;
+     *)
+      echo "Error unknown command"
+      ;;
+
+    esac
+    done
+}
+
+menu_security_settings(){
+    comand=;
+    until [[ "$comand" == "0" ]]; do
+    clear;
+
+    echo -e "\n          Menu -> Security settings:\n";
+    echo "          1) SSH/Updates";
+    echo "          2) Install/Delete Crowdsec";
+    echo "          3) Install/Delete Rkhunter";
+    echo "          4) Install/Delete Linux Malware Detect";
+    echo "          0) Return to main menu";
+    echo -e "\n\n";
+    echo -n "Enter command: "
+    read -r comand
+
+    case $comand in
+
+      "1") security_settings ;;
+      "2") install_crowdsec ;;
+      "3") install_rkhunter ;;
+      "4") install_linux_malware_detect ;;
 
     0|z)  main_menu
     ;;
@@ -1706,6 +1746,255 @@ function validate_input() {
     fi
     # Add more specific validation rules as needed
     return 0
+}
+
+validate_port_number() {
+    local port="$1"
+    [[ "$port" =~ ^[0-9]+$ ]] || return 1
+    (( port >= 1 && port <= 65535 ))
+}
+
+get_current_ssh_port() {
+    local port
+    port=$(sshd -T 2>/dev/null | awk '/^port / {print $2; exit}')
+    if [[ -z "$port" ]]; then
+        port="$BS_SSH_PORT"
+    fi
+    printf '%s\n' "$port"
+}
+
+is_port_busy_by_other_service() {
+    local port="$1"
+    local current_ssh_port
+    current_ssh_port=$(get_current_ssh_port)
+
+    if [[ "$port" == "$current_ssh_port" ]]; then
+        return 1
+    fi
+
+    ss -ltnH "( sport = :${port} )" 2>/dev/null | grep -q .
+}
+
+validate_ssh_port_for_security() {
+    local port="$1"
+
+    if ! validate_port_number "$port"; then
+        echo "   Invalid port. Enter a number from 1 to 65535."
+        return 1
+    fi
+
+    if is_port_busy_by_other_service "$port"; then
+        echo "   Port ${port} is already in use."
+        return 1
+    fi
+
+    return 0
+}
+
+validate_yes_no_or_prohibit_password() {
+    local value="${1,,}"
+    [[ "$value" == "yes" || "$value" == "no" || "$value" == "prohibit-password" ]]
+}
+
+validate_yes_no_value() {
+    local value="${1,,}"
+    [[ "$value" == "yes" || "$value" == "no" || "$value" == "y" || "$value" == "n" ]]
+}
+
+validate_true_false_value() {
+    local value="${1,,}"
+    [[ "$value" == "true" || "$value" == "false" || "$value" == "yes" || "$value" == "no" || "$value" == "y" || "$value" == "n" ]]
+}
+
+normalize_to_yes_no() {
+    local value="${1,,}"
+    case "$value" in
+        y|yes) printf 'yes\n' ;;
+        n|no) printf 'no\n' ;;
+        *) printf '%s\n' "$value" ;;
+    esac
+}
+
+normalize_to_true_false() {
+    local value="${1,,}"
+    case "$value" in
+        y|yes|true) printf 'true\n' ;;
+        n|no|false) printf 'false\n' ;;
+        *) printf '%s\n' "$value" ;;
+    esac
+}
+
+validate_time_hhmm() {
+    local value="$1"
+    [[ "$value" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]
+}
+
+system_user_exists() {
+    local username="$1"
+    id "$username" >/dev/null 2>&1
+}
+
+function security_settings() {
+    clear
+
+    local current_ssh_port
+    current_ssh_port=$(get_current_ssh_port)
+
+    BS_SSH_PORT=${BS_SSH_PORT:-$current_ssh_port}
+    BS_SSH_PERMIT_ROOT_LOGIN=${BS_SSH_PERMIT_ROOT_LOGIN:-yes}
+    BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO=${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO:-true}
+    BS_SSH_ADMIN_USER_PASSWORD=${BS_SSH_ADMIN_USER_PASSWORD:-}
+    BS_SSH_PASSWORD_AUTHENTICATION=${BS_SSH_PASSWORD_AUTHENTICATION:-yes}
+    BS_AUTOUPDATE_ENABLED=${BS_AUTOUPDATE_ENABLED:-true}
+    BS_AUTOUPDATE_REBOOT_ENABLE=${BS_AUTOUPDATE_REBOOT_ENABLE:-false}
+    BS_AUTOUPDATE_REBOOT_TIME=${BS_AUTOUPDATE_REBOOT_TIME:-05:00}
+    BS_SECRITY_HIDEPID=${BS_SECRITY_HIDEPID:-false}
+    BS_SECRITY_HIDEPID_MONITORING_USER=${BS_SECRITY_HIDEPID_MONITORING_USER:-}
+
+    echo -e "\n   Menu -> Security settings:\n"
+
+    while true; do
+        read_by_def "   Enter SSH port (default: ${BS_SSH_PORT}): " BS_SSH_PORT "${BS_SSH_PORT}"
+        if validate_ssh_port_for_security "${BS_SSH_PORT}"; then
+            break
+        fi
+    done
+
+    while true; do
+        read_by_def "   Enter PermitRootLogin (yes/no/prohibit-password) [${BS_SSH_PERMIT_ROOT_LOGIN}]: " BS_SSH_PERMIT_ROOT_LOGIN "${BS_SSH_PERMIT_ROOT_LOGIN}"
+        BS_SSH_PERMIT_ROOT_LOGIN="${BS_SSH_PERMIT_ROOT_LOGIN,,}"
+        if validate_yes_no_or_prohibit_password "${BS_SSH_PERMIT_ROOT_LOGIN}"; then
+            break
+        fi
+        echo "   Please enter yes, no or prohibit-password."
+    done
+
+    read_by_def "   Enter sudo admin user for SSH access [${BS_SSH_ADMIN_USER}]: " BS_SSH_ADMIN_USER "${BS_SSH_ADMIN_USER}"
+
+    if [[ -n "${BS_SSH_ADMIN_USER}" ]]; then
+        while true; do
+            read_by_def "   Use passwordless sudo for admin user (true/false) [${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}]: " BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO "${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}"
+            BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO=$(normalize_to_true_false "${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}")
+            if validate_true_false_value "${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}"; then
+                break
+            fi
+            echo "   Please enter true or false."
+        done
+
+        if [[ "${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}" == "false" ]]; then
+            local generated_admin_password
+            generated_admin_password="${BS_SSH_ADMIN_USER_PASSWORD:-$(generate_password 20)}"
+            read_by_def "   Enter password for admin user [${generated_admin_password}]: " BS_SSH_ADMIN_USER_PASSWORD "${generated_admin_password}"
+        else
+            BS_SSH_ADMIN_USER_PASSWORD=""
+        fi
+    else
+        BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO="true"
+        BS_SSH_ADMIN_USER_PASSWORD=""
+    fi
+
+    while true; do
+        read_by_def "   Enable PasswordAuthentication (yes/no) [${BS_SSH_PASSWORD_AUTHENTICATION}]: " BS_SSH_PASSWORD_AUTHENTICATION "${BS_SSH_PASSWORD_AUTHENTICATION}"
+        BS_SSH_PASSWORD_AUTHENTICATION=$(normalize_to_yes_no "${BS_SSH_PASSWORD_AUTHENTICATION}")
+        if validate_yes_no_value "${BS_SSH_PASSWORD_AUTHENTICATION}"; then
+            break
+        fi
+        echo "   Please enter yes or no."
+    done
+
+    while true; do
+        read_by_def "   Enable unattended security updates (true/false) [${BS_AUTOUPDATE_ENABLED}]: " BS_AUTOUPDATE_ENABLED "${BS_AUTOUPDATE_ENABLED}"
+        BS_AUTOUPDATE_ENABLED=$(normalize_to_true_false "${BS_AUTOUPDATE_ENABLED}")
+        if validate_true_false_value "${BS_AUTOUPDATE_ENABLED}"; then
+            break
+        fi
+        echo "   Please enter true or false."
+    done
+
+    if [[ "${BS_AUTOUPDATE_ENABLED}" == "true" ]]; then
+        while true; do
+            read_by_def "   Enable auto reboot after updates (true/false) [${BS_AUTOUPDATE_REBOOT_ENABLE}]: " BS_AUTOUPDATE_REBOOT_ENABLE "${BS_AUTOUPDATE_REBOOT_ENABLE}"
+            BS_AUTOUPDATE_REBOOT_ENABLE=$(normalize_to_true_false "${BS_AUTOUPDATE_REBOOT_ENABLE}")
+            if validate_true_false_value "${BS_AUTOUPDATE_REBOOT_ENABLE}"; then
+                break
+            fi
+            echo "   Please enter true or false."
+        done
+
+        if [[ "${BS_AUTOUPDATE_REBOOT_ENABLE}" == "true" ]]; then
+            while true; do
+                read_by_def "   Enter auto reboot time in HH:MM [${BS_AUTOUPDATE_REBOOT_TIME}]: " BS_AUTOUPDATE_REBOOT_TIME "${BS_AUTOUPDATE_REBOOT_TIME}"
+                if validate_time_hhmm "${BS_AUTOUPDATE_REBOOT_TIME}"; then
+                    break
+                fi
+                echo "   Invalid time format. Use HH:MM."
+            done
+        fi
+    fi
+
+    while true; do
+        read_by_def "   Enable hidepid for /proc (true/false) [${BS_SECRITY_HIDEPID}]: " BS_SECRITY_HIDEPID "${BS_SECRITY_HIDEPID}"
+        BS_SECRITY_HIDEPID=$(normalize_to_true_false "${BS_SECRITY_HIDEPID}")
+        if validate_true_false_value "${BS_SECRITY_HIDEPID}"; then
+            break
+        fi
+        echo "   Please enter true or false."
+    done
+
+    if [[ "${BS_SECRITY_HIDEPID}" == "true" ]]; then
+        while true; do
+            read_by_def "   Enter existing monitoring user for /proc access (optional) [${BS_SECRITY_HIDEPID_MONITORING_USER}]: " BS_SECRITY_HIDEPID_MONITORING_USER "${BS_SECRITY_HIDEPID_MONITORING_USER}"
+            if [[ -z "${BS_SECRITY_HIDEPID_MONITORING_USER}" ]] || system_user_exists "${BS_SECRITY_HIDEPID_MONITORING_USER}"; then
+                break
+            fi
+            echo "   User ${BS_SECRITY_HIDEPID_MONITORING_USER} does not exist."
+        done
+    else
+        BS_SECRITY_HIDEPID_MONITORING_USER=""
+    fi
+
+    if [[ "${BS_SSH_PERMIT_ROOT_LOGIN}" == "no" && -z "${BS_SSH_ADMIN_USER}" ]]; then
+        echo "   If PermitRootLogin=no, you must specify BS_SSH_ADMIN_USER."
+        press_any_key_to_return_menu
+        return 1
+    fi
+
+    echo -e "\n   Entered data:\n"
+    echo "   SSH port: ${BS_SSH_PORT}"
+    echo "   PermitRootLogin: ${BS_SSH_PERMIT_ROOT_LOGIN}"
+    if [[ -n "${BS_SSH_ADMIN_USER}" ]]; then
+        echo "   SSH admin user: ${BS_SSH_ADMIN_USER}"
+        echo "   Passwordless sudo: ${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}"
+        if [[ "${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO}" == "false" ]]; then
+            echo "   Admin user password: ${BS_SSH_ADMIN_USER_PASSWORD}"
+        fi
+    fi
+    echo "   PasswordAuthentication: ${BS_SSH_PASSWORD_AUTHENTICATION}"
+    echo "   Auto updates enabled: ${BS_AUTOUPDATE_ENABLED}"
+    if [[ "${BS_AUTOUPDATE_ENABLED}" == "true" ]]; then
+        echo "   Auto reboot enabled: ${BS_AUTOUPDATE_REBOOT_ENABLE}"
+        if [[ "${BS_AUTOUPDATE_REBOOT_ENABLE}" == "true" ]]; then
+            echo "   Auto reboot time: ${BS_AUTOUPDATE_REBOOT_TIME}"
+        fi
+    fi
+    echo "   HidePID: ${BS_SECRITY_HIDEPID}"
+    if [[ "${BS_SECRITY_HIDEPID}" == "true" ]]; then
+        echo "   HidePID monitoring user: ${BS_SECRITY_HIDEPID_MONITORING_USER}"
+    fi
+    echo -e "\n"
+
+    while true; do
+        read -r -p "   Do you really want to apply security settings? (Y/N): " answer
+        case ${answer,,} in
+            y )
+                BS_SETUP_SECURITY="Y"
+                action_setup_security
+                break
+                ;;
+            n ) break ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
 }
 
 function add_user_and_db_postgresql() {

@@ -326,12 +326,16 @@ if [ "$BS_SETUP_SECURITY" == "Y" ]; then
   -e "security_ssh_port=${BS_SSH_PORT} \
       security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
       security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
-      security_sudoers_passwordless=${BS_SSH_ADMIN_USER} \
+      security_admin_user=${BS_SSH_ADMIN_USER} \
+      security_admin_user_passwordless_sudo=${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO} \
+      security_admin_user_password=\"${BS_SSH_ADMIN_USER_PASSWORD}\" \
       security_autoupdate_enabled=${BS_AUTOUPDATE_ENABLED} \
       security_sudoers_passwordless_ssh_key=\"${BS_SSH_ADMIN_USER_SSH_KEY}\" \
       security_autoupdate_reboot=${BS_AUTOUPDATE_REBOOT_ENABLE} \
       security_autoupdate_reboot_time=${BS_AUTOUPDATE_REBOOT_TIME} \
-      security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY}"
+      security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      security_hidepid_enabled=${BS_SECRITY_HIDEPID} \
+      security_hidepid_monitoring_user=${BS_SECRITY_HIDEPID_MONITORING_USER}"
 fi
 
 if [ "$BS_DELETE_SNAPD" == "Y" ]; then

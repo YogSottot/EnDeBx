@@ -201,6 +201,10 @@ BS_SSH_PORT=22
 BS_SSH_PERMIT_ROOT_LOGIN="yes"
 # Specify an alternate user to log in to the server with sudo privileges
 BS_SSH_ADMIN_USER=
+# Use passwordless sudo for alternate admin user ("true"/"false")
+BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO="true"
+# Password for alternate admin user when sudo requires password
+BS_SSH_ADMIN_USER_PASSWORD=""
 # Specify the ssh key for the alternate user (in single quotes. Multiple keys can be used on a new line))
 BS_SSH_ADMIN_USER_SSH_KEY=
 # Enable/Disable login by password ('yes'/'no')
@@ -211,6 +215,10 @@ BS_AUTOUPDATE_ENABLED="true"
 BS_AUTOUPDATE_REBOOT_ENABLE="false"
 # Specify time for auto reboot
 BS_AUTOUPDATE_REBOOT_TIME="05:00"
+# Hide processes of other users in /proc ("true"/"false")
+BS_SECRITY_HIDEPID="false"
+# Existing monitoring user that should keep access to /proc
+BS_SECRITY_HIDEPID_MONITORING_USER=""
 
 # Setup rkhunter by default (Y/N)
 BS_SETUP_RKHUNTER=N

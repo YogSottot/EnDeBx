@@ -5,10 +5,31 @@
   become: true
   gather_facts: true
   vars:
+    security_admin_user_effective: "{{ security_admin_user | default('') }}"
+    security_admin_user_passwordless_sudo_effective: "{{ security_admin_user_passwordless_sudo | default(true) }}"
+    security_admin_user_password_effective: "{{ security_admin_user_password | default('') }}"
+    security_sudoers_passwordless: "{{ [security_admin_user_effective] if security_admin_user_effective | length > 0 and security_admin_user_passwordless_sudo_effective | bool else [] }}"
+    security_sudoers_passworded: "{{ [security_admin_user_effective] if security_admin_user_effective | length > 0 and not (security_admin_user_passwordless_sudo_effective | bool) else [] }}"
     marcelnijenhof_firewalld_allow_ports:
       - port: "{{ security_ssh_port }}/tcp"
         immediate: true
   pre_tasks:
+    - name: Validate alternate admin user exists when root login is disabled
+      ansible.builtin.assert:
+        that:
+          - security_admin_user_effective | length > 0
+        fail_msg: "security_admin_user must be set when PermitRootLogin=no"
+      when: security_ssh_permit_root_login == 'no'
+
+    - name: Validate password is set for admin user with passworded sudo
+      ansible.builtin.assert:
+        that:
+          - security_admin_user_password_effective | length > 0
+        fail_msg: "security_admin_user_password must be set when passwordless sudo is disabled"
+      when:
+        - security_admin_user_effective | length > 0
+        - not security_admin_user_passwordless_sudo_effective | bool
+
     - name: Set facts for Astra Linux
       ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
       tags: always
@@ -17,3 +38,124 @@
       role: marcelnijenhof.firewalld
     - name: Setup ssh security
       role: geerlingguy.security
+  tasks:
+    - name: Create passworded sudo admin user
+      ansible.builtin.user:
+        name: "{{ security_admin_user_effective }}"
+        password: "{{ security_admin_user_password_effective | password_hash('sha512') }}"
+        update_password: always
+        generate_ssh_key: true
+        ssh_key_type: ed25519
+        shell: /bin/bash
+      when:
+        - security_admin_user_effective | length > 0
+        - not security_admin_user_passwordless_sudo_effective | bool
+
+    - name: Add ssh keys for passworded sudo admin user
+      ansible.posix.authorized_key:
+        user: "{{ security_admin_user_effective }}"
+        key: "{{ security_sudoers_passwordless_ssh_key }}"
+        state: present
+        exclusive: no
+      when:
+        - security_admin_user_effective | length > 0
+        - not security_admin_user_passwordless_sudo_effective | bool
+        - security_sudoers_passwordless_ssh_key | length > 0
+
+    - name: Validate hidepid monitoring user exists
+      ansible.builtin.command: "getent passwd {{ security_hidepid_monitoring_user }}"
+      changed_when: false
+      when:
+        - security_hidepid_enabled | bool
+        - security_hidepid_monitoring_user | length > 0
+
+    - name: Ensure procmon group exists
+      ansible.builtin.group:
+        name: "{{ security_hidepid_group }}"
+        state: present
+      when: security_hidepid_enabled | bool
+
+    - name: Get current procmon group members
+      ansible.builtin.command: "getent group {{ security_hidepid_group }}"
+      register: procmon_group_entry
+      changed_when: false
+      failed_when: false
+      when:
+        - security_hidepid_enabled | bool or security_hidepid_monitoring_user | length == 0
+
+    - name: Build procmon members list
+      ansible.builtin.set_fact:
+        procmon_group_members: >-
+          {{
+            (
+              procmon_group_entry.stdout.split(':')[3]
+              if procmon_group_entry.stdout | length > 0 and procmon_group_entry.stdout.split(':') | length > 3
+              else ''
+            ).split(',') | reject('equalto', '') | list
+          }}
+      when:
+        - security_hidepid_enabled | bool or security_hidepid_monitoring_user | length == 0
+
+    - name: Remove all users from procmon when monitoring user is empty
+      ansible.builtin.command: "gpasswd -d {{ item }} {{ security_hidepid_group }}"
+      loop: "{{ procmon_group_members | default([]) }}"
+      register: procmon_remove_result
+      changed_when: "'Removing user' in procmon_remove_result.stdout or procmon_remove_result.rc == 0"
+      failed_when: procmon_remove_result.rc not in [0]
+      when:
+        - security_hidepid_monitoring_user | length == 0
+        - (procmon_group_members | default([])) | length > 0
+
+    - name: Add monitoring user to procmon group
+      ansible.builtin.user:
+        name: "{{ security_hidepid_monitoring_user }}"
+        groups: "{{ security_hidepid_group }}"
+        append: true
+      when:
+        - security_hidepid_enabled | bool
+        - security_hidepid_monitoring_user | length > 0
+
+    - name: Configure hidepid in /etc/fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^proc\s+/proc\s+proc\s+'
+        line: "proc /proc proc defaults,hidepid=2,gid={{ security_hidepid_group }},nosuid,nodev,noexec 0 0"
+        state: present
+      when: security_hidepid_enabled | bool
+
+    - name: Remount /proc with hidepid options
+      ansible.builtin.command: mount -o remount /proc
+      when: security_hidepid_enabled | bool
+
+    - name: Remove hidepid proc entry from /etc/fstab when disabled
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^proc\s+/proc\s+proc\s+'
+        state: absent
+      when: not security_hidepid_enabled | bool
+
+    - name: Persist BS_SETUP_SECURITY in /root/.env.menu
+      ansible.builtin.lineinfile:
+        path: /root/.env.menu
+        regexp: '^BS_SETUP_SECURITY='
+        line: 'BS_SETUP_SECURITY="Y"'
+        create: true
+
+    - name: Persist security settings in /root/.env.menu
+      ansible.builtin.lineinfile:
+        path: /root/.env.menu
+        regexp: "^{{ item.key }}="
+        line: '{{ item.key }}="{{ item.value }}"'
+        create: true
+      loop:
+        - { key: 'BS_SSH_PORT', value: '{{ security_ssh_port }}' }
+        - { key: 'BS_SSH_PERMIT_ROOT_LOGIN', value: '{{ security_ssh_permit_root_login }}' }
+        - { key: 'BS_SSH_ADMIN_USER', value: '{{ security_admin_user_effective }}' }
+        - { key: 'BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO', value: '{{ security_admin_user_passwordless_sudo_effective | string | lower }}' }
+        - { key: 'BS_SSH_ADMIN_USER_PASSWORD', value: '{{ security_admin_user_password_effective }}' }
+        - { key: 'BS_SSH_PASSWORD_AUTHENTICATION', value: '{{ security_ssh_password_authentication }}' }
+        - { key: 'BS_AUTOUPDATE_ENABLED', value: '{{ security_autoupdate_enabled | string | lower }}' }
+        - { key: 'BS_AUTOUPDATE_REBOOT_ENABLE', value: '{{ security_autoupdate_reboot | string | lower }}' }
+        - { key: 'BS_AUTOUPDATE_REBOOT_TIME', value: '{{ security_autoupdate_reboot_time }}' }
+        - { key: 'BS_SECRITY_HIDEPID', value: '{{ security_hidepid_enabled | string | lower }}' }
+        - { key: 'BS_SECRITY_HIDEPID_MONITORING_USER', value: '{{ security_hidepid_monitoring_user }}' }

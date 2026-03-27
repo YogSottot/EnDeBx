@@ -258,6 +258,27 @@ function action_update_server() {
     press_any_key_to_return_menu;
 }
 
+function action_setup_security() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_SECURITY}")
+
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "security_ssh_port=${BS_SSH_PORT} \
+      security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
+      security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
+      security_admin_user=${BS_SSH_ADMIN_USER} \
+      security_admin_user_passwordless_sudo=${BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO} \
+      security_admin_user_password=\"${BS_SSH_ADMIN_USER_PASSWORD}\" \
+      security_autoupdate_enabled=${BS_AUTOUPDATE_ENABLED} \
+      security_sudoers_passwordless_ssh_key=\"${BS_SSH_ADMIN_USER_SSH_KEY}\" \
+      security_autoupdate_reboot=${BS_AUTOUPDATE_REBOOT_ENABLE} \
+      security_autoupdate_reboot_time=${BS_AUTOUPDATE_REBOOT_TIME} \
+      security_autoupdate_mail_to=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      security_hidepid_enabled=${BS_SECRITY_HIDEPID} \
+      security_hidepid_monitoring_user=${BS_SECRITY_HIDEPID_MONITORING_USER}"
+
+  press_any_key_to_return_menu;
+}
+
 function action_change_php_version(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ADD_PHP_VERSIONS}")
 

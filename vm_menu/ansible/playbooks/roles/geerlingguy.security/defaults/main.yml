@@ -25,6 +25,10 @@ security_autoupdate_reboot_time: "03:00"
 security_autoupdate_mail_to: ""
 security_autoupdate_mail_on_error: true
 
+security_hidepid_enabled: false
+security_hidepid_group: procmon
+security_hidepid_monitoring_user: ""
+
 security_fail2ban_enabled: false
 security_fail2ban_custom_configuration_template: "jail.local.j2"
 

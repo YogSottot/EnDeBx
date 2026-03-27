@@ -51,13 +51,13 @@
 
    `6) Enable/Disable Bot Blocker in nginx` — скачать и установить [mitchellkrogza/nginx-ultimate-bad-bot-blocker](https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker). Подключается для каждого сайта отдельно.  Изучите документация по ссылке для более тонкой настройки. Конфигурационные файлы в `/etc/nginx/bots.d/`.  
 
-1) `Configure Let's Encrypt certificate` — создать сертификат для сайта. Конфигурационный файл в `/etc/nginx/bx/site_settings/домен/ssl.conf`. Конфигурация вынесена в отдельный файл, чтобы не затиралась при редактировании сайта через пункт меню `Edit existing website`.  
-2) `Enable or Disable redirect HTTP to HTTPS` — помещает файл `.htsecure` в корень выбранного сайта. Это приводит к включению редиректа с http на https.  
-3) `Add/Remove FTP user` — создать или удалить пользователя ftp. Используется pureftpd. Конфигурационные файлы в `/etc/pure-ftpd/  
-4) `Add/Change global PHP version`. — Добавление новой версии php.  
+3) `Configure Let's Encrypt certificate` — создать сертификат для сайта. Конфигурационный файл в `/etc/nginx/bx/site_settings/домен/ssl.conf`. Конфигурация вынесена в отдельный файл, чтобы не затиралась при редактировании сайта через пункт меню `Edit existing website`.  
+4) `Enable or Disable redirect HTTP to HTTPS` — помещает файл `.htsecure` в корень выбранного сайта. Это приводит к включению редиректа с http на https.  
+5) `Add/Remove FTP user` — создать или удалить пользователя ftp. Используется pureftpd. Конфигурационные файлы в `/etc/pure-ftpd/  
+6) `Add/Change global PHP version`. — Добавление новой версии php.  
    `Set this version of php as the default version? All sites on bitrix that use the default version will be switched to this version.` — установить новую версию php как версию php по умолчанию. То есть `/usr/bin/php` будет использовать новую версию.
    Это затрагивает только сайты пользователя по умолчанию (www-data или bitrix).  
-5) `Settings SMTP sites` — по умолчанию на сервер устанавливается postfix. Отправка почты идёт прямо с сервера без аккаунта.  Если сервер за анти-ддос панелью, то такая отправка приводит к утечке ip-адреса сервера. Поэтому, для отправки почты нужно настроить использование стороннего smtp-сервера. Этот пункт меню позволяет создать конфиг для msmtp. Конфигурационный файл в `/etc/msmtprc`.  
+7) `Settings SMTP sites` — по умолчанию на сервер устанавливается postfix. Отправка почты идёт прямо с сервера без аккаунта.  Если сервер за анти-ддос панелью, то такая отправка приводит к утечке ip-адреса сервера. Поэтому, для отправки почты нужно настроить использование стороннего smtp-сервера. Этот пункт меню позволяет создать конфиг для msmtp. Конфигурационный файл в `/etc/msmtprc`.  
    - `Enter site dir` — введите имя директории сайта. Для создания конфига для сайта `example.com` нужно ввести `example.com`.  
    - `Enter From email address` — адрес отправителя.  
    - `Enter SMTP server address` — доменное имя или ip-адрес smtp-сервера.  
@@ -71,42 +71,22 @@
    Если сервер не за анти-ддосом, то рекомендую использовать локальный `postfix`, так как большинство почтовых сервисов имеют лимиты на отправку почты. Типичный интернет-магазин вполне легко может превысить эти лимиты при большом количестве заказов.  
    Если грамотно настроить dns-записи (spf / rDNS), то письма будут доходить до получателей не попадая в спам. Убедитесь только, что ip-сервера нет в чёрных списках. Для проверки настроек можно использовать [сервис](https://www.mail-tester.com/). Или используйте собственный почтовый сервер, например [mailcow](https://mailcow.email/), [mailu](https://mailu.io/).  
 
-6) `Installing Extensions` — меню для установки дополнительного ПО  
-   `1) Install/Delete Sphinx` — установка sphinx.  
+8) `Installing Extensions` — меню для установки дополнительного ПО  
+   `1) Install/Delete Memcached` — установка memcached. Конфиг в `/etc/memcached.conf`. Сокет в `/tmp/memcached.sock`  
 
-   `2) Install/Delete File Conversion Server (transformer)` — модуль конвертации файлов. Только для лицензии Энтерпрайз. Меню самостоятельно произведёт все настройки битрикса для использования локального модуля.  
+   `2) Install/Delete Push server` — установка или удаление локального Bitrix push-server. При удалении меню дополнительно спрашивает, нужно ли удалить `Redis`. Поведение по умолчанию можно задать через переменные `BS_PUSH_SERVER_CONFIG`, `BS_PUSH_SERVER_STOPPED`, `BS_PUSH_SERVER_BX_SETTINGS`.
 
-   `3) Install/Delete Netdata` — установка системы мониторинга [Netdata](https://www.netdata.cloud/)  
+   `3) Install/Delete Sphinx` — установка sphinx.  
 
-   `4) Install/Delete Crowdsec` — Установка [crowdsec](https://github.com/crowdsecurity/crowdsec). Это бесплатный open source-инструмент для выявления и блокировки вредоносных IP-адресов на основе шаблонов их поведения. Аналог fail2ban на языке Go. Меню установит парсер логов nginx подходящих по формату к логам этого окружения. В .env.menu есть несколько переменных относящихся к данному пункту меню.  
-      `BS_CROWDSEC_ENROLL_KEY` — ключ для подключения к облачной консоли https://app.crowdsec.net (опционально)
-      `BS_CROWDESC_WHITELIST_IP` — белый список ip для crowdsec, измените на свои ip, через запятую (например zabbix-server и gitlab-runner).  
-      `BS_CROWDSEC_COLLECTION_INSTALL` — устанавливаемые по умолчанию коллекции crowdsec, через запятую.  
-      `BS_CROWDSEC_SCENARIOS_INSTALL` — устанавливаемые по умолчанию сценарии crowdsec, через запятую.  
+   `4) Install/Delete File Conversion Server (transformer)` — модуль конвертации файлов. Только для лицензии Энтерпрайз. Меню самостоятельно произведёт все настройки битрикса для использования локального модуля.  
 
-   `5) Install/Delete Rkhunter` — установка [rkhunter](https://rkhunter.sourceforge.net/). Конфиг в `/etc/rkhunter.conf.local`. В качестве почты для уведомлений используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`  
+   `5) Install/Delete Netdata` — установка системы мониторинга [Netdata](https://www.netdata.cloud/)  
 
-   `6) Install/Delete Linux Malware Detect` — установка [maldet](https://github.com/rfxn/linux-malware-detect). Конфиги в `/usr/local/maldetect/`. В качестве почты для уведомлений используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`  
+   `6) Install/Delete Docker` — установка свежей версии докера из официальных репозиториев. Роль меняет log-driver c json на local, так как json очень сильно забивает место на диске.  
 
-   `7) Install/Delete Memcached` — установка memcached. Конфиг в `/etc/memcached.conf`. Сокет в `/tmp/memcached.sock`  
+   `7) PostgreSQL` — меню для управления postgresql.  
 
-   `8) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Не рекомендуется использовать ppa в debian. (Меню поддерживает и ubuntu).  
-
-   `9) Install/Delete Docker` — установка свежей версии докера из официальных репозиториев. Роль меняет log-driver c json на local, так как json очень сильно забивает место на диске.  
-
-   `10) PostgreSQL` — меню для управления postgresql.  
-
-     - `1) Install PostgreSQL` — установка разных версии postgresql из официальных репозиториев.  
-
-     - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
-
-     - `3) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
-
-     - `4) Remove user and db from PostgreSQL` — удалить пользователя и бд.  
-
-     - `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
-
-   `12) MySQL`
+   `8) MySQL`
 
      - `1) Re-generate MySQL config` — повторная генерация конфига mysql
 
@@ -114,11 +94,47 @@
 
      - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
 
-   `13) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
+   `9) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
 
-   `14) Change server timezone` — Изменение таймзоны. Внимание: Будут перезапущены mysql и postgresql
+   `10) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Пункт отображается только на Ubuntu. Не рекомендуется использовать ppa в debian.  
 
-`9) Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
+   `11) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
+
+   Подменю `PostgreSQL`:
+   - `1) Install PostgreSQL` — установка разных версии postgresql из официальных репозиториев.  
+   - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
+   - `3) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
+   - `4) Remove user and db from PostgreSQL` — удалить пользователя и бд.  
+   - `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
+
+9) `Security settings` — отдельное меню для security-настроек.  
+   `1) SSH/Updates` — повторная настройка параметров безопасности без полной переустановки окружения. Пункт запускает тот же playbook, что и настройка безопасности при первичной установке через `.env.menu`, и сохраняет выбранные значения в `/root/.env.menu`.  
+   - `Enter SSH port` — порт SSH. Проверяется, что введено число от `1` до `65535` и что порт не занят другим сервисом.  
+   - `Enter PermitRootLogin (yes/no/prohibit-password)` — значение `PermitRootLogin` для `sshd_config`.  
+   - `Enter sudo admin user for SSH access` — альтернативный пользователь с sudo-правами. Если `PermitRootLogin=no`, это поле обязательно.  
+   - `Use passwordless sudo for admin user (true/false)` — задаётся только если указан `BS_SSH_ADMIN_USER`. Если выбрать `true`, пользователь будет добавлен в `sudoers` без запроса пароля. Если выбрать `false`, sudo будет запрашивать пароль пользователя.  
+   - `Enter password for admin user` — задаётся только если `passwordless sudo = false`. Меню заранее генерирует пароль и предлагает его как значение по умолчанию, но можно ввести свой.  
+   - `Enable PasswordAuthentication (yes/no)` — включение или отключение входа по паролю.  
+   - `Enable unattended security updates (true/false)` — установка обновлений безопасности. Можно отвечать `true/false`, `yes/no` или `y/n`.  
+   - `Enable auto reboot after updates (true/false)` — задаётся только если включены unattended updates. Можно отвечать `true/false`, `yes/no` или `y/n`.  
+   - `Enter auto reboot time in HH:MM` — задаётся только если включён автоматический reboot.  
+   - `Enable hidepid for /proc (true/false)` — включает режим `hidepid=2` для `/proc`. Можно отвечать `true/false`, `yes/no` или `y/n`.  
+   - `Enter existing monitoring user for /proc access (optional)` — опциональный пользователь, которого нужно добавить в группу `procmon`, чтобы сохранить ему доступ к `/proc` (например `zabbix`). Если поле оставить пустым, все текущие участники группы `procmon` будут удалены из неё.  
+   Связанные переменные в `.env.menu`: `BS_SSH_ADMIN_USER`, `BS_SSH_ADMIN_USER_PASSWORDLESS_SUDO`, `BS_SSH_ADMIN_USER_PASSWORD`, `BS_SSH_ADMIN_USER_SSH_KEY`.
+
+   `2) Install/Delete Crowdsec` — Установка [crowdsec](https://github.com/crowdsecurity/crowdsec). Это бесплатный open source-инструмент для выявления и блокировки вредоносных IP-адресов на основе шаблонов их поведения. Аналог fail2ban на языке Go. Меню установит парсер логов nginx подходящих по формату к логам этого окружения. В `.env.menu` есть несколько переменных относящихся к данному пункту меню.  
+      `BS_CROWDSEC_ENROLL_KEY` — ключ для подключения к облачной консоли https://app.crowdsec.net (опционально)
+      `BS_CROWDESC_WHITELIST_IP` — белый список ip для crowdsec, измените на свои ip, через запятую (например zabbix-server и gitlab-runner).  
+      `BS_CROWDSEC_COLLECTION_INSTALL` — устанавливаемые по умолчанию коллекции crowdsec, через запятую.  
+      `BS_CROWDSEC_SCENARIOS_INSTALL` — устанавливаемые по умолчанию сценарии crowdsec, через запятую.  
+
+   `3) Install/Delete Rkhunter` — установка [rkhunter](https://rkhunter.sourceforge.net/). Конфиг в `/etc/rkhunter.conf.local`. В качестве почты для уведомлений используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`.
+
+   `4) Install/Delete Linux Malware Detect` — установка [maldet](https://github.com/rfxn/linux-malware-detect). Конфиги в `/usr/local/maldetect/`. В качестве почты для уведомлений используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`.
+
+10) `Change server timezone` — Изменение таймзоны. Внимание: будут перезапущены сервисы, использующие системную таймзону, в том числе mysql и postgresql.
+
+11) `Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
 `R) Restart the server` — перезагрузка сервера. Запуск команды `reboot`.  
 
