@@ -469,6 +469,30 @@ function action_install_or_delete_docker() {
     press_any_key_to_return_menu;
 }
 
+function action_install_or_delete_push_server() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_PUSH_SERVER}")
+  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "push_server_action=${action} \
+      push_server_remove_redis=${push_server_remove_redis} \
+      user_server_sites=${BS_USER_SERVER_SITES} \
+      group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
+      default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
+      php_default_version_debian=${BX_PHP_DEFAULT_VERSION}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      Push server is installed and configured."
+    elif [ "${push_server_remove_redis}" = "Y" ]; then
+      echo -e "
+      Push server and Redis are deleted."
+    else
+      echo -e "
+      Push server is deleted. Redis is kept."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
     ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \

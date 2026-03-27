@@ -110,7 +110,8 @@ if [ "$OS_DISTRO" == astra ] ; then
 fi
     echo "          12) MySQL";
     echo "          13) Install/Delete Snapd";
-    echo "          14) Change server timezone";
+    echo "          14) Install/Delete Push server";
+    echo "          15) Change server timezone";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -131,7 +132,8 @@ fi
     "11") install_debian_repo_on_astra_linux ;;
     "12") menu_mysql ;;
     "13") purge_snapd ;;
-    "14") change_timezone ;;
+    "14") install_push_server ;;
+    "15") change_timezone ;;
 
     0|z)  main_menu
     ;;
@@ -421,15 +423,19 @@ add_site(){
             esac
           done
 
-          while true; do
-            read -r -p "   Do you want to add local push-server config to /bitrix/.setting.php? (Y/N) [${push_server_bx_settings}]: " answer
-            answer=${answer:-$push_server_bx_settings}
-            case ${answer,,} in
-              y ) push_server_bx_settings=Y; break;;
-              n ) push_server_bx_settings=N; break;;
-              * ) printf "   Please enter Y or N.\n";;
-            esac
-          done
+          if [ -f "${BS_PUSH_SERVER_CONFIG}" ]; then
+            while true; do
+              read -r -p "   Do you want to add local push-server config to /bitrix/.setting.php? (Y/N) [${push_server_bx_settings}]: " answer
+              answer=${answer:-$push_server_bx_settings}
+              case ${answer,,} in
+                y ) push_server_bx_settings=Y; break;;
+                n ) push_server_bx_settings=N; break;;
+                * ) printf "   Please enter Y or N.\n";;
+              esac
+            done
+          else
+            push_server_bx_settings=N
+          fi
 
             # Create unique username for each full site
               BS_USER_SERVER_SITES=$(generate_unique_username)
@@ -1923,6 +1929,39 @@ function purge_snapd() {
   done
 }
 
+function install_push_server() {
+  clear
+
+  push_server_remove_redis="N"
+  action="INSTALL"
+  if [ -f "${BS_PUSH_SERVER_CONFIG}" ] || [ -f /etc/systemd/system/push-server.service ] || [ -e /usr/local/bin/push-server-multi ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  if [ "$action" == "DELETE" ]; then
+    while true; do
+      read -r -p "   Delete Redis too? (Y/N) [${push_server_remove_redis}]: " answer
+      answer=${answer:-$push_server_remove_redis}
+      case ${answer,,} in
+        y ) push_server_remove_redis="Y"; break;;
+        n ) push_server_remove_redis="N"; break;;
+        * ) echo "   Please enter Y or N.";;
+      esac
+    done
+  fi
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")Push server? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_push_server; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
 function change_timezone() {
     clear;
     server_timezone=${BS_SERVER_TIMEZONE}
@@ -2044,4 +2083,3 @@ check_reboot_needed() {
         return 2
     fi
 }
-

@@ -6,11 +6,11 @@
   gather_facts: true
   vars:
     bx_temporary_files_directory: "{{ path_sites }}/.bx_temp/{{ db_name }}/"
-    marcelnijenhof_firewalld_allow_ports:
-      - port: 8893/tcp
-        immediate: false
-      - port: 8894/tcp
-        immediate: false
+    bx_install_push_server: "{{ bx_install_push_server | default(true) | bool }}"
+    marcelnijenhof_firewalld_allow_ports: "{{ bx_install_push_server | ternary([
+      {'port': '8893/tcp', 'immediate': false},
+      {'port': '8894/tcp', 'immediate': false}
+    ], []) }}"
     marcelnijenhof_firewalld_allow_services:
       - service: https
         immediate: false
@@ -52,8 +52,10 @@
     - geerlingguy.php
     - geerlingguy.apache-php-fpm
     - geerlingguy.mysql
-    - geerlingguy.redis
-    - bx_push_server
+    - role: geerlingguy.redis
+      when: bx_install_push_server
+    - role: bx_push_server
+      when: bx_install_push_server
 
   post_tasks:
     - name: Setup repo for Astra Linux (cleanup)

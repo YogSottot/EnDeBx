@@ -103,6 +103,14 @@ else
   htaccess_support=0
 fi
 
+if [ "${BS_INSTALL_PUSH_SERVER}" == Y ]; then
+  bx_install_push_server=true
+  push_server_bx_settings="${BS_PUSH_SERVER_BX_SETTINGS}"
+else
+  bx_install_push_server=false
+  push_server_bx_settings=N
+fi
+
 if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
     # Check script in .profile and add to .profile if not exist
     if ! grep -qF "$FULL_PATH_MENU_FILE" /root/.profile; then
@@ -197,6 +205,7 @@ extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
   bx_cron_logs_path_dir=${BS_BX_CRON_LOGS_PATH_DIR} \
   bx_cron_logs_path_file=${BS_BX_CRON_LOGS_PATH_FILE} \
   push_server_config=${BS_PUSH_SERVER_CONFIG} \
+  bx_install_push_server=${bx_install_push_server} \
   php_version=${BX_PHP_DEFAULT_VERSION} \
   php_enable_php_fpm_xdebug=false \
   php_default_version_debian=${BX_PHP_DEFAULT_VERSION} \
@@ -278,7 +287,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   bx_cron_logs_path_file=${BS_BX_CRON_LOGS_PATH_FILE} \
 
   push_server_config=${BS_PUSH_SERVER_CONFIG} \
-  push_server_bx_settings=${BS_PUSH_SERVER_BX_SETTINGS} \
+  push_server_bx_settings=${push_server_bx_settings} \
 
   php_version=${BX_PHP_DEFAULT_VERSION} \
   php_current_default_version=${BX_PHP_DEFAULT_VERSION} \
@@ -362,14 +371,16 @@ systemctl restart systemd-journald
 apt remove build-essential gcc gcc-12 -y
 apt autoremove -y
 
-if [ "$BS_PUSH_SERVER_STOPPED" == Y  ]; then
-  systemctl stop push-server.service
-  systemctl disable push-server.service
-  systemctl stop redis-server.service
-  systemctl disable redis-server.service
-else
-  systemctl restart push-server.service
-  systemctl restart redis-server.service
+if [ "${BS_INSTALL_PUSH_SERVER}" == Y ]; then
+  if [ "$BS_PUSH_SERVER_STOPPED" == Y  ]; then
+    systemctl stop push-server.service
+    systemctl disable push-server.service
+    systemctl stop redis-server.service
+    systemctl disable redis-server.service
+  else
+    systemctl restart push-server.service
+    systemctl restart redis-server.service
+  fi
 fi
 
 if systemctl is-active --quiet percona-telemetry-agent.service; then

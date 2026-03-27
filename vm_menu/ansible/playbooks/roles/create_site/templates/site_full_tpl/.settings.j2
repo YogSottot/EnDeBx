@@ -77,7 +77,7 @@ return array(
                 ),
             'readonly' => true,
         ),
-        {% if push_server_bx_settings == 'Y' %}
+        {% if (push_server_bx_settings_effective | default(push_server_bx_settings)) == 'Y' %}
     'pull_s1' => 'BEGIN GENERATED PUSH SETTINGS. DON\'T DELETE COMMENT!!!!',
     'pull' => array(
         'value' => array(

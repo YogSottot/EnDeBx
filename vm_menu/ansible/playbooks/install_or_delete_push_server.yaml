@@ -1,0 +1,48 @@
+---
+- name: "{{ push_server_action }} Push server"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  vars:
+    push_server_remove_redis: "{{ push_server_remove_redis | default('N') }}"
+  tasks:
+    - name: Install Redis
+      ansible.builtin.include_role:
+        name: geerlingguy.redis
+      when: push_server_action == "INSTALL"
+
+    - name: Manage push-server role
+      ansible.builtin.include_role:
+        name: bx_push_server
+      vars:
+        bx_push_server_action: "{{ push_server_action }}"
+
+    - name: Stop and disable Redis
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - redis
+        - redis-server
+      failed_when: false
+      when:
+        - push_server_action == "DELETE"
+        - push_server_remove_redis == "Y"
+
+    - name: Remove Redis package
+      ansible.builtin.apt:
+        name: redis-server
+        state: absent
+        purge: true
+      when:
+        - push_server_action == "DELETE"
+        - push_server_remove_redis == "Y"
+
+    - name: Reload systemd after Redis removal
+      ansible.builtin.systemd:
+        daemon_reload: true
+      when:
+        - push_server_action == "DELETE"
+        - push_server_remove_redis == "Y"

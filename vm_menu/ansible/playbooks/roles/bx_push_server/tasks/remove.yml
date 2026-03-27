@@ -1,0 +1,27 @@
+---
+- name: Stop and disable push-server service
+  ansible.builtin.systemd:
+    name: push-server
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Remove push-server files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/push-server.service
+    - /usr/local/bin/push-server-multi
+    - /etc/default/push-server-multi
+    - /etc/tmpfiles.d/push-server.conf
+    - /etc/logrotate.d/push-server
+    - /etc/push-server
+    - /opt/push-server
+    - /opt/node_modules/push-server
+    - /var/log/push-server
+    - /tmp/push-server
+
+- name: Reload systemd after push-server removal
+  ansible.builtin.systemd:
+    daemon_reload: true

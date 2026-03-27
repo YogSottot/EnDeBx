@@ -109,14 +109,25 @@
       ansible.builtin.set_fact:
         crypto_key: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=32') }}"
 
+    - name: Check if push-server config file exists
+      ansible.builtin.stat:
+        path: "{{ push_server_config }}"
+      register: push_server_config_stat
+
+    - name: Set effective push-server settings flag
+      ansible.builtin.set_fact:
+        push_server_bx_settings_effective: "{{ 'Y' if push_server_bx_settings == 'Y' and push_server_config_stat.stat.exists else 'N' }}"
+
     - name: Read push-server config file
       ansible.builtin.slurp:
         src: "{{ push_server_config }}"
       register: push_config_content
+      when: push_server_bx_settings_effective == 'Y'
 
     - name: Extract SECURITY_KEY and set push_key variable
       ansible.builtin.set_fact:
         push_key: "{{ push_config_content['content'] | b64decode | regex_search('SECURITY_KEY=\"([^\"]+)\"', '\\1') | first }}"
+      when: push_server_bx_settings_effective == 'Y'
 
     - name: Generating .settings.php file
       ansible.builtin.template:

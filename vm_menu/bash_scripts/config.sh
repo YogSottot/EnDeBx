@@ -94,6 +94,7 @@ BS_ANSIBLE_PB_MALDET="install_or_delete_maldet.yaml"
 BS_ANSIBLE_PB_MEMCACHED="install_or_delete_memcached.yaml"
 BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 BS_ANSIBLE_PB_DOCKER="install_or_delete_docker.yaml"
+BS_ANSIBLE_PB_PUSH_SERVER="install_or_delete_push_server.yaml"
 BS_ANSIBLE_PS_BASIC_AUTH="setup_basic_auth.yaml"
 BS_ANSIBLE_PS_SWAP="setup_swap.yaml"
 BS_ANSIBLE_PS_POSTGRESQL_SETUP="install_or_delete_postgresql.yaml"
@@ -164,6 +165,8 @@ BS_MYSQL_CMD="mysql"
 
 # Push-server configs
 BS_PUSH_SERVER_CONFIG=/etc/default/push-server-multi
+# Install push-server and redis during full environment installation (Y/N)
+BS_INSTALL_PUSH_SERVER=Y
 # Do not run push-server by default (Y/N)
 BS_PUSH_SERVER_STOPPED=N
 # Add to /bitrix/.settings.php config local push-server (Y/N).

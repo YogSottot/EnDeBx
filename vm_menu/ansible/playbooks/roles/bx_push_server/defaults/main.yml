@@ -6,5 +6,6 @@ bx_push_server_archive_url: "{{ bx_push_server_archive_base_url }}{{ bx_push_ser
 bx_push_server_archive_sha256: "0ca02ce5acc25ea12d83200601e03f963f5393b65069f6cda39d62ca335eb5c1"
 bx_push_server_force_upgrade: false
 bx_push_server_force_config: false
+bx_push_server_action: "INSTALL"
 bx_push_server_user: "{{ user_server_sites }}"
 bx_push_server_group: "{{ group_user_server_sites }}"
