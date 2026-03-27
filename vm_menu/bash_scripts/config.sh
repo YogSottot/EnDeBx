@@ -106,6 +106,7 @@ BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80="upgrade_mysql_from57_to80.yaml"
 BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84="upgrade_mysql_from80_to84.yaml"
 BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD="install_or_delete_snapd.yaml"
 BS_ANSIBLE_PB_CHANGE_TIMEZONE="change_timezone.yaml"
+BS_ANSIBLE_PB_FIREWALL="firewall.yaml"
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20
