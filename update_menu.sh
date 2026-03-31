@@ -176,6 +176,10 @@ nginx_reload() {
     systemctl reload "${BS_SERVICE_NGINX_NAME}.service"
 }
 
+logrotate_fix_owner() {
+    chown root: /etc/logrotate.d/*
+}
+
 main() {
     require_root
     backup_menu
@@ -191,6 +195,7 @@ main() {
     apache_restart
     nginx_fix_site
     nginx_reload
+    logrotate_fix_owner
 
     log "Menu updated! Backup directory old menu: $backup_path";
 }
