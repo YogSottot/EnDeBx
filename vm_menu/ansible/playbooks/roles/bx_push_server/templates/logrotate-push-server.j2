@@ -3,7 +3,7 @@
 /var/log/push-server/*.log
 {
         su {{ bx_push_server_user }} {{ bx_push_server_group }}
-        create 0644 {{ bx_push_server_user }} {{ bx_push_server_group }}"
+        create 0644 {{ bx_push_server_user }} {{ bx_push_server_group }}
         copytruncate
         ifempty
         daily

@@ -147,8 +147,8 @@
   ansible.builtin.template:
     src: logrotate-push-server.j2
     dest: /etc/logrotate.d/push-server
-    owner: "{{ bx_push_server_user }}"
-    group: "{{ bx_push_server_group }}"
+    owner: "root"
+    group: "root"
     mode: "0644"
 
 - name: Reload systemd

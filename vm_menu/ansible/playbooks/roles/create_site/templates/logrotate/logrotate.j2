@@ -1,4 +1,4 @@
-{{ path_sites }}/*.log {{ document_root }}/*.log {{ document_root }}/logs/*.log {
+{{ document_root }}/*.log {{ document_root }}/logs/*.log {
         su {{ user_server_sites }} {{ group_user_server_sites }}
         daily
         dateext
