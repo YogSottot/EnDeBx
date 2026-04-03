@@ -132,6 +132,54 @@ setup_ansible() {
     fi
 }
 
+reload_php_fpm_services() {
+    local php_version="$1"
+    local service_name=""
+
+    for service_name in "php${php_version}-fpm.service" "php${php_version}-fpm-xdebug.service"; do
+        if systemctl list-unit-files "${service_name}" --no-legend 2>/dev/null | grep -q "^${service_name}[[:space:]]"; then
+            systemctl try-reload-or-restart "${service_name}"
+        fi
+    done
+}
+
+disable_xdebug_for_installed_php_versions() {
+    local xdebug_found=0
+    local php_version=""
+    local php_version_dir=""
+    local php_sapi=""
+    local php_sapi_dir=""
+
+    if [[ ! -d /etc/php ]]; then
+        log "Directory /etc/php not found, skipping xdebug disable"
+        return 0
+    fi
+    command -v phpdismod >/dev/null 2>&1 || die "phpdismod not found"
+
+    while IFS= read -r php_version_dir; do
+        php_version="${php_version_dir##*/}"
+
+        while IFS= read -r php_sapi_dir; do
+            [[ -d "${php_sapi_dir}/conf.d" ]] || continue
+
+            php_sapi="${php_sapi_dir##*/}"
+            if compgen -G "${php_sapi_dir}/conf.d/*-xdebug.ini" >/dev/null; then
+                phpdismod -v "${php_version}" -s "${php_sapi}" xdebug
+                log "Disabled xdebug for PHP ${php_version} (${php_sapi})"
+                xdebug_found=1
+
+                if [[ "${php_sapi}" == "fpm" ]]; then
+                    reload_php_fpm_services "${php_version}"
+                fi
+            fi
+        done < <(find "${php_version_dir}" -mindepth 1 -maxdepth 1 -type d | sort)
+    done < <(find /etc/php -mindepth 1 -maxdepth 1 -type d | sort)
+
+    if [[ "${xdebug_found}" -eq 0 ]]; then
+        log "No enabled xdebug configs found for installed PHP versions"
+    fi
+}
+
 run_a2dismod() {
     # make sure apache modules disabled
     a2dismod --force deflate filter negotiation ssl
@@ -189,6 +237,7 @@ main() {
     update_nginx
     remove_zstd
     setup_ansible
+    disable_xdebug_for_installed_php_versions
     run_a2dismod
     apache_fix_site
     apache_fix_ports
