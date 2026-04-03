@@ -27,11 +27,25 @@
     file_type: link
   register: xdebug_files
 
-- name: Delete found xdebug.ini files
+- name: Disable found xdebug.ini files with phpdismod
+  ansible.builtin.command:
+    argv:
+      - phpdismod
+      - -v
+      - "{{ php_default_version_debian }}"
+      - -s
+      - "{{ item.path | dirname | dirname | basename }}"
+      - xdebug
+  loop: "{{ xdebug_files.files }}"
+  when: ansible_os_family == 'Debian' or ansible_os_family == 'Astra Linux'
+  notify: restart webserver
+
+- name: Delete found xdebug.ini files on non-Debian systems
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
   loop: "{{ xdebug_files.files }}"
+  when: ansible_os_family != 'Debian' and ansible_os_family != 'Astra Linux'
   notify: restart webserver
 
 - name: Place PHP configuration file in place. # noqa name[casing]
