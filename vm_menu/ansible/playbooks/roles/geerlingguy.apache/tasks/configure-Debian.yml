@@ -112,6 +112,16 @@
           </IfModule>
       </Files>
 
+      <IfModule !mod_php8.c>
+        <IfModule proxy_fcgi_module>
+          # Enable http authorization headers
+          <IfModule setenvif_module>
+            SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+            SetEnv AUTHBIND_UNAVAILABLE yes
+          </IfModule>
+        </IfModule>
+      </IfModule>
+
       # Cause the PHP interpreter to handle files with a .php extension.
       <FilesMatch "\.php$">
       #        SetHandler "proxy:fcgi://127.0.0.1:9000"
