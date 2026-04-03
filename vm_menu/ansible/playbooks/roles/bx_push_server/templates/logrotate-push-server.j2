@@ -15,6 +15,6 @@
         delaycompress
         sharedscripts
         postrotate
-        /bin/systemctl restart push-server.service > /dev/null 2>/dev/null || true
+        /bin/systemctl try-restart push-server.service > /dev/null 2>/dev/null || true
         endscript
 }
