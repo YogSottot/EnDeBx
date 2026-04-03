@@ -1,10 +1,8 @@
 ---
 - name: Remove all Listen directives
-  ansible.builtin.lineinfile:
+  ansible.builtin.file:
     path: "{{ apache_server_root }}/ports.conf"
-    regexp: "^Listen "
     state: absent
-    firstmatch: true
   notify: restart apache
 
 - name: Add required Listen directives
