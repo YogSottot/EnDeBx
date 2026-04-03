@@ -176,7 +176,7 @@
 - name: Disable required Apache modules for NTLM
   community.general.apache2_module:
     name: "{{ item }}"
-    state: present
+    state: absent
     force: true
   loop: "{{ ntlm_apache_modules }}"
   notify: Reload apache ntlm
