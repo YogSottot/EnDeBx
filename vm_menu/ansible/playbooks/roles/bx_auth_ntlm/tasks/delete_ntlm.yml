@@ -27,6 +27,20 @@
   register: ntlm_all_sites
   changed_when: false
 
+- name: Check Apache NTLM vhosts in sites-available
+  ansible.builtin.stat:
+    path: "{{ path_apache_sites_conf }}/ntlm_{{ item | basename }}.conf"
+  loop: "{{ ntlm_all_sites.stdout_lines }}"
+  register: ntlm_vhosts_available
+  changed_when: false
+
+- name: Check Apache NTLM vhosts in sites-enabled
+  ansible.builtin.stat:
+    path: "{{ path_apache_sites_enabled }}/ntlm_{{ item | basename }}.conf"
+  loop: "{{ ntlm_all_sites.stdout_lines }}"
+  register: ntlm_vhosts_enabled
+  changed_when: false
+
 - name: Collect system users for Bitrix sites
   ansible.builtin.shell: |
     site_root="{{ item }}"
@@ -41,8 +55,12 @@
   args:
     executable: /bin/bash
   loop: "{{ ntlm_all_sites.stdout_lines }}"
+  loop_control:
+    index_var: ntlm_site_idx
   register: ntlm_delete_runtime
   changed_when: false
+  when:
+    - ntlm_vhosts_available.results[ntlm_site_idx].stat.exists or ntlm_vhosts_enabled.results[ntlm_site_idx].stat.exists
 
 - name: Initialize NTLM site info list
   ansible.builtin.set_fact:
@@ -55,6 +73,9 @@
       'document_root': item.stdout.split('\t')[1],
       'site_system_user': item.stdout.split('\t')[2] } ] }}"
   loop: "{{ ntlm_delete_runtime.results }}"
+  when:
+    - not (item.skipped | default(false))
+    - item.stdout | default('') | length > 0
 
 - name: Close NTLM ports in firewalld
   ansible.builtin.include_role:
@@ -63,10 +84,10 @@
     marcelnijenhof_firewalld_allow_ports:
       - port: "{{ ntlm_http_port }}/tcp"
         immediate: false
-        state: absent
+        state: disabled
       - port: "{{ ntlm_https_port }}/tcp"
         immediate: false
-        state: absent
+        state: disabled
 
 - name: Create temporary NTLM delete directory
   ansible.builtin.file:
@@ -74,7 +95,8 @@
     state: directory
     owner: root
     group: root
-    mode: "0700"
+    mode: "0755"
+
 
 - name: Create temporary NTLM delete directories for sites
   ansible.builtin.file:
@@ -102,25 +124,43 @@
   become_user: "{{ item.site_system_user }}"
   loop: "{{ ntlm_sites_info }}"
   changed_when: false
-  no_log: true
+  #no_log: true
 
 - name: Remove temporary NTLM delete directory
   ansible.builtin.file:
     path: /tmp/debianlikebitrixvm-ntlm-delete
     state: absent
 
-- name: Remove Apache NTLM vhosts from sites-available
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop: "{{ query('ansible.builtin.fileglob', path_apache_sites_conf + '/ntlm_*.conf') }}"
-  notify: Reload apache ntlm
+- name: Find Apache NTLM vhosts in sites-enabled
+  ansible.builtin.find:
+    paths: "{{ path_apache_sites_enabled }}"
+    patterns: "ntlm_*.conf"
+    file_type: link
+    recurse: false
+  register: ntlm_vhosts_enabled_find
+  changed_when: false
 
 - name: Remove Apache NTLM vhosts from sites-enabled
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: absent
-  loop: "{{ query('ansible.builtin.fileglob', path_apache_sites_enabled + '/ntlm_*.conf') }}"
+  loop: "{{ ntlm_vhosts_enabled_find.files }}"
+  notify: Reload apache ntlm
+
+- name: Find Apache NTLM vhosts in sites-available
+  ansible.builtin.find:
+    paths: "{{ path_apache_sites_conf }}"
+    patterns: "ntlm_*.conf"
+    file_type: file
+    recurse: false
+  register: ntlm_vhosts_available_find
+  changed_when: false
+
+- name: Remove Apache NTLM vhosts from sites-available
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ ntlm_vhosts_available_find.files }}"
   notify: Reload apache ntlm
 
 - name: Remove global Apache NTLM config
@@ -131,6 +171,14 @@
     - "{{ path_apache }}/conf-available/{{ ntlm_apache_global_conf_name }}"
     - "{{ path_apache }}/conf-enabled/{{ ntlm_apache_global_conf_name }}"
     - "{{ path_apache }}/mods-enabled/auth_ntlm_winbind.load"
+  notify: Reload apache ntlm
+
+- name: Disable required Apache modules for NTLM
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+    force: true
+  loop: "{{ ntlm_apache_modules }}"
   notify: Reload apache ntlm
 
 - name: Check current join status before leave

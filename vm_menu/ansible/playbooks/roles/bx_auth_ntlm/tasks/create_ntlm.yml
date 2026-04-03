@@ -41,6 +41,7 @@
 
 - name: Set current AD facts
   ansible.builtin.set_fact:
+    ntlm_current_ldap_server: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^LDAP server:\\s+(\\S+)') | first) | default('') }}"
     ntlm_current_workgroup_raw: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Workgroup:\\s+(\\S+)') | first) | default('') }}"
     ntlm_current_realm: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Realm:\\s+(\\S+)') | first) | default('') }}"
     ntlm_current_bind_path: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Bind Path:\\s+(\\S+)') | first) | default('') }}"
@@ -48,6 +49,48 @@
 - name: Normalize current AD workgroup
   ansible.builtin.set_fact:
     ntlm_current_workgroup: "{{ ntlm_current_workgroup_raw if ntlm_current_workgroup_raw | length > 0 else ((ntlm_current_realm.split('.') | first) if ntlm_current_realm | length > 0 else '') }}"
+
+- name: Resolve local network source for Bitrix VM auth support
+  ansible.builtin.set_fact:
+    ntlm_auth_net_hint: "{{ ntlm_dps if ntlm_action == 'create' else ntlm_current_ldap_server }}"
+
+- name: Detect local subnet for Bitrix VM auth support
+  ansible.builtin.shell: |
+    target="{{ ntlm_auth_net_hint }}"
+    target_ip=""
+    cidr=""
+
+    if [ -n "$target" ]; then
+      if printf '%s\n' "$target" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+        target_ip="$target"
+      else
+        target_ip=$(getent ahostsv4 "$target" | awk 'NR == 1 { print $1; exit }')
+      fi
+    fi
+
+    if [ -n "$target_ip" ]; then
+      src_ip=$(ip -o -4 route get "$target_ip" 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit }}')
+      if [ -n "$src_ip" ]; then
+        cidr=$(ip -o -4 addr show scope global | awk -v src="$src_ip" '$4 ~ ("^" src "/") { print $4; exit }')
+      fi
+    fi
+
+    if [ -z "$cidr" ]; then
+      cidr=$(ip -o -4 addr show scope global | awk '$4 ~ /^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/ { print $4; exit }')
+    fi
+
+    if [ -n "$cidr" ]; then
+      python3 -c 'import ipaddress, sys; print(ipaddress.ip_interface(sys.argv[1]).network)' "$cidr"
+    fi
+  args:
+    executable: /bin/bash
+  register: ntlm_local_auth_net_raw
+  changed_when: false
+  failed_when: false
+
+- name: Save detected local subnet for Bitrix VM auth support
+  ansible.builtin.set_fact:
+    ntlm_local_auth_net: "{{ ntlm_local_auth_net_raw.stdout | trim }}"
 
 - name: Resolve selected Bitrix kernel path
   ansible.builtin.command: readlink -f "{{ path_site_from_links }}/bitrix"
@@ -191,6 +234,24 @@
         - winbind
       failed_when: false
 
+    - name: Ensure Samba directories exist before join
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - path: /var/log/samba
+          group: root
+          mode: "0755"
+        - path: /var/lib/samba
+          group: root
+          mode: "0755"
+        - path: /var/lib/samba/private
+          group: root
+          mode: "0700"
+
     - name: Remove Samba cache files before join
       ansible.builtin.file:
         path: "/var/lib/samba/{{ item }}"
@@ -309,10 +370,9 @@
   ansible.builtin.file:
     path: /tmp/debianlikebitrixvm-ntlm
     state: directory
-    owner: "{{ item.site_system_user }}"
-    group: "{{ item.site_system_user }}"
-    mode: "0700"
-  loop: "{{ ntlm_sites_info }}"
+    owner: root
+    group: root
+    mode: "0755"
 
 - name: Create temporary NTLM directories for sites
   ansible.builtin.file:

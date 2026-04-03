@@ -15,6 +15,8 @@ if (!\Bitrix\Main\Loader::includeModule("ldap"))
 }
 
 $code = "{{ ntlm_code }}";
+/*
+// Это пользователь заполняет вручную
 $bindPath = "{{ ntlm_bind_path_effective }}";
 $ldapServerId = 0;
 $ldapServer = new CLdapServer();
@@ -43,10 +45,15 @@ $ldapServerFields = [
     "GROUP_MEMBERS_ATTR" => "member",
     "FIELD_MAP" => [],
 ];
-
+*/
 $arOrder = [];
 $arFilter = ["CODE" => $code];
 $rsLdapServers = CLdapServer::GetList($arOrder, $arFilter);
+while ($arLdapServer = $rsLdapServers->Fetch())
+{
+        $ldapServerID = $arLdapServer["ID"];
+}
+/*
 if ($arLdapServer = $rsLdapServers->Fetch())
 {
     $ldapServerId = (int)$arLdapServer["ID"];
@@ -59,15 +66,32 @@ elseif ({{ ntlm_sync_server_settings | ternary('true', 'false') }})
 {
     $ldapServerId = (int)$ldapServer->Add($ldapServerFields);
 }
+*/
 
 RegisterModuleDependences("main", "OnBeforeProlog", "ldap", "CLDAP", "NTLMAuth", 40);
-$ipMask = COption::GetOptionString("ldap", "bitrixvm_auth_net", false);
-CLdapUtil::SetBitrixVMAuthSupport(true, $ipMask);
+$fallbackIpMask = trim((string)"{{ ntlm_local_auth_net | default('') }}");
+$ipMask = trim((string)COption::GetOptionString("ldap", "bitrixvm_auth_net", ""));
+if ($ipMask === "" && $fallbackIpMask !== "")
+{
+    $ipMask = $fallbackIpMask;
+    \Bitrix\Main\Config\Option::set("ldap", "bitrixvm_auth_net", $ipMask);
+}
+if ($ipMask !== "")
+{
+    CLdapUtil::SetBitrixVMAuthSupport(true, $ipMask);
+}
+else
+{
+    CLdapUtil::UnSetBitrixVMAuthSupport(true);
+}
 \Bitrix\Main\Config\Option::set("ldap", "use_ntlm", "Y");
+/*
 if ($ldapServerId > 0)
 {
     \Bitrix\Main\Config\Option::set("ldap", "ntlm_default_server", $ldapServerId);
 }
+*/
+\Bitrix\Main\Config\Option::set("ldap", "ntlm_default_server", $ldapServerID);
 
 global $CACHE_MANAGER;
 if (is_object($CACHE_MANAGER))

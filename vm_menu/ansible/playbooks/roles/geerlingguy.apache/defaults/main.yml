@@ -48,6 +48,7 @@ apache_mods_enabled:
   - rewrite
   - remoteip
   - setenvif
+  - unique_id
 apache_mods_disabled:
   - ssl
   - negotiation

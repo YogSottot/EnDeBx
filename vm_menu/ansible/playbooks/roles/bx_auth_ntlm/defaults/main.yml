@@ -20,9 +20,9 @@ ntlm_apache_modules:
   - auth_ntlm_winbind
   - ssl
   - socache_shmcb
-  - rewrite
   - headers
-  - unique_id
-  - proxy
-  - proxy_fcgi
-  - setenvif
+#  - unique_id
+#  - rewrite
+#  - proxy
+#  - proxy_fcgi
+#  - setenvif
