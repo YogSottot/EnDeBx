@@ -35,17 +35,21 @@
   ansible.builtin.set_fact:
     webroot_path: "{{ '/opt/letsencrypt/' if letsencrypt_check.found else path_site }}"
 
+- name: Set certificate domain variable
+  ansible.builtin.set_fact:
+    letsencrypt_domain: "{{ ssl_lets_encrypt_domain | default(domain) }}"
+
 - name: Getting SSL certificate
   ansible.builtin.shell: |
-        certbot certonly --webroot --webroot-path {{ webroot_path }} --non-interactive --agree-tos --expand --allow-subset-of-names --deploy-hook "systemctl reload nginx" --email {{ email }} -d {{ domain }} {% if is_www == 'Y' %}-d www.{{ domain }}{% endif %}
+        certbot certonly --webroot --webroot-path {{ webroot_path }} --non-interactive --agree-tos --expand --allow-subset-of-names --deploy-hook "systemctl reload nginx" --email {{ email }} -d {{ letsencrypt_domain }} {% if is_www == 'Y' %}-d www.{{ letsencrypt_domain }}{% endif %}
   args:
-    creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+    creates: /etc/letsencrypt/live/{{ letsencrypt_domain }}/fullchain.pem
 
 - name: Searching domain directory
   ansible.builtin.find:
     paths: "{{ letsencrypt_live_dir }}"
     file_type: directory
-    patterns: "{{ domain }}*"
+    patterns: "{{ letsencrypt_domain }}*"
   register: found_directory_domain
 
 - name: Saving founded directory in variable
@@ -98,7 +102,7 @@
         marker: "### {mark} MANAGED SSL CERTS ###"
         block: |
           # HERE YOU CAN CONNECT YOUR CONFIG WITH AN SSL CERTIFICATE
-          ## include ssl_conf/ssl_{{ domain }}.conf;
+          ## include ssl_conf/ssl_{{ letsencrypt_domain }}.conf;
 
           # DONT DELETE THIS PARAMETERS - MANAGED SSL CERTS FROM Lets Encrypt
           ssl_certificate {{ ssl_cert_full_path }};

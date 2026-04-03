@@ -1,0 +1,6 @@
+---
+- name: Reload apache ntlm
+  ansible.builtin.systemd:
+    name: "{{ service_apache_name }}"
+    state: restarted
+    enabled: true

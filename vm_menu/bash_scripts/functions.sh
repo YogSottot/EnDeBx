@@ -198,6 +198,7 @@ menu_edit_sites(){
     echo "          4) Block/Unblock access by ip";
     echo "          5) Enable/Disable Basic Auth in ${BS_SERVICE_NGINX_NAME}";
     echo "          6) Enable/Disable Bot Blocker in ${BS_SERVICE_NGINX_NAME}";
+    echo "          7) Configure NTLM auth for sites";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -211,6 +212,7 @@ menu_edit_sites(){
       "4") block_access_by_ip ;;
       "5") enable_or_disable_basic_auth ;;
       "6") enable_or_disable_bot_blocker ;;
+      "7") menu_ntlm_auth_sites ;;
 
     0|z)  main_menu
     ;;
@@ -637,6 +639,7 @@ edit_site_config(){
     htaccess_support=${BS_HTACCESS_SUPPORT};
 
     ssl_lets_encrypt="N";
+    ssl_lets_encrypt_domain="";
     ssl_lets_encrypt_www="Y";
     ssl_lets_encrypt_email="${BS_EMAIL_ADMIN_FOR_NOTIFY}";
     redirect_to_https="N";
@@ -656,6 +659,7 @@ edit_site_config(){
 
         # Extract domain name from link
         domain=$(basename "$path_site_from_links")
+        ssl_lets_encrypt_domain="$domain"
 
         # Extract username based on the path
         extract_username_from_path
@@ -713,6 +717,34 @@ edit_site_config(){
     ssl_lets_encrypt="${ssl_lets_encrypt^^}"
 
     if [ $ssl_lets_encrypt == "Y" ]; then
+        local site_ssl_conf="${BS_PATH_NGINX}/site_settings/${domain}/ssl.conf"
+        if [ -f "$site_ssl_conf" ] && grep -q '/etc/letsencrypt/live/' "$site_ssl_conf"; then
+            local current_ssl_lets_encrypt_domain=""
+            current_ssl_lets_encrypt_domain=$(sed -n 's|^[[:space:]]*ssl_certificate[[:space:]]\+/etc/letsencrypt/live/\([^/;[:space:]]\+\)/fullchain\.pem;.*|\1|p' "$site_ssl_conf" | head -n1)
+            if [ -n "$current_ssl_lets_encrypt_domain" ]; then
+                ssl_lets_encrypt_domain="$current_ssl_lets_encrypt_domain"
+            fi
+        fi
+
+        if [ "$domain" == "$BS_DEFAULT_SITE_NAME" ]; then
+            if [ "$ssl_lets_encrypt_domain" == "$domain" ]; then
+                ssl_lets_encrypt_domain=""
+            fi
+
+            while true; do
+                read_by_def "   Enter domain for SSL Let\`s Encrypt certificate (default: $ssl_lets_encrypt_domain): " ssl_lets_encrypt_domain "$ssl_lets_encrypt_domain";
+                if [ -z "$ssl_lets_encrypt_domain" ]; then
+                    echo "   Incorrect domain! Please enter another domain";
+                else
+                    break
+                fi
+            done
+        fi
+
+        if [ -z "$ssl_lets_encrypt_email" ] || [ "$ssl_lets_encrypt_email" == "$(echo "admin@$domain" | "${dir_helpers}/perl/translate.pl")" ]; then
+            ssl_lets_encrypt_email=$(echo "admin@$ssl_lets_encrypt_domain" | "${dir_helpers}/perl/translate.pl")
+        fi
+
         read_by_def "   Enter Y or N to get a certificate for WWW (default: $ssl_lets_encrypt_www): " ssl_lets_encrypt_www $ssl_lets_encrypt_www;
         read_by_def "   Enter email for SSL Let\`s Encrypt (default: $ssl_lets_encrypt_email): " ssl_lets_encrypt_email $ssl_lets_encrypt_email;
         read_by_def "   Enter Y or N for redirect HTTP to HTTPS (default: $redirect_to_https): " redirect_to_https $redirect_to_https;
@@ -732,6 +764,7 @@ edit_site_config(){
     echo "   ${BS_SERVICE_NGINX_NAME} composite: $nginx_composite";
 
     if [ $ssl_lets_encrypt == "Y" ]; then
+        echo "   SSL Let\`s Encrypt domain: $ssl_lets_encrypt_domain"
         echo "   Get a certificate for WWW: $ssl_lets_encrypt_www"
         echo "   SSL Let\`s Encrypt email: $ssl_lets_encrypt_email"
         echo "   Redirect HTTP to HTTPS: $redirect_to_https"
@@ -746,6 +779,609 @@ edit_site_config(){
             [Nn]* ) break;;
             * ) echo "   Please enter Y or N.";;
         esac
+    done
+}
+
+ntlm_cleanup_password_file() {
+    if [[ -n "$ntlm_pass_file" ]] && [[ -f "$ntlm_pass_file" ]]; then
+        rm -f "$ntlm_pass_file"
+    fi
+    ntlm_pass_file=""
+}
+
+ntlm_prepare_password_file() {
+    local ntlm_password_value=$1
+
+    ntlm_cleanup_password_file
+    ntlm_pass_file=$(mktemp /tmp/ntlm_pass.XXXXXX)
+    chmod 600 "$ntlm_pass_file"
+    printf "%s" "$ntlm_password_value" > "$ntlm_pass_file"
+}
+
+ntlm_get_server_status() {
+    NTLM_STATUS="not_configured"
+    NTLM_REALM=""
+    NTLM_WORKGROUP=""
+    NTLM_LDAP_SERVER=""
+    NTLM_LDAP_PORT=""
+    NTLM_BIND_PATH=""
+    NTLM_KDC=""
+    NTLM_TIME_OFFSET=""
+
+    if ! command -v net >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local net_info
+    net_info=$(net ads info 2>/dev/null) || return 0
+
+    NTLM_WORKGROUP=$(echo "$net_info" | awk -F':' '/^Workgroup:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    NTLM_REALM=$(echo "$net_info" | awk -F':' '/^Realm:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    NTLM_LDAP_SERVER=$(echo "$net_info" | awk -F':' '/^LDAP server name:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    if [ -z "$NTLM_LDAP_SERVER" ]; then
+        NTLM_LDAP_SERVER=$(echo "$net_info" | awk -F':' '/^LDAP server:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    fi
+    NTLM_LDAP_PORT=$(echo "$net_info" | awk -F':' '/^LDAP port:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    NTLM_BIND_PATH=$(echo "$net_info" | awk -F':' '/^Bind Path:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    NTLM_KDC=$(echo "$net_info" | awk -F':' '/^KDC server:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+    NTLM_TIME_OFFSET=$(echo "$net_info" | awk -F':' '/^Server time offset:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+
+    if [[ -n "$NTLM_REALM" ]] && [[ -n "$NTLM_LDAP_SERVER" ]] && [[ -n "$NTLM_BIND_PATH" ]] && [[ -n "$NTLM_KDC" ]]; then
+        if net ads testjoin >/dev/null 2>&1; then
+            NTLM_STATUS="configured"
+        fi
+    fi
+}
+
+ntlm_print_server_status() {
+    if [[ "$NTLM_STATUS" == "configured" ]]; then
+        echo "                 NTLM auth already configured:"
+        echo "------------------------------------------------------------------------------------------------------"
+        printf "                 %-15s: %s\n" "Domain" "$NTLM_REALM"
+        printf "                 %-15s: %s\n" "LDAP Server" "${NTLM_LDAP_SERVER}:${NTLM_LDAP_PORT}"
+        printf "                 %-15s: %s\n" "Realm" "$NTLM_BIND_PATH"
+        printf "                 %-15s: %s\n" "KDC" "$NTLM_KDC"
+        printf "                 %-15s: %s\n" "TimeOffset" "$NTLM_TIME_OFFSET"
+        echo "------------------------------------------------------------------------------------------------------"
+    else
+        echo "                 NTLM auth does't configured on the server $(hostname)"
+    fi
+}
+
+ntlm_collect_kernel_sites() {
+    NTLM_KERNEL_SITES=""
+
+    while IFS= read -r settings_file; do
+        local site_root
+        site_root=$(dirname "$(dirname "$settings_file")")
+        if [ -L "$site_root/bitrix" ]; then
+            continue
+        fi
+        NTLM_KERNEL_SITES+="$site_root"$'\n'
+    done < <(find "$BS_PATH_USER_HOME_PREFIX" -mindepth 4 -maxdepth 4 -path '*/bitrix/.settings.php' 2>/dev/null | sort)
+}
+
+ntlm_get_site_db_info() {
+    local site_path=$1
+    local output
+
+    output=$(php -r '
+    $settings = include $argv[1] . "/bitrix/.settings.php";
+    $connection = $settings["connections"]["value"]["default"] ?? [];
+    $className = $connection["className"] ?? "";
+    $dbType = "Unknown";
+    if (stripos($className, "Mysql") !== false) {
+        $dbType = "MySQL";
+    } elseif (stripos($className, "Pgsql") !== false || stripos($className, "Postgres") !== false) {
+        $dbType = "PostgreSQL";
+    }
+    $dbName = $connection["database"] ?? "Unknown";
+    echo $dbType . ":" . $dbName;
+    ' "$site_path" 2>/dev/null)
+
+    if [ -z "$output" ]; then
+        echo "Unknown:Unknown"
+    else
+        echo "$output"
+    fi
+}
+
+ntlm_get_site_status() {
+    local site_path=$1
+    local output
+
+    output=$(php -r '
+    $root = $argv[1];
+    $_SERVER["DOCUMENT_ROOT"] = $root;
+    $DOCUMENT_ROOT = $root;
+    define("NO_KEEP_STATISTIC", true);
+    define("NOT_CHECK_PERMISSIONS", true);
+    define("BX_NO_ACCELERATOR_RESET", true);
+    $prolog = $root . "/bitrix/modules/main/include/prolog_before.php";
+    if (!is_file($prolog)) {
+        echo "N:N:N";
+        exit(0);
+    }
+    require $prolog;
+    $ldapInstalled = \Bitrix\Main\Loader::includeModule("ldap");
+    $ldapMod = $ldapInstalled ? "Y" : "N";
+    $useNtlm = "N";
+    $ldapAuth = "N";
+    if ($ldapInstalled) {
+        $useNtlm = \Bitrix\Main\Config\Option::get("ldap", "use_ntlm", "N");
+        $ldapAuth = COption::GetOptionString("ldap", "bitrixvm_auth_support", "N");
+    }
+    $normalize = static function ($value) {
+        $value = strtoupper(trim((string)$value));
+        return in_array($value, ["Y", "1", "YES", "TRUE"], true) ? "Y" : "N";
+    };
+    echo $normalize($ldapMod) . ":" . $normalize($useNtlm) . ":" . $normalize($ldapAuth);
+    ' "$site_path" 2>/dev/null)
+
+    if [ -z "$output" ]; then
+        echo "N:N:N"
+    else
+        echo "$output"
+    fi
+}
+
+ntlm_site_has_existing_settings() {
+    local site_path=$1
+    local site_name
+
+    site_name=$(basename "$site_path")
+
+    if [ -f "${BS_PATH_APACHE_SITES_CONF}/ntlm_${site_name}.conf" ] || [ -L "${BS_PATH_APACHE_SITES_ENABLED}/ntlm_${site_name}.conf" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+ntlm_prepare_site_runtime() {
+    path_site_from_links=$BS_PATH_DEFAULT_SITE
+    ssl_lets_encrypt="N"
+    ssl_lets_encrypt_domain=""
+    ssl_lets_encrypt_www="Y"
+    ssl_lets_encrypt_email="${BS_EMAIL_ADMIN_FOR_NOTIFY}"
+    redirect_to_https="N"
+    new_version_php="$default_version"
+    php_enable_php_fpm_xdebug=0
+
+    echo
+    while true; do
+        read_by_def "   Enter the path to site (default: $path_site_from_links): " path_site_from_links "$path_site_from_links"
+        if [ -d "$path_site_from_links" ]; then
+            break
+        fi
+        echo "   Incorrect site dir! Please enter site dir"
+    done
+
+    domain=$(basename "$path_site_from_links")
+    ssl_lets_encrypt_domain="$domain"
+
+    local site_config="${BS_PATH_APACHE_SITES_ENABLED}/${domain}.conf"
+    if [ ! -f "$site_config" ]; then
+        site_config="${BS_PATH_APACHE_SITES_CONF}/${domain}.conf"
+    fi
+
+    local php_socket=""
+    if [ -f "$site_config" ]; then
+        php_socket=$(sed -n 's/.*SetHandler "proxy:unix:\([^|"]*\).*/\1/p' "$site_config" | head -n1)
+    fi
+
+    if [ -n "$php_socket" ]; then
+        new_version_php=$(echo "$php_socket" | grep -oP 'php\K[\d.]+' | head -n1)
+        if [ -z "$new_version_php" ]; then
+            new_version_php="$default_version"
+        fi
+        if [[ "$php_socket" == *"-xdebug"* ]]; then
+            php_enable_php_fpm_xdebug=1
+        fi
+    fi
+
+    local site_ssl_conf="${BS_PATH_NGINX}/site_settings/${domain}/ssl.conf"
+    if [ -f "$site_ssl_conf" ] && grep -q '/etc/letsencrypt/live/' "$site_ssl_conf"; then
+        ssl_lets_encrypt="Y"
+        local current_ssl_lets_encrypt_domain=""
+        current_ssl_lets_encrypt_domain=$(sed -n 's|^[[:space:]]*ssl_certificate[[:space:]]\+/etc/letsencrypt/live/\([^/;[:space:]]\+\)/fullchain\.pem;.*|\1|p' "$site_ssl_conf" | head -n1)
+        if [ -n "$current_ssl_lets_encrypt_domain" ]; then
+            ssl_lets_encrypt_domain="$current_ssl_lets_encrypt_domain"
+        fi
+    fi
+
+    if [ -z "$ssl_lets_encrypt_email" ]; then
+        ssl_lets_encrypt_email=$(echo "admin@$domain" | "${dir_helpers}/perl/translate.pl")
+    fi
+
+    echo -e "\n   Selected PHP version: $new_version_php\n"
+
+    while true; do
+        read_by_def "   Enter Y or N for setting SSL Let\`s Encrypt site (default: $ssl_lets_encrypt): " ssl_lets_encrypt "$ssl_lets_encrypt"
+        ssl_lets_encrypt="${ssl_lets_encrypt^^}"
+        case $ssl_lets_encrypt in
+            Y|N) break ;;
+            *) echo "   Please enter Y or N." ;;
+        esac
+    done
+
+    if [ "$ssl_lets_encrypt" == "Y" ]; then
+        local generated_ssl_lets_encrypt_email=""
+
+        if [ "$domain" == "$BS_DEFAULT_SITE_NAME" ] && [ "$ssl_lets_encrypt_domain" == "$domain" ]; then
+            ssl_lets_encrypt_domain=""
+        fi
+
+        while true; do
+            read_by_def "   Enter domain for SSL Let\`s Encrypt certificate (default: $ssl_lets_encrypt_domain): " ssl_lets_encrypt_domain "$ssl_lets_encrypt_domain"
+            if [ -z "$ssl_lets_encrypt_domain" ]; then
+                echo "   Incorrect domain! Please enter another domain"
+            else
+                break
+            fi
+        done
+
+        generated_ssl_lets_encrypt_email=$(echo "admin@$domain" | "${dir_helpers}/perl/translate.pl")
+        if [ -z "$ssl_lets_encrypt_email" ] || [ "$ssl_lets_encrypt_email" == "$generated_ssl_lets_encrypt_email" ]; then
+            ssl_lets_encrypt_email=$(echo "admin@$ssl_lets_encrypt_domain" | "${dir_helpers}/perl/translate.pl")
+        fi
+
+        read_by_def "   Enter Y or N to get a certificate for WWW (default: $ssl_lets_encrypt_www): " ssl_lets_encrypt_www "$ssl_lets_encrypt_www"
+        read_by_def "   Enter email for SSL Let\`s Encrypt (default: $ssl_lets_encrypt_email): " ssl_lets_encrypt_email "$ssl_lets_encrypt_email"
+        ssl_lets_encrypt_www="${ssl_lets_encrypt_www^^}"
+    fi
+}
+
+ntlm_print_sites_status() {
+    ntlm_collect_kernel_sites
+
+    local count=0
+    while IFS= read -r site_root; do
+        [ -z "$site_root" ] && continue
+        count=$((count + 1))
+    done <<< "$NTLM_KERNEL_SITES"
+
+    if [ "$count" -eq 0 ]; then
+        echo "                 Not found kernel sites on the server"
+        return 0
+    fi
+
+    echo "                 Found $count kernel sites:"
+    echo "------------------------------------------------------------------------------------------------------"
+    printf "%-15s | %-11s | %-15s | %7s | %7s | %8s | %s\n" "SiteName" "DBType" "dbName" "LDAPMod" "UseNTLM" "LDAPAuth" "DocumentRoot"
+    echo "------------------------------------------------------------------------------------------------------"
+
+    while IFS= read -r site_root; do
+        [ -z "$site_root" ] && continue
+
+        local site_name
+        local db_info
+        local db_type
+        local db_name
+        local ntlm_info
+        local ldap_mod
+        local use_ntlm
+        local ldap_auth
+
+        site_name=$(basename "$site_root")
+        db_info=$(ntlm_get_site_db_info "$site_root")
+        db_type=$(echo "$db_info" | awk -F':' '{print $1}')
+        db_name=$(echo "$db_info" | cut -d':' -f2-)
+        ntlm_info=$(ntlm_get_site_status "$site_root")
+        ldap_mod=$(echo "$ntlm_info" | awk -F':' '{print $1}')
+        use_ntlm=$(echo "$ntlm_info" | awk -F':' '{print $2}')
+        ldap_auth=$(echo "$ntlm_info" | awk -F':' '{print $3}')
+
+        printf "%-15s | %-11s | %-15s | %7s | %7s | %8s | %s\n" "$site_name" "$db_type" "$db_name" "$ldap_mod" "$use_ntlm" "$ldap_auth" "$site_root"
+    done <<< "$NTLM_KERNEL_SITES"
+
+    echo "------------------------------------------------------------------------------------------------------"
+}
+
+configure_ntlm_auth_for_site() {
+    clear
+    list_sites
+    ntlm_get_server_status
+
+    if [[ "$NTLM_STATUS" == "configured" ]]; then
+        echo
+        echo "   The host is already in the domain."
+        echo
+        read -r -p "   Do you want to change NTLM settings for the server? (N|y): " answer
+        case ${answer:-N} in
+            [Yy]*) ;;
+            *) return 0 ;;
+        esac
+    fi
+
+    ntlm_host=$(hostname | awk -F'.' '{print $1}')
+    ntlm_name="$NTLM_WORKGROUP"
+    ntlm_fqdn="$NTLM_REALM"
+    ntlm_dps="$NTLM_LDAP_SERVER"
+    ntlm_user="Administrator"
+
+    local ntlm_pass=""
+
+    while true; do
+        read_by_def "   NetBIOS Hostname (default $ntlm_host): " ntlm_host "$ntlm_host"
+        if [ -z "$ntlm_host" ]; then
+            echo "   NetBIOS Hostname cannot be empty. Try again."
+            continue
+        fi
+        if [ ${#ntlm_host} -gt 15 ]; then
+            echo "   NetBIOS Hostname must be 15 characters or less."
+            continue
+        fi
+
+        read_by_def "   NetBIOS Domain/Workgroup Name (ex. TEST): " ntlm_name "$ntlm_name"
+        if [ -z "$ntlm_name" ]; then
+            echo "   NetBIOS Domain Name cannot be empty. Try again."
+            continue
+        fi
+
+        read_by_def "   Full Domain Name: (ex. TEST.LOCAL): " ntlm_fqdn "$ntlm_fqdn"
+        if [ -z "$ntlm_fqdn" ]; then
+            echo "   Full Domain Name cannot be empty. Try again."
+            continue
+        fi
+
+        read_by_def "   Domain password server (ex. TEST-DC-SP.TEST.LOCAL): " ntlm_dps "$ntlm_dps"
+        if [ -z "$ntlm_dps" ]; then
+            echo "   Domain password server cannot be empty. Try again."
+            continue
+        fi
+
+        read_by_def "   Domain admin user name (default Administrator): " ntlm_user "$ntlm_user"
+        if [ -z "$ntlm_user" ]; then
+            echo "   User name cannot be empty. Try again."
+            continue
+        fi
+
+        read -r -s -p "   Domain admin user password:  " ntlm_pass
+        echo
+        if [ -z "$ntlm_pass" ]; then
+            echo "   Password cannot be empty. Try again."
+            continue
+        fi
+        break
+    done
+
+    echo -e "\n   NTLM Settings:"
+    echo "------------------------------------------------------------------------------------------------------"
+    printf "   %-18s: %s\n" "NetBIOS Domain" "$ntlm_name"
+    printf "   %-18s: %s\n" "NetBIOS Hostname" "$ntlm_host"
+    printf "   %-18s: %s\n" "Full Domain Name" "$ntlm_fqdn"
+    printf "   %-18s: %s\n" "Password Server" "$ntlm_dps"
+    printf "   %-18s: %s\n" "Domain User" "$ntlm_user"
+    echo "------------------------------------------------------------------------------------------------------"
+    echo "   The site and its shared sites will be configured to use NTLM."
+
+    ntlm_prepare_site_runtime
+
+    if ntlm_site_has_existing_settings "$path_site_from_links"; then
+        echo
+        echo "   NTLM settings found on the site $domain."
+        read -r -p "   Do you want to change them? (N|y): " answer
+        case ${answer:-N} in
+            [Yy]*) ;;
+            *) return 0 ;;
+        esac
+    fi
+
+    echo -e "\n   Entered data:\n"
+    echo "   Domain: $domain"
+    echo "   Path to site: $path_site_from_links"
+    echo "   Selected PHP version: $new_version_php"
+    echo "   SSL Let\`s Encrypt: $ssl_lets_encrypt"
+    if [ "$ssl_lets_encrypt" == "Y" ]; then
+        echo "   SSL Let\`s Encrypt domain: $ssl_lets_encrypt_domain"
+        echo "   Get a certificate for WWW: $ssl_lets_encrypt_www"
+        echo "   SSL Let\`s Encrypt email: $ssl_lets_encrypt_email"
+    fi
+    echo
+
+    while true; do
+        read -r -p "   Do you really want to configure NTLM auth? (Y/N): " answer
+        case $answer in
+            [Yy]* )
+                ntlm_action="create"
+                ntlm_prepare_password_file "$ntlm_pass"
+                if action_configure_ntlm_auth; then
+                    echo -e "\n   'configure' NTLM auth successfully executed."
+                else
+                    echo -e "\n   Error: 'configure' NTLM auth failed." >&2
+                fi
+                ntlm_cleanup_password_file
+                read -r -p "   Press any key to return to the menu..." key
+                break
+            ;;
+            [Nn]* )
+                ntlm_cleanup_password_file
+                break
+            ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+use_existing_ntlm_auth_for_site() {
+    clear
+    list_sites
+    ntlm_get_server_status
+
+    if [[ "$NTLM_STATUS" != "configured" ]]; then
+        echo
+        echo "   NTLM auth does't configured on the server $(hostname)"
+        read -r -p "   Press any key to return to the menu..." key
+        return 0
+    fi
+
+    ntlm_prepare_site_runtime
+
+    if ntlm_site_has_existing_settings "$path_site_from_links"; then
+        echo
+        echo "   NTLM settings found on the site $domain."
+        read -r -p "   Do you want to change them? (N|y): " answer
+        case ${answer:-N} in
+            [Yy]*) ;;
+            *) return 0 ;;
+        esac
+    fi
+
+    ntlm_action="use_existing"
+    ntlm_name="$NTLM_WORKGROUP"
+    ntlm_fqdn="$NTLM_REALM"
+    ntlm_dps="$NTLM_LDAP_SERVER"
+    ntlm_host=$(hostname | awk -F'.' '{print $1}')
+    ntlm_user="Administrator"
+    ntlm_pass_file=""
+
+    echo -e "\n   Entered data:\n"
+    echo "   Domain: $domain"
+    echo "   Path to site: $path_site_from_links"
+    echo "   Selected PHP version: $new_version_php"
+    echo "   SSL Let\`s Encrypt: $ssl_lets_encrypt"
+    if [ "$ssl_lets_encrypt" == "Y" ]; then
+        echo "   SSL Let\`s Encrypt domain: $ssl_lets_encrypt_domain"
+        echo "   Get a certificate for WWW: $ssl_lets_encrypt_www"
+        echo "   SSL Let\`s Encrypt email: $ssl_lets_encrypt_email"
+    fi
+    echo
+
+    while true; do
+        read -r -p "   Do you really want to use existing NTLM settings? (Y/N): " answer
+        case $answer in
+            [Yy]* )
+                if action_configure_ntlm_auth; then
+                    echo -e "\n   'configure' NTLM auth successfully executed."
+                else
+                    echo -e "\n   Error: 'configure' NTLM auth failed." >&2
+                fi
+                read -r -p "   Press any key to return to the menu..." key
+                break
+            ;;
+            [Nn]* ) break ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+delete_ntlm_auth_settings() {
+    clear
+    list_sites
+    ntlm_get_server_status
+
+    if [[ "$NTLM_STATUS" != "configured" ]]; then
+        echo
+        echo "   NTLM auth does't configured on the server $(hostname)"
+        read -r -p "   Press any key to return to the menu..." key
+        return 0
+    fi
+
+    ntlm_host=$(hostname | awk -F'.' '{print $1}')
+    ntlm_name="$NTLM_WORKGROUP"
+    ntlm_fqdn="$NTLM_REALM"
+    ntlm_dps="$NTLM_LDAP_SERVER"
+    ntlm_user="Administrator"
+
+    local ntlm_pass=""
+
+    echo
+    while true; do
+        read_by_def "   NetBIOS Hostname (default $ntlm_host): " ntlm_host "$ntlm_host"
+        read_by_def "   NetBIOS Domain/Workgroup Name (ex. TEST): " ntlm_name "$ntlm_name"
+        read_by_def "   Full Domain Name: (ex. TEST.LOCAL): " ntlm_fqdn "$ntlm_fqdn"
+        read_by_def "   Domain password server (ex. TEST-DC-SP.TEST.LOCAL): " ntlm_dps "$ntlm_dps"
+        read_by_def "   Domain admin user name (default Administrator): " ntlm_user "$ntlm_user"
+        read -r -s -p "   Domain admin user password:  " ntlm_pass
+        echo
+        if [ -z "$ntlm_pass" ]; then
+            echo "   Password cannot be empty. Try again."
+            continue
+        fi
+        break
+    done
+
+    echo -e "\n   NTLM Settings:"
+    echo "------------------------------------------------------------------------------------------------------"
+    printf "   %-18s: %s\n" "NetBIOS Domain" "$ntlm_name"
+    printf "   %-18s: %s\n" "NetBIOS Hostname" "$ntlm_host"
+    printf "   %-18s: %s\n" "Full Domain Name" "$ntlm_fqdn"
+    printf "   %-18s: %s\n" "Password Server" "$ntlm_dps"
+    printf "   %-18s: %s\n" "Domain User" "$ntlm_user"
+    echo "------------------------------------------------------------------------------------------------------"
+    echo
+
+    while true; do
+        read -r -p "   Do you really want to delete NTLM settings? (Y/N): " answer
+        case $answer in
+            [Yy]* )
+                ntlm_action="delete"
+                domain=""
+                path_site_from_links=""
+                ssl_lets_encrypt="N"
+                ssl_lets_encrypt_www="Y"
+                ssl_lets_encrypt_email=""
+                ntlm_prepare_password_file "$ntlm_pass"
+                if action_configure_ntlm_auth; then
+                    echo -e "\n   'delete' NTLM auth successfully executed."
+                else
+                    echo -e "\n   Error: 'delete' NTLM auth failed." >&2
+                fi
+                ntlm_cleanup_password_file
+                read -r -p "   Press any key to return to the menu..." key
+                break
+            ;;
+            [Nn]* )
+                ntlm_cleanup_password_file
+                break
+            ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+menu_ntlm_auth_sites() {
+    comand=;
+    until [[ "$comand" == "0" ]]; do
+    clear;
+    list_sites;
+    ntlm_get_server_status;
+
+    echo -e "\n          Menu -> Configure NTLM auth for sites:\n";
+    ntlm_print_sites_status;
+    echo;
+    ntlm_print_server_status;
+    echo;
+    echo "                 Available actions: ";
+    echo "                 1. Configure NTLM settings for the site";
+    if [[ "$NTLM_STATUS" == "configured" ]]; then
+        echo "                 2. Use existing NTLM settings for the site";
+        echo "                 3. Delete NTLM settings";
+    fi
+    echo "                 0. Previous screen or exit";
+    echo;
+    read -r -p "Enter your choice: " comand
+
+    case $comand in
+      "1") configure_ntlm_auth_for_site ;;
+      "2")
+        if [[ "$NTLM_STATUS" == "configured" ]]; then
+            use_existing_ntlm_auth_for_site
+        else
+            echo "Error unknown command"
+        fi
+      ;;
+      "3")
+        if [[ "$NTLM_STATUS" == "configured" ]]; then
+            delete_ntlm_auth_settings
+        else
+            echo "Error unknown command"
+        fi
+      ;;
+      0|z) return ;;
+      *) echo "Error unknown command" ;;
+    esac
     done
 }
 

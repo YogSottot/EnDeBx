@@ -1,0 +1,367 @@
+---
+- name: Validate NTLM create/update variables
+  ansible.builtin.assert:
+    that:
+      - path_site_from_links | length > 0
+      - path_user_home_prefix | length > 0
+      - path_apache | length > 0
+      - path_apache_sites_conf | length > 0
+      - path_apache_sites_enabled | length > 0
+      - path_nginx | length > 0
+      - service_apache_name | length > 0
+      - service_nginx_name | length > 0
+
+- name: Validate NTLM server variables for create action
+  ansible.builtin.assert:
+    that:
+      - ntlm_name | length > 0
+      - ntlm_fqdn | length > 0
+      - ntlm_dps | length > 0
+      - ntlm_user | length > 0
+      - ntlm_pass_file | length > 0
+    fail_msg: "NTLM server settings are required for ntlm_action=create"
+  when: ntlm_action == 'create'
+
+- name: Load NTLM password from file
+  ansible.builtin.set_fact:
+    ntlm_pass: "{{ lookup('file', ntlm_pass_file) }}"
+  when: ntlm_action == 'create'
+  no_log: true
+
+- name: Build NTLM LDAP bind path
+  ansible.builtin.set_fact:
+    ntlm_bind_path: "{{ ntlm_fqdn.split('.') | map('regex_replace', '^(.*)$', 'dc=\\1') | join(',') }}"
+  when: ntlm_action == 'create'
+
+- name: Read current AD info
+  ansible.builtin.command: net ads info
+  register: ntlm_current_info
+  changed_when: false
+  failed_when: false
+
+- name: Set current AD facts
+  ansible.builtin.set_fact:
+    ntlm_current_workgroup_raw: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Workgroup:\\s+(\\S+)') | first) | default('') }}"
+    ntlm_current_realm: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Realm:\\s+(\\S+)') | first) | default('') }}"
+    ntlm_current_bind_path: "{{ (ntlm_current_info.stdout | regex_findall('(?m)^Bind Path:\\s+(\\S+)') | first) | default('') }}"
+
+- name: Normalize current AD workgroup
+  ansible.builtin.set_fact:
+    ntlm_current_workgroup: "{{ ntlm_current_workgroup_raw if ntlm_current_workgroup_raw | length > 0 else ((ntlm_current_realm.split('.') | first) if ntlm_current_realm | length > 0 else '') }}"
+
+- name: Resolve selected Bitrix kernel path
+  ansible.builtin.command: readlink -f "{{ path_site_from_links }}/bitrix"
+  register: ntlm_selected_bitrix
+  changed_when: false
+
+- name: Find related sites by shared Bitrix kernel
+  ansible.builtin.shell: |
+    find "{{ path_user_home_prefix }}" -mindepth 4 -maxdepth 4 -path '*/bitrix/.settings.php' -print | while IFS= read -r settings_file; do
+      site_root=$(dirname "$(dirname "$settings_file")")
+      site_bitrix=$(readlink -f "$site_root/bitrix" 2>/dev/null)
+      if [ "$site_bitrix" = "{{ ntlm_selected_bitrix.stdout }}" ]; then
+        echo "$site_root"
+      fi
+    done | sort -u
+  args:
+    executable: /bin/bash
+  register: ntlm_related_sites
+  changed_when: false
+
+- name: Ensure at least one related site is found
+  ansible.builtin.assert:
+    that:
+      - ntlm_related_sites.stdout_lines | length > 0
+    fail_msg: "No sites found for shared Bitrix kernel {{ ntlm_selected_bitrix.stdout }}"
+
+- name: Initialize NTLM site info list
+  ansible.builtin.set_fact:
+    ntlm_sites_info: []
+
+- name: Build base site info list for NTLM
+  ansible.builtin.set_fact:
+    ntlm_sites_info: "{{ ntlm_sites_info + [ {
+      'site_name': item | basename,
+      'document_root': item,
+      'site_system_user': (default_user_server_sites if (item | dirname) == (default_full_path_site | dirname) else (item | dirname | basename)),
+      'apache_conf_available_path': path_apache_sites_conf ~ '/' ~ (item | basename) ~ '.conf',
+      'apache_conf_enabled_path': path_apache_sites_enabled ~ '/' ~ (item | basename) ~ '.conf',
+      'ssl_conf_path': path_nginx ~ '/site_settings/' ~ (item | basename) ~ '/ssl.conf' } ] }}"
+  loop: "{{ ntlm_related_sites.stdout_lines }}"
+
+- name: Read Apache config from sites-available for related sites
+  ansible.builtin.slurp:
+    src: "{{ item.apache_conf_available_path }}"
+  loop: "{{ ntlm_sites_info }}"
+  register: ntlm_apache_conf_available
+  changed_when: false
+  failed_when: false
+
+- name: Read Apache config from sites-enabled for related sites
+  ansible.builtin.slurp:
+    src: "{{ item.apache_conf_enabled_path }}"
+  loop: "{{ ntlm_sites_info }}"
+  register: ntlm_apache_conf_enabled
+  changed_when: false
+  failed_when: false
+
+- name: Read Nginx SSL config for related sites
+  ansible.builtin.slurp:
+    src: "{{ item.ssl_conf_path }}"
+  loop: "{{ ntlm_sites_info }}"
+  register: ntlm_ssl_conf
+  changed_when: false
+  failed_when: false
+
+- name: Initialize resolved NTLM site info list
+  ansible.builtin.set_fact:
+    ntlm_sites_info_resolved: []
+
+- name: Finalize site info list for NTLM
+  ansible.builtin.set_fact:
+    ntlm_sites_info_resolved: "{{ ntlm_sites_info_resolved + [ item | combine({
+      'php_fpm_handler': (ntlm_php_handler_matches | first | default('')),
+      'ssl_certificate_file': (ntlm_ssl_cert_found if ntlm_ssl_lets_encrypt else ntlm_default_ssl_cert_file),
+      'ssl_certificate_key_file': (ntlm_ssl_key_found if ntlm_ssl_lets_encrypt else ntlm_default_ssl_key_file) }) ] }}"
+  loop: "{{ ntlm_sites_info }}"
+  loop_control:
+    index_var: ntlm_site_idx
+  vars:
+    ntlm_apache_conf_content: "{{ (ntlm_apache_conf_available.results[ntlm_site_idx].content | b64decode) if ntlm_apache_conf_available.results[ntlm_site_idx].content is defined else ((ntlm_apache_conf_enabled.results[ntlm_site_idx].content | b64decode) if ntlm_apache_conf_enabled.results[ntlm_site_idx].content is defined else '') }}"
+    ntlm_ssl_conf_content: "{{ (ntlm_ssl_conf.results[ntlm_site_idx].content | b64decode) if ntlm_ssl_conf.results[ntlm_site_idx].content is defined else '' }}"
+    ntlm_php_handler_matches: "{{ ntlm_apache_conf_content | regex_findall('(?m)^[\\t ]*SetHandler \"([^\"]+)\"') }}"
+    ntlm_ssl_cert_matches: "{{ ntlm_ssl_conf_content | regex_findall('(?m)^[\\t ]*ssl_certificate[\\t ]+([^;\\s]+);') }}"
+    ntlm_ssl_key_matches: "{{ ntlm_ssl_conf_content | regex_findall('(?m)^[\\t ]*ssl_certificate_key[\\t ]+([^;\\s]+);') }}"
+    ntlm_ssl_cert_found: "{{ ntlm_ssl_cert_matches | first | default('') }}"
+    ntlm_ssl_key_found: "{{ ntlm_ssl_key_matches | first | default('') }}"
+    ntlm_ssl_lets_encrypt: "{{ ntlm_ssl_cert_found.startswith('/etc/letsencrypt/live/') and ntlm_ssl_key_found.startswith('/etc/letsencrypt/live/') }}"
+
+- name: Save resolved NTLM site info list
+  ansible.builtin.set_fact:
+    ntlm_sites_info: "{{ ntlm_sites_info_resolved }}"
+
+- name: Install NTLM packages
+  ansible.builtin.apt:
+    name: "{{ ntlm_packages }}"
+    state: present
+    update_cache: true
+
+- name: Check winbind privileged group
+  ansible.builtin.command: getent group winbindd_priv
+  register: ntlm_winbind_group
+  changed_when: false
+  failed_when: false
+
+- name: Add Apache user to winbind privileged group
+  ansible.builtin.user:
+    name: www-data
+    groups: winbindd_priv
+    append: true
+  when: ntlm_winbind_group.rc == 0
+  notify: Reload apache ntlm
+
+- name: Enable required Apache modules for NTLM
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+    force: true
+  loop: "{{ ntlm_apache_modules }}"
+  notify: Reload apache ntlm
+
+- name: Configure Samba for NTLM
+  when: ntlm_action == 'create'
+  block:
+    - name: Check current join status
+      ansible.builtin.command: net ads testjoin
+      register: ntlm_testjoin_before
+      changed_when: false
+      failed_when: false
+
+    - name: Decide if AD rejoin is required
+      ansible.builtin.set_fact:
+        ntlm_join_needed: "{{ ntlm_testjoin_before.rc != 0 or (ntlm_current_workgroup | upper) != (ntlm_name | upper) or (ntlm_current_realm | upper) != (ntlm_fqdn | upper) }}"
+
+    - name: Stop Samba services before reconfigure
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - smbd
+        - nmbd
+        - winbind
+      failed_when: false
+
+    - name: Remove Samba cache files before join
+      ansible.builtin.file:
+        path: "/var/lib/samba/{{ item }}"
+        state: absent
+      loop:
+        - serverid.tdb
+        - winbindd_cache.tdb
+        - winbindd_idmap.tdb
+        - gencache.tdb
+        - netlogon_creds_cli.tdb
+      failed_when: false
+
+    - name: Render Samba config
+      ansible.builtin.template:
+        src: smb.conf.j2
+        dest: /etc/samba/smb.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Render Kerberos config
+      ansible.builtin.template:
+        src: krb5.conf.j2
+        dest: /etc/krb5.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Update passwd source in nsswitch.conf
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^passwd:'
+        line: 'passwd: files systemd winbind'
+
+    - name: Update group source in nsswitch.conf
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^group:'
+        line: 'group: files systemd winbind'
+
+    - name: Update shadow source in nsswitch.conf
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^shadow:'
+        line: 'shadow: files'
+
+    - name: Join server to AD
+      ansible.builtin.shell: |
+        net ads join -S {{ ntlm_dps | quote }} -U {{ (ntlm_user ~ '%' ~ ntlm_pass) | quote }} || \
+        net ads join -U {{ (ntlm_user ~ '%' ~ ntlm_pass) | quote }}
+      args:
+        executable: /bin/bash
+      register: ntlm_join_result
+      changed_when: true
+      when: ntlm_join_needed
+      # no_log: true
+
+    - name: Ensure Samba services are started and enabled
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - smbd
+        - nmbd
+        - winbind
+
+    - name: Verify AD join
+      ansible.builtin.command: net ads testjoin
+      register: ntlm_testjoin_after
+      changed_when: false
+
+- name: Resolve NTLM code from current server settings
+  ansible.builtin.set_fact:
+    ntlm_code: "{{ ntlm_name if ntlm_action == 'create' else ntlm_current_workgroup }}"
+    ntlm_bind_path_effective: "{{ ntlm_bind_path if ntlm_action == 'create' else ntlm_current_bind_path }}"
+    ntlm_sync_server_settings: "{{ ntlm_action == 'create' }}"
+
+- name: Validate current NTLM server settings for site-only action
+  ansible.builtin.assert:
+    that:
+      - ntlm_code | length > 0
+      - ntlm_bind_path_effective | length > 0
+    fail_msg: "Existing NTLM server settings were not detected"
+  when: ntlm_action == 'use_existing'
+
+- name: Open NTLM ports in firewalld
+  ansible.builtin.include_role:
+    name: marcelnijenhof.firewalld
+  vars:
+    marcelnijenhof_firewalld_allow_ports:
+      - port: "{{ ntlm_http_port }}/tcp"
+        immediate: false
+        state: enabled
+      - port: "{{ ntlm_https_port }}/tcp"
+        immediate: false
+        state: enabled
+
+- name: Render global Apache NTLM config
+  ansible.builtin.template:
+    src: mod_ntlm.conf.j2
+    dest: "{{ path_apache }}/conf-available/{{ ntlm_apache_global_conf_name }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload apache ntlm
+
+- name: Enable global Apache NTLM config
+  ansible.builtin.file:
+    src: "{{ path_apache }}/conf-available/{{ ntlm_apache_global_conf_name }}"
+    dest: "{{ path_apache }}/conf-enabled/{{ ntlm_apache_global_conf_name }}"
+    state: link
+  notify: Reload apache ntlm
+
+- name: Create temporary NTLM directory
+  ansible.builtin.file:
+    path: /tmp/debianlikebitrixvm-ntlm
+    state: directory
+    owner: "{{ item.site_system_user }}"
+    group: "{{ item.site_system_user }}"
+    mode: "0700"
+  loop: "{{ ntlm_sites_info }}"
+
+- name: Create temporary NTLM directories for sites
+  ansible.builtin.file:
+    path: "/tmp/debianlikebitrixvm-ntlm/{{ item.site_name }}"
+    state: directory
+    owner: "{{ item.site_system_user }}"
+    group: "{{ item.site_system_user }}"
+    mode: "0700"
+  loop: "{{ ntlm_sites_info }}"
+
+- name: Render NTLM settings PHP script for related sites
+  ansible.builtin.template:
+    src: ntlm_settings.php.j2
+    dest: "/tmp/debianlikebitrixvm-ntlm/{{ item.site_name }}/ntlm_settings.php"
+    owner: "{{ item.site_system_user }}"
+    group: "{{ item.site_system_user }}"
+    mode: "0600"
+  loop: "{{ ntlm_sites_info }}"
+  no_log: true
+
+- name: Apply NTLM settings in Bitrix sites
+  ansible.builtin.command: php -f ntlm_settings.php
+  args:
+    chdir: "/tmp/debianlikebitrixvm-ntlm/{{ item.site_name }}"
+  become: true
+  become_user: "{{ item.site_system_user }}"
+  loop: "{{ ntlm_sites_info }}"
+  changed_when: false
+  no_log: true
+
+- name: Render Apache NTLM vhosts for related sites
+  ansible.builtin.template:
+    src: ntlm_site.conf.j2
+    dest: "{{ path_apache_sites_conf }}/ntlm_{{ item.site_name }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ntlm_sites_info }}"
+  notify: Reload apache ntlm
+
+- name: Enable Apache NTLM vhosts for related sites
+  ansible.builtin.file:
+    src: "{{ path_apache_sites_conf }}/ntlm_{{ item.site_name }}.conf"
+    dest: "{{ path_apache_sites_enabled }}/ntlm_{{ item.site_name }}.conf"
+    state: link
+  loop: "{{ ntlm_sites_info }}"
+  notify: Reload apache ntlm
+
+- name: Remove temporary NTLM directory
+  ansible.builtin.file:
+    path: /tmp/debianlikebitrixvm-ntlm
+    state: absent

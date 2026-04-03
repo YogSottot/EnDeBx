@@ -1,0 +1,209 @@
+---
+- name: Validate NTLM delete variables
+  ansible.builtin.assert:
+    that:
+      - ntlm_name | length > 0
+      - ntlm_fqdn | length > 0
+      - ntlm_dps | length > 0
+      - ntlm_user | length > 0
+      - ntlm_pass_file | length > 0
+      - path_user_home_prefix | length > 0
+      - path_apache | length > 0
+      - path_apache_sites_conf | length > 0
+      - path_apache_sites_enabled | length > 0
+
+- name: Load NTLM password for leave action
+  ansible.builtin.set_fact:
+    ntlm_pass: "{{ lookup('file', ntlm_pass_file) }}"
+  no_log: true
+
+- name: Find all Bitrix sites
+  ansible.builtin.shell: |
+    find "{{ path_user_home_prefix }}" -mindepth 4 -maxdepth 4 -path '*/bitrix/.settings.php' -print | while IFS= read -r settings_file; do
+      dirname "$(dirname "$settings_file")"
+    done | sort -u
+  args:
+    executable: /bin/bash
+  register: ntlm_all_sites
+  changed_when: false
+
+- name: Collect system users for Bitrix sites
+  ansible.builtin.shell: |
+    site_root="{{ item }}"
+    site_name=$(basename "$site_root")
+    parent_dir=$(dirname "$site_root")
+    if [ "$parent_dir" = "{{ default_full_path_site | dirname }}" ]; then
+      site_user="{{ default_user_server_sites }}"
+    else
+      site_user=$(basename "$parent_dir")
+    fi
+    printf '%s\t%s\t%s\n' "$site_name" "$site_root" "$site_user"
+  args:
+    executable: /bin/bash
+  loop: "{{ ntlm_all_sites.stdout_lines }}"
+  register: ntlm_delete_runtime
+  changed_when: false
+
+- name: Initialize NTLM site info list
+  ansible.builtin.set_fact:
+    ntlm_sites_info: []
+
+- name: Build site info list for NTLM delete
+  ansible.builtin.set_fact:
+    ntlm_sites_info: "{{ ntlm_sites_info | default([]) + [ {
+      'site_name': item.stdout.split('\t')[0],
+      'document_root': item.stdout.split('\t')[1],
+      'site_system_user': item.stdout.split('\t')[2] } ] }}"
+  loop: "{{ ntlm_delete_runtime.results }}"
+
+- name: Close NTLM ports in firewalld
+  ansible.builtin.include_role:
+    name: marcelnijenhof.firewalld
+  vars:
+    marcelnijenhof_firewalld_allow_ports:
+      - port: "{{ ntlm_http_port }}/tcp"
+        immediate: false
+        state: absent
+      - port: "{{ ntlm_https_port }}/tcp"
+        immediate: false
+        state: absent
+
+- name: Create temporary NTLM delete directory
+  ansible.builtin.file:
+    path: /tmp/debianlikebitrixvm-ntlm-delete
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Create temporary NTLM delete directories for sites
+  ansible.builtin.file:
+    path: "/tmp/debianlikebitrixvm-ntlm-delete/{{ item.site_name }}"
+    state: directory
+    owner: "{{ item.site_system_user }}"
+    group: "{{ item.site_system_user }}"
+    mode: "0700"
+  loop: "{{ ntlm_sites_info }}"
+
+- name: Render NTLM remove PHP script for sites
+  ansible.builtin.template:
+    src: ntlm_settings_remove.php.j2
+    dest: "/tmp/debianlikebitrixvm-ntlm-delete/{{ item.site_name }}/ntlm_settings_remove.php"
+    owner: "{{ item.site_system_user }}"
+    group: "{{ item.site_system_user }}"
+    mode: "0600"
+  loop: "{{ ntlm_sites_info }}"
+
+- name: Remove NTLM settings from Bitrix sites
+  ansible.builtin.command: php -f ntlm_settings_remove.php
+  args:
+    chdir: "/tmp/debianlikebitrixvm-ntlm-delete/{{ item.site_name }}"
+  become: true
+  become_user: "{{ item.site_system_user }}"
+  loop: "{{ ntlm_sites_info }}"
+  changed_when: false
+  no_log: true
+
+- name: Remove temporary NTLM delete directory
+  ansible.builtin.file:
+    path: /tmp/debianlikebitrixvm-ntlm-delete
+    state: absent
+
+- name: Remove Apache NTLM vhosts from sites-available
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ query('ansible.builtin.fileglob', path_apache_sites_conf + '/ntlm_*.conf') }}"
+  notify: Reload apache ntlm
+
+- name: Remove Apache NTLM vhosts from sites-enabled
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ query('ansible.builtin.fileglob', path_apache_sites_enabled + '/ntlm_*.conf') }}"
+  notify: Reload apache ntlm
+
+- name: Remove global Apache NTLM config
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ path_apache }}/conf-available/{{ ntlm_apache_global_conf_name }}"
+    - "{{ path_apache }}/conf-enabled/{{ ntlm_apache_global_conf_name }}"
+    - "{{ path_apache }}/mods-enabled/auth_ntlm_winbind.load"
+  notify: Reload apache ntlm
+
+- name: Check current join status before leave
+  ansible.builtin.command: net ads testjoin
+  register: ntlm_testjoin_before_leave
+  changed_when: false
+  failed_when: false
+
+- name: Leave AD domain
+  ansible.builtin.shell: |
+    net ads leave -S {{ ntlm_dps | quote }} -U {{ (ntlm_user ~ '%' ~ ntlm_pass) | quote }} || \
+    net ads leave -U {{ (ntlm_user ~ '%' ~ ntlm_pass) | quote }}
+  args:
+    executable: /bin/bash
+  register: ntlm_leave_result
+  changed_when: true
+  when: ntlm_testjoin_before_leave.rc == 0
+  no_log: true
+
+- name: Stop Samba services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - smbd
+    - nmbd
+    - winbind
+  failed_when: false
+
+- name: Remove NTLM packages
+  ansible.builtin.apt:
+    name: "{{ ntlm_packages }}"
+    state: absent
+    purge: true
+
+- name: Remove Samba directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/log/samba
+    - /var/lib/samba
+    - /etc/samba
+
+- name: Restore default Kerberos config
+  ansible.builtin.template:
+    src: krb5_default.conf.j2
+    dest: /etc/krb5.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Restore passwd source in nsswitch.conf
+  ansible.builtin.lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '^passwd:'
+    line: 'passwd: files systemd'
+
+- name: Restore group source in nsswitch.conf
+  ansible.builtin.lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '^group:'
+    line: 'group: files systemd'
+
+- name: Restore shadow source in nsswitch.conf
+  ansible.builtin.lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '^shadow:'
+    line: 'shadow: files'
+
+- name: Reload Apache after NTLM cleanup
+  ansible.builtin.systemd:
+    name: "{{ service_apache_name }}"
+    state: reloaded
+    enabled: true

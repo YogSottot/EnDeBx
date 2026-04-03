@@ -1,0 +1,184 @@
+# {{ ansible_managed }}
+<VirtualHost *:{{ ntlm_http_port }}>
+    ServerName {{ item.site_name }}
+    ServerAlias *.{{ item.site_name }}
+    ServerAdmin webmaster@localhost
+    DocumentRoot {{ item.document_root }}
+
+    ErrorLog ${APACHE_LOG_DIR}/{{ item.site_name }}_ntlm_error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/{{ item.site_name }}_ntlm_access.log combined
+
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{HTTP:HTTPS} =YES
+        RewriteRule .* - [E=HTTPS:on,L]
+    </IfModule>
+
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+
+    <DirectoryMatch .*\.svn/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <DirectoryMatch .*\.git/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <DirectoryMatch .*\.hg/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <Directory {{ item.document_root }}>
+        Options FollowSymLinks MultiViews
+        AllowOverride All
+        DirectoryIndex index.php index.html index.htm
+        AuthName "NTLM Authentication"
+        NTLMAuth on
+        NTLMAuthHelper "/usr/bin/ntlm_auth --helper-protocol=squid-2.5-ntlmssp"
+        NTLMBasicAuthoritative on
+        AuthType NTLM
+        Require valid-user
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/managed_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/local_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/stack_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/upload>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    <Directory {{ item.document_root }}/upload/support/not_image>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/images>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/tmp>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    {% if item.php_fpm_handler | default('') | length > 0 %}
+    <FilesMatch "\.php$">
+        SetHandler "{{ item.php_fpm_handler }}"
+    </FilesMatch>
+    {% endif %}
+</VirtualHost>
+
+<VirtualHost *:{{ ntlm_https_port }}>
+    ServerName {{ item.site_name }}
+    ServerAlias *.{{ item.site_name }}
+    ServerAdmin webmaster@localhost
+    DocumentRoot {{ item.document_root }}
+
+    ErrorLog ${APACHE_LOG_DIR}/{{ item.site_name }}_ntlm_error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/{{ item.site_name }}_ntlm_access.log combined
+
+    SSLEngine on
+    SSLProtocol all -SSLv2
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
+    SSLCertificateFile {{ item.ssl_certificate_file }}
+    SSLCertificateKeyFile {{ item.ssl_certificate_key_file }}
+
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+
+    <DirectoryMatch .*\.svn/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <DirectoryMatch .*\.git/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <DirectoryMatch .*\.hg/.*>
+        Require all denied
+    </DirectoryMatch>
+
+    <Directory {{ item.document_root }}>
+        Options FollowSymLinks MultiViews
+        AllowOverride All
+        DirectoryIndex index.php index.html index.htm
+        AuthName "NTLM Authentication"
+        NTLMAuth on
+        NTLMAuthHelper "/usr/bin/ntlm_auth --helper-protocol=squid-2.5-ntlmssp"
+        NTLMBasicAuthoritative on
+        AuthType NTLM
+        Require valid-user
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/managed_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/local_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/stack_cache>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/upload>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    <Directory {{ item.document_root }}/upload/support/not_image>
+        AllowOverride none
+        Require all denied
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/images>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    <Directory {{ item.document_root }}/bitrix/tmp>
+        AllowOverride none
+        AddType text/plain php,php3,php4,php5,php6,phtml,pl,asp,aspx,cgi,dll,exe,ico,shtm,shtml,fcg,fcgi,fpl,asmx,pht
+    </Directory>
+
+    {% if item.php_fpm_handler | default('') | length > 0 %}
+    <FilesMatch "\.php$">
+        SetHandler "{{ item.php_fpm_handler }}"
+    </FilesMatch>
+    {% endif %}
+</VirtualHost>

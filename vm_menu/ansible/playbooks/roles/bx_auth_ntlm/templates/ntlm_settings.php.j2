@@ -1,0 +1,82 @@
+<?php
+// {{ ansible_managed }}
+$_SERVER["DOCUMENT_ROOT"] = "{{ item.document_root }}";
+$DOCUMENT_ROOT = $_SERVER["DOCUMENT_ROOT"];
+define("NO_KEEP_STATISTIC", true);
+define("NOT_CHECK_PERMISSIONS", true);
+define("BX_NO_ACCELERATOR_RESET", true);
+
+require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php";
+
+if (!\Bitrix\Main\Loader::includeModule("ldap"))
+{
+    echo "LDAP module is not installed on {{ item.site_name }}";
+    return;
+}
+
+$code = "{{ ntlm_code }}";
+$bindPath = "{{ ntlm_bind_path_effective }}";
+$ldapServerId = 0;
+$ldapServer = new CLdapServer();
+$ldapServerFields = [
+    "ACTIVE" => "Y",
+    "NAME" => $code,
+    "CODE" => $code,
+    "SERVER" => "{{ ntlm_dps | default('') }}",
+    "PORT" => "389",
+    "ADMIN_LOGIN" => "{{ (ntlm_user ~ '@' ~ ntlm_fqdn | lower) if ntlm_sync_server_settings else '' }}",
+    "ADMIN_PASSWORD" => "{{ ntlm_pass if ntlm_sync_server_settings else '' }}",
+    "BASE_DN" => $bindPath,
+    "CONNECTION_TYPE" => "0",
+    "SYNC" => "N",
+    "CONVERT_UTF8" => "Y",
+    "USER_GROUP_ACCESSORY" => "N",
+    "USER_FILTER" => "(sAMAccountName=%login%)",
+    "USER_ID_ATTR" => "sAMAccountName",
+    "USER_NAME_ATTR" => "givenName",
+    "USER_LAST_NAME_ATTR" => "sn",
+    "USER_EMAIL_ATTR" => "mail",
+    "USER_GROUP_ATTR" => "memberOf",
+    "GROUP_FILTER" => "(objectClass=group)",
+    "GROUP_ID_ATTR" => "cn",
+    "GROUP_NAME_ATTR" => "name",
+    "GROUP_MEMBERS_ATTR" => "member",
+    "FIELD_MAP" => [],
+];
+
+$arOrder = [];
+$arFilter = ["CODE" => $code];
+$rsLdapServers = CLdapServer::GetList($arOrder, $arFilter);
+if ($arLdapServer = $rsLdapServers->Fetch())
+{
+    $ldapServerId = (int)$arLdapServer["ID"];
+    if ({{ ntlm_sync_server_settings | ternary('true', 'false') }})
+    {
+        $ldapServer->Update($ldapServerId, $ldapServerFields);
+    }
+}
+elseif ({{ ntlm_sync_server_settings | ternary('true', 'false') }})
+{
+    $ldapServerId = (int)$ldapServer->Add($ldapServerFields);
+}
+
+RegisterModuleDependences("main", "OnBeforeProlog", "ldap", "CLDAP", "NTLMAuth", 40);
+$ipMask = COption::GetOptionString("ldap", "bitrixvm_auth_net", false);
+CLdapUtil::SetBitrixVMAuthSupport(true, $ipMask);
+\Bitrix\Main\Config\Option::set("ldap", "use_ntlm", "Y");
+if ($ldapServerId > 0)
+{
+    \Bitrix\Main\Config\Option::set("ldap", "ntlm_default_server", $ldapServerId);
+}
+
+global $CACHE_MANAGER;
+if (is_object($CACHE_MANAGER))
+{
+    $CACHE_MANAGER->CleanAll();
+}
+if (isset($stackCacheManager) && is_object($stackCacheManager))
+{
+    $stackCacheManager->CleanAll();
+}
+
+echo "Ntlm auth on {{ item.site_name }} configured";

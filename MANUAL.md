@@ -40,6 +40,7 @@
       - `Do you want nginx-composite from files support? (Y/N) [default: N]:` — включение и обновление
 настроек NGINX для композита. (Хранение композита в файлах). Предварительно нужно включить композит в админке сайта.  
       - `Enter Y or N for setting SSL Let`s Encrypt site (default: N):` — создать сертификат для сайта.  
+        Для сайта `default` домен сертификата запрашивается отдельно, потому что имя каталога сайта не является реальным доменом.
 
    `3) Delete site` — удаление сайта  
       - `Enter path to site:` — ввести путь к директории сайта. Директория сайта будет удалена безвозвратно. База данных и пользователь бд будут удалены безвозвратно. Введите сгенерированный код для продолжения.  
@@ -50,6 +51,20 @@
    `5) Enable/Disable Basic Auth in nginx` — включить/выключить базовую авторизацию в nginx для сайта. Логи и пароль можно задать в меню или использовать переменные `BS_NGINX_BASIC_AUTH_LOGIN` `BS_NGINX_BASIC_AUTH_PASSWORD`  
 
    `6) Enable/Disable Bot Blocker in nginx` — скачать и установить [mitchellkrogza/nginx-ultimate-bad-bot-blocker](https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker). Подключается для каждого сайта отдельно.  Изучите документация по ссылке для более тонкой настройки. Конфигурационные файлы в `/etc/nginx/bots.d/`.  
+
+   `7) Configure NTLM auth for sites` — настройка NTLM-авторизации через отдельные Apache vhost на портах `8890/8891`. Для сайтов с общим ядром настройка применяется ко всей группе.
+      - Перед подключением к AD убедитесь, что сервер Bitrix в локальной сети использует ваш офисный DNS-сервер. Это может быть контроллер домена или отдельный внутренний DNS-сервер.
+      - До запуска данного меню предварительно выполните пункты `1-3` из документации Bitrix: [Настройка NTLM модуля Linux для Битрикс](https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=41&LESSON_ID=5078&LESSON_PATH=3911.27946.5076.5078). Данное меню закрывает пункт `4`.
+      - Синхронизация времени должна идти с вашим офисным источником времени, например с контроллером домена. Один из вариантов для `chrony`: указать в конфиге `server ip_ntp_сервера iburst`, затем выполнить `systemctl restart chrony`.
+      - Проверить синхронизацию можно командами `chronyc sources` и `chronyc tracking`.
+      - Для принудительной синхронизации можно использовать `ntpdate ip_ntp_сервера`. В качестве NTP-сервера также может выступать контроллер AD.
+      - После настройки LDAP/AD-сервера в самом Битрикс обязательно откройте вкладку `Настройка полей` и нажмите ссылку `AD` или `LDAP` в заголовке раздела, чтобы подставились стандартные шаблоны полей для выбранного типа сервера. Без этого Bitrix может не находить пользователя в LDAP, даже если NTLM на Apache уже работает. Подробности: [Настройка NTLM авторизации со стороны продукта](https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=41&LESSON_ID=2547).
+      - Для прозрачной авторизации дополнительно проверьте настройки браузеров сотрудников. Например, для Firefox нужно добавить сервер в `network.automatic-ntlm-auth.trusted-uris`, а для Internet Explorer/Edge сервер должен находиться в зоне `Local Intranet`. Подробности: [Настройка браузеров сотрудников](https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=41&LESSON_ID=5077).
+      - До входа сервера в AD доступны только пункты `1. Configure NTLM settings for the site` и `0. Previous screen or exit`.
+      - В `Configure NTLM settings for the site` меню спрашивает `NetBIOS Hostname`, `NetBIOS Domain/Workgroup Name`, `Full Domain Name`, `Domain password server`, `Domain admin user name`, `Domain admin user password`, затем путь к сайту и необходимость выпуска `SSL Let's Encrypt`. Если сертификат нужен, дополнительно запрашиваются домен сертификата, выпуск `www`-сертификата и email.
+      - Если сервер уже состоит в AD, меню сначала показывает текущий статус NTLM на сервере и статус по kernel/full сайтам (`LDAPMod`, `UseNTLM`, `LDAPAuth`).
+      - Пункт `Use existing NTLM settings for the site` добавляет NTLM-конфиг для нового сайта без повторного ввода параметров домена.
+      - Пункт `Delete NTLM settings` удаляет NTLM-конфиги Apache, отключает сервер от AD, закрывает порты в `firewalld` и очищает пакеты/config-файлы samba/winbind.
 
 3) `Configure Let's Encrypt certificate` — создать сертификат для сайта. Конфигурационный файл в `/etc/nginx/bx/site_settings/домен/ssl.conf`. Конфигурация вынесена в отдельный файл, чтобы не затиралась при редактировании сайта через пункт меню `Edit existing website`.  
 4) `Enable or Disable redirect HTTP to HTTPS` — помещает файл `.htsecure` в корень выбранного сайта. Это приводит к включению редиректа с http на https.  

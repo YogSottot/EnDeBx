@@ -20,6 +20,7 @@ action_create_site(){
 
   path_site_from_links=${path_site_from_links} \
   ssl_lets_encrypt=${ssl_lets_encrypt} \
+  ssl_lets_encrypt_domain=${ssl_lets_encrypt_domain} \
   ssl_lets_encrypt_www=${ssl_lets_encrypt_www} \
   ssl_lets_encrypt_email=${ssl_lets_encrypt_email} \
   redirect_to_https=${redirect_to_https} \
@@ -83,6 +84,7 @@ action_edit_site(){
 
   path_site_from_links=${path_site_from_links} \
   ssl_lets_encrypt=${ssl_lets_encrypt} \
+  ssl_lets_encrypt_domain=${ssl_lets_encrypt_domain} \
   ssl_lets_encrypt_www=${ssl_lets_encrypt_www} \
   ssl_lets_encrypt_email=${ssl_lets_encrypt_email} \
   redirect_to_https=${redirect_to_https} \
@@ -688,6 +690,38 @@ function action_enable_or_disable_basic_auth() {
       htpasswd_password=${htpasswd_password} \
       web_server_daemon=${BS_SERVICE_NGINX_NAME}"
 
+}
+
+function action_configure_ntlm_auth() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_NTLM_AUTH}")
+
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "ntlm_action=${ntlm_action} \
+      domain=${domain} \
+      default_domain=${BS_DEFAULT_SITE_NAME} \
+      path_site_from_links=${path_site_from_links} \
+      path_user_home_prefix=${BS_PATH_USER_HOME_PREFIX} \
+      default_full_path_site=${BS_PATH_DEFAULT_SITE} \
+      default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
+      service_nginx_name=${BS_SERVICE_NGINX_NAME} \
+      path_nginx=${BS_PATH_NGINX} \
+      service_apache_name=${BS_SERVICE_APACHE_NAME} \
+      path_apache=${BS_PATH_APACHE} \
+      path_apache_sites_conf=${BS_PATH_APACHE_SITES_CONF} \
+      path_apache_sites_enabled=${BS_PATH_APACHE_SITES_ENABLED} \
+      ntlm_http_port=${BS_NTLM_HTTP_PORT} \
+      ntlm_https_port=${BS_NTLM_HTTPS_PORT} \
+      ntlm_name=${ntlm_name} \
+      ntlm_fqdn=${ntlm_fqdn} \
+      ntlm_dps=${ntlm_dps} \
+      ntlm_host=${ntlm_host} \
+      ntlm_user=${ntlm_user} \
+      ntlm_pass_file=${ntlm_pass_file} \
+      ssl_lets_encrypt=${ssl_lets_encrypt} \
+      ssl_lets_encrypt_domain=${ssl_lets_encrypt_domain} \
+      ssl_lets_encrypt_www=${ssl_lets_encrypt_www} \
+      ssl_lets_encrypt_email=${ssl_lets_encrypt_email} \
+      redirect_to_https=${redirect_to_https}"
 }
 
 function action_setup_debian_repositories_for_astra() {

@@ -1,0 +1,16 @@
+---
+- name: Manage NTLM auth for sites
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  roles:
+    - role: get_lets_encrypt_certificate
+      vars:
+        path_site: "{{ path_site_from_links }}"
+        is_www: "{{ ssl_lets_encrypt_www | default('Y') }}"
+        email: "{{ ssl_lets_encrypt_email }}"
+      when:
+        - ntlm_action != 'delete'
+        - ssl_lets_encrypt == "Y"
+    - role: bx_auth_ntlm

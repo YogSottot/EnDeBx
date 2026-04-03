@@ -1,0 +1,14 @@
+---
+- name: Validate NTLM action
+  ansible.builtin.assert:
+    that:
+      - ntlm_action in ['create', 'use_existing', 'delete']
+    fail_msg: "Unsupported ntlm_action={{ ntlm_action }}"
+
+- name: Configure NTLM auth
+  ansible.builtin.include_tasks: create_ntlm.yml
+  when: ntlm_action in ['create', 'use_existing']
+
+- name: Delete NTLM auth
+  ansible.builtin.include_tasks: delete_ntlm.yml
+  when: ntlm_action == 'delete'

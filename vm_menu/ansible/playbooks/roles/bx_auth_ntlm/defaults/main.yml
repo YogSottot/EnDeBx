@@ -1,0 +1,28 @@
+---
+ntlm_action: use_existing
+ntlm_http_port: 8890
+ntlm_https_port: 8891
+idmap_range_start: 10000
+idmap_range_end: 40000
+ntlm_packages:
+  - samba
+  - samba-common-bin
+  - winbind
+  - smbclient
+  - krb5-user
+  - libnss-winbind
+  - libpam-winbind
+  - libapache2-mod-auth-ntlm-winbind
+ntlm_default_ssl_cert_file: "/etc/{{ service_nginx_name }}/ssl/cert.pem"
+ntlm_default_ssl_key_file: "/etc/{{ service_nginx_name }}/ssl/cert.key"
+ntlm_apache_global_conf_name: bx_ntlm.conf
+ntlm_apache_modules:
+  - auth_ntlm_winbind
+  - ssl
+  - socache_shmcb
+  - rewrite
+  - headers
+  - unique_id
+  - proxy
+  - proxy_fcgi
+  - setenvif
