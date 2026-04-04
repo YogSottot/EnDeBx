@@ -228,6 +228,14 @@ logrotate_fix_owner() {
     chown root: /etc/logrotate.d/*
 }
 
+fix_push_logrotate() {
+    local file="/etc/logrotate.d/push-server"
+
+    [ -f "$file" ] || return 0
+
+    sed -i '/systemctl/s/\brestart\b/try-restart/' "$file"
+}
+
 main() {
     require_root
     backup_menu
@@ -245,6 +253,7 @@ main() {
     nginx_fix_site
     nginx_reload
     logrotate_fix_owner
+    fix_push_logrotate
 
     log "Menu updated! Backup directory old menu: $backup_path";
 }
