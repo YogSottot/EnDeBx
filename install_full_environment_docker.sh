@@ -42,12 +42,26 @@ apt update -y
 apt upgrade -y --enable-upgrade
 apt install -y pipx git locales-all python3-debian
 
-if [ -f /etc/debian_version ]; then
-    ver=$(cut -d. -f1 /etc/debian_version)
-    if [ "$ver" -ge 13 ]; then
-        systemctl mask tmp.mount
+get_debian_major_version() {
+    local os_id version_id major_version
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "debian" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+            return 0
+        fi
     fi
-fi
+
+    if [ -r /etc/debian_version ]; then
+        major_version=$(cut -d. -f1 /etc/debian_version)
+        if [[ "${major_version}" =~ ^[0-9]+$ ]]; then
+            printf '%s\n' "${major_version}"
+        fi
+    fi
+}
 
 site_user_password=$(generate_password 24)
 

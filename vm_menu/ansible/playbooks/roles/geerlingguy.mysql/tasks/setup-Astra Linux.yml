@@ -25,9 +25,13 @@
   ansible.builtin.apt:
     name: "{{ mysql_percona_packages }}"
     state: present
+    policy_rc_d: 101
   when: mysql_flavor == 'percona' and not mysql_installed.stat.exists
   environment:
     DEBIAN_FRONTEND: noninteractive
+    TMPDIR: /tmp
+    TMP: /tmp
+    TEMP: /tmp
     # DEBIAN_PRIORITY: critical
   register: deb_percona_install_packages
 
@@ -36,6 +40,10 @@
     name: "{{ mysql_packages }}"
     state: present
     policy_rc_d: 101
+  environment:
+    TMPDIR: /tmp
+    TMP: /tmp
+    TEMP: /tmp
   register: deb_mysql_install_packages
 
 - name: Ensure MySQL Python libraries are installed.

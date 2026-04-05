@@ -3,7 +3,7 @@
   hosts: localhost
   connection: local
   become: true
-  gather_facts: false
+  gather_facts: true
   tasks:
     - name: Deliting site dir {{ full_path_site }}
       ansible.builtin.file:
@@ -33,7 +33,63 @@
             user: "{{ user_server_sites }}"
             state: absent
 
-      when: type == "full"
+      when:
+        - type == "full"
+        - db_type | default('mysql') == "mysql"
+
+    - block:
+
+        - name: Installing of python3-psycopg2
+          ansible.builtin.apt:
+            name: python3-psycopg2
+            state: present
+
+        - name: Deliting PostgreSQL data base {{ db_name }}
+          community.postgresql.postgresql_db:
+            name: "{{ db_name }}"
+            port: "{{ postgresql_port }}"
+            login_user: postgres
+            login_unix_socket: /run/postgresql
+            state: absent
+            force: true
+          become: true
+          become_user: postgres
+          become_method: su
+
+        - name: Deliting PostgreSQL database user {{ db_user }}
+          community.postgresql.postgresql_user:
+            name: "{{ db_user }}"
+            port: "{{ postgresql_port }}"
+            login_user: postgres
+            login_unix_socket: /run/postgresql
+            state: absent
+          become: true
+          become_user: postgres
+          become_method: su
+
+        - name: Remove PostgreSQL user from pgbouncer
+          ansible.builtin.include_role:
+            name: mshurutov.pgbouncer
+          vars:
+            pgbouncer_action: DELETE
+            pgbouncer_pkg_state: present
+            pgbouncer_db_state: absent
+            pgbouncer_db_user: "{{ db_user }}"
+            pgbouncer_db_password: ""
+            pgbouncer_db_port: "{{ postgresql_port }}"
+            pgbouncer_db_host: "/run/postgresql/"
+            postgresql_db_encoding: UTF-8
+          when: pgbouncer_use | default(false) | bool
+
+        - name: Deliting cron task
+          ansible.builtin.cron:
+            name: Adding cron bitrix agents site {{ site }}
+            user: "{{ user_server_sites }}"
+            state: absent
+
+      when:
+        - type == "full"
+        - db_type | default('mysql') == "pgsql"
 
     - name: Rename Nginx config {{ site }}.conf
       ansible.builtin.file:

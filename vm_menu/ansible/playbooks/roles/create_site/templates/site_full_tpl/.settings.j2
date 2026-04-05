@@ -67,8 +67,15 @@ return array(
                 array(
                     'default' =>
                         array(
+                            {% if db_type | default('mysql') == 'pgsql' %}
+                            'className' => '\\Bitrix\\Main\\DB\\PgsqlConnection',
+                            'host' => '{{ db_host | default("127.0.0.1") }}',
+                            'port' => '{{ db_port | default("5432") }}',
+                            {% else %}
                             'className' => '\\Bitrix\\Main\\DB\\MysqliConnection',
-                            'host' => 'localhost',
+                            'host' => '{{ db_host | default("localhost") }}',
+                            'port' => '{{ db_port | default("3306") }}',
+                            {% endif %}
                             'database' => '{{ db_name }}',
                             'login' => '{{ db_user }}',
                             'password' => '{{ db_password }}',

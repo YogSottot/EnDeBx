@@ -1,6 +1,7 @@
 ---
 # defaults file for pgbouncer
 pgbouncer_pkg_state: "{{ pgbouncer_state }}"
+pgbouncer_db_state: "{{ pgbouncer_pkg_state }}"
 pgbouncer_files_dir: "{{ role_path }}/files"
 pgbouncer_templates_dir: "{{ role_path }}/templates"
 pgbouncer_vars_dir: "{{ role_path }}/vars"

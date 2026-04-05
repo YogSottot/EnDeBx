@@ -2,6 +2,9 @@
 # Postgresql version
 postgresql_version: 15
 
+# Debian repository source (official / distro)
+postgresql_repository_source: official
+
 postgresql_debug: false
 
 # Postgresql installation related variables
@@ -176,9 +179,22 @@ postgresql_privs:
     port: "{{ postgresql_user_port }}"
     login_unix_socket: "{{ postgresql_socket }}"
     # login_host: "127.0.0.1"
+  - roles: "{{ postgresql_username }}"
+    db: "{{ postgresql_db_name }}"
+    privs: ALL
+    objs: "{{ postgresql_db_name }}"
+    type: database
+    state: "{{ postgresql_user_state }}"
+    port: "{{ postgresql_user_port }}"
+    login_unix_socket: "{{ postgresql_socket }}"
 
 # Extensions management per database
-postgresql_extensions: []
+postgresql_extensions:
+  - name: pgcrypto
+    db: "{{ postgresql_db_name }}"
+    port: "{{ postgresql_user_port }}"
+    login_unix_socket: "{{ postgresql_socket }}"
+    state: "{{ postgresql_user_state }}"
 
 # Inline query strings to run
 postgresql_queries: []

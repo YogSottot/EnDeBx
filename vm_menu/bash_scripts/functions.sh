@@ -233,9 +233,10 @@ menu_postgresql(){
     echo -e "\n          Menu -> PostgreSQL settings:\n";
     echo "          1) Install PostgreSQL";
     echo "          2) Delete PostgreSQL";
-    echo "          3) Add user and db in PostgreSQL";
-    echo "          4) Remove user and db from PostgreSQL";
-    echo "          5) Install/Delete Pgbouncer";
+    echo "          3) Upgrade PostgreSQL";
+    echo "          4) Add user and db in PostgreSQL";
+    echo "          5) Remove user and db from PostgreSQL";
+    echo "          6) Install/Delete Pgbouncer";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -245,9 +246,10 @@ menu_postgresql(){
 
       "1") install_postgresql ;;
       "2") delete_postgresql ;;
-      "3") add_user_and_db_postgresql ;;
-      "4") delete_user_and_db_postgresql ;;
-      "5") install_delete_pgbouncer ;;
+      "3") upgrade_postgresql ;;
+      "4") add_user_and_db_postgresql ;;
+      "5") delete_user_and_db_postgresql ;;
+      "6") install_delete_pgbouncer ;;
 
     0|z)  main_menu
     ;;
@@ -263,16 +265,36 @@ menu_mysql(){
     comand=;
     until [[ "$comand" == "0" ]]; do
     clear;
-    detect_mysql_version;
+    local mysql_installed=false
+    local option_upgrade_57=""
+    local option_upgrade_80=""
+    local option_delete_mysql=""
+
+    if detect_mysql_version >/dev/null 2>&1; then
+      mysql_installed=true
+    fi
 
     echo -e "\n          Menu -> MySQL:\n";
-    echo "          1) Re-generate MySQL config";
-  if [ "$MYSQL_VERSION_MAJOR" == 5.7 ] ; then
-    echo "          2) Upgrade percona 5.7 to 8.0";
-  fi
-  if [ "$MYSQL_FLAVOR" == "Percona" ] && [ "$MYSQL_VERSION_MAJOR" == 8.0 ] ; then
-    echo "          3) Upgrade percona 8.0 to 8.4";
-  fi
+    if $mysql_installed; then
+      echo "          Installed: ${MYSQL_FLAVOR} ${MYSQL_VERSION}"
+      echo "          1) Re-generate MySQL config";
+      local next_option=2
+      if [ "$MYSQL_VERSION_MAJOR" == 5.7 ] ; then
+        option_upgrade_57="$next_option"
+        echo "          ${option_upgrade_57}) Upgrade percona 5.7 to 8.0";
+        next_option=$((next_option + 1))
+      fi
+      if [ "$MYSQL_FLAVOR" == "Percona" ] && [ "$MYSQL_VERSION_MAJOR" == 8.0 ] ; then
+        option_upgrade_80="$next_option"
+        echo "          ${option_upgrade_80}) Upgrade percona 8.0 to 8.4";
+        next_option=$((next_option + 1))
+      fi
+      option_delete_mysql="$next_option"
+      echo "          ${option_delete_mysql}) Delete MySQL";
+    else
+      echo "          MySQL is not installed"
+      echo "          1) Install MySQL";
+    fi
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -280,9 +302,34 @@ menu_mysql(){
 
     case $comand in
 
-      "1") re-generate_mysql_config ;;
-      "2") upgrade_percona_5.7_to_8.0 ;;
-      "3") upgrade_percona_8.0_to_8.4  ;;
+      "1")
+        if $mysql_installed; then
+          re-generate_mysql_config
+        else
+          install_mysql
+        fi
+        ;;
+      "$option_upgrade_57")
+        if [ -n "$option_upgrade_57" ]; then
+          upgrade_percona_5.7_to_8.0
+        else
+          echo "Error unknown command"
+        fi
+        ;;
+      "$option_upgrade_80")
+        if [ -n "$option_upgrade_80" ]; then
+          upgrade_percona_8.0_to_8.4
+        else
+          echo "Error unknown command"
+        fi
+        ;;
+      "$option_delete_mysql")
+        if [ -n "$option_delete_mysql" ]; then
+          delete_mysql
+        else
+          echo "Error unknown command"
+        fi
+        ;;
 
     0|z)  main_menu
     ;;
@@ -319,6 +366,206 @@ user_exists() {
         return 1
     fi
     return 0
+}
+
+is_mysql_installed() {
+    detect_mysql_version >/dev/null 2>&1
+}
+
+get_distribution_postgresql_version() {
+    apt-cache depends postgresql 2>/dev/null |
+        awk '/Depends: postgresql-[0-9]+/ {sub("postgresql-", "", $2); print $2; exit}'
+}
+
+get_available_postgresql_versions_for_source() {
+    local repository_source="${1:-${BS_POSTGRESQL_REPOSITORY_SOURCE}}"
+
+    if [ "${repository_source}" = "distro" ]; then
+        get_distribution_postgresql_version
+        return 0
+    fi
+
+    apt-cache search --names-only '^postgresql-[0-9]+$' 2>/dev/null |
+        sed -n 's/^postgresql-\([0-9]\+\)[[:space:]].*/\1/p' |
+        sort -n |
+        uniq |
+        tr '\n' ' '
+}
+
+get_installed_postgresql_versions_raw() {
+    ls -d /usr/lib/postgresql/[0-9]* 2>/dev/null | xargs -r -n1 basename | sort -n | tr '\n' ' '
+}
+
+get_pgbouncer_listen_port() {
+    local pgbouncer_port
+    pgbouncer_port=$(sed -n 's/^[[:space:]]*listen_port[[:space:]]*=[[:space:]]*//p' /etc/pgbouncer/pgbouncer-other.ini 2>/dev/null | head -n1)
+    printf '%s\n' "${pgbouncer_port:-6432}"
+}
+
+get_pgbouncer_backend_port_for_user() {
+    local username=$1
+    sed -n "s/^${username}[[:space:]]*=[[:space:]]*host=.* port=\\([0-9]\\+\\).*/\\1/p" /etc/pgbouncer/pgbouncer-other.ini 2>/dev/null | head -n1
+}
+
+get_postgresql_port_by_version() {
+    local version=$1
+    local port
+
+    port=$(grep -r "/var/lib/postgresql/$version/main" /run/postgresql/ 2>/dev/null | grep -oP '(?<=PGSQL.)\d+' | head -n1)
+    if [[ -z "$port" ]]; then
+        port=$(sed -nE "s/^[[:space:]]*port[[:space:]]*=[[:space:]]*'?([0-9]+)'?.*/\\1/p" "/etc/postgresql/$version/main/postgresql.conf" 2>/dev/null | head -n1)
+    fi
+
+    printf '%s\n' "$port"
+}
+
+find_postgresql_version_by_port() {
+    local port=$1
+    local version current_port
+    for version in $(get_installed_postgresql_versions_raw); do
+        current_port=$(get_postgresql_port_by_version "$version")
+        if [ "$current_port" = "$port" ]; then
+            printf '%s\n' "$version"
+            return 0
+        fi
+    done
+    return 1
+}
+
+postgresql_cluster_exists() {
+    local version=$1
+    [[ -d "/etc/postgresql/$version/main" ]]
+}
+
+print_postgresql_cluster_info() {
+    local version=$1
+    local port socket status
+
+    if ! postgresql_cluster_exists "$version"; then
+        printf "   PostgreSQL cluster for version %s not found\n" "$version"
+        return 1
+    fi
+
+    port=$(get_postgresql_port_by_version "$version")
+    socket="/run/postgresql/.s.PGSQL.$port"
+    status="stopped"
+
+    if [[ -n "$port" && -S "$socket" ]]; then
+        status="running"
+    fi
+
+    printf "   \n   Version: %s\n   Port: %s\n   Status: %s\n\n" "$version" "${port:-unknown}" "$status"
+}
+
+postgresql_db_exists() {
+    local db_name=$1
+    sudo -u postgres psql -h /run/postgresql -p "$postgresql_port" -tAc "SELECT 1 FROM pg_database WHERE datname = '${db_name}'" 2>/dev/null | grep -q 1
+}
+
+postgresql_user_exists() {
+    local db_user=$1
+    sudo -u postgres psql -h /run/postgresql -p "$postgresql_port" -tAc "SELECT 1 FROM pg_roles WHERE rolname = '${db_user}'" 2>/dev/null | grep -q 1
+}
+
+database_exists_by_type() {
+    local db_engine=$1
+    local db_name=$2
+
+    if [ "$db_engine" = "pgsql" ]; then
+        postgresql_db_exists "$db_name"
+    else
+        db_exists "$db_name"
+    fi
+}
+
+user_exists_by_type() {
+    local db_engine=$1
+    local username=$2
+
+    if [ "$db_engine" = "pgsql" ]; then
+        postgresql_user_exists "$username"
+    else
+        user_exists "$username"
+    fi
+}
+
+select_site_database_type() {
+    local mysql_available=$1
+    local postgresql_available=$2
+
+    db_type="mysql"
+    postgresql_version=""
+    postgresql_port=""
+    postgresql_db_lc_collate="ru_RU.UTF-8"
+    postgresql_db_lc_ctype="${postgresql_db_lc_collate}"
+    postgresql_db_encoding="UTF-8"
+    pgbouncer_use=0
+    db_host="localhost"
+    db_port="3306"
+
+    if $mysql_available && $postgresql_available; then
+        echo "   The following databases are available:"
+        echo "   mysql - default database used for site (MySQL)"
+        echo "   pgsql - alternative database used for site (PostgreSQL)"
+        echo "   Default: mysql"
+        echo
+
+        while true; do
+            read -r -p "   Enter database type (mysql|pgsql): " input_db_type
+            input_db_type=${input_db_type:-mysql}
+            case "${input_db_type}" in
+                mysql|pgsql)
+                    db_type="${input_db_type}"
+                    break
+                    ;;
+                *)
+                    echo "   Please enter mysql or pgsql."
+                    ;;
+            esac
+        done
+    elif $postgresql_available; then
+        db_type="pgsql"
+    fi
+
+    if [ "$db_type" = "pgsql" ]; then
+        resolve_site_postgresql_instance || return 1
+        db_host="127.0.0.1"
+        db_port="${postgresql_port}"
+
+        if command -v pgbouncer >/dev/null 2>&1; then
+            pgbouncer_use=1
+            db_port=$(get_pgbouncer_listen_port)
+        fi
+    fi
+}
+
+resolve_site_postgresql_instance() {
+    local versions version_count default_pg_version
+    versions=$(get_installed_postgresql_versions_raw)
+    version_count=$(wc -w <<< "$versions")
+
+    if [ "$version_count" -eq 0 ]; then
+        echo "   PostgreSQL is not installed."
+        return 1
+    fi
+
+    if [ "$version_count" -gt 1 ]; then
+        echo "   Installed PostgreSQL versions: $versions"
+        default_pg_version=$(printf '%s\n' "$versions" | awk '{print $1}')
+        while true; do
+            read_by_def "   Enter PostgreSQL version for site (default: ${default_pg_version}): " postgresql_version "${default_pg_version}"
+            if [[ " ${versions} " =~ " ${postgresql_version} " ]] && get_postgresql_info "${postgresql_version}" >/dev/null; then
+                break
+            fi
+            echo "   PostgreSQL version ${postgresql_version} is not installed or not running."
+        done
+    else
+        postgresql_version=$(printf '%s\n' "$versions" | awk '{print $1}')
+        if ! get_postgresql_info "${postgresql_version}" >/dev/null; then
+            echo "   PostgreSQL version ${postgresql_version} is not running."
+            return 1
+        fi
+    fi
 }
 
 # Function to generate a random hash
@@ -372,9 +619,18 @@ add_site(){
 
     domain=''
     mode=''
+    db_type='mysql'
     db_name=''
     db_user=''
     db_password=$(generate_password $BS_CHAR_DB_PASSWORD)
+    db_host='localhost'
+    db_port='3306'
+    postgresql_version=''
+    postgresql_port=''
+    postgresql_db_lc_collate='ru_RU.UTF-8'
+    postgresql_db_lc_ctype="${postgresql_db_lc_collate}"
+    postgresql_db_encoding='UTF-8'
+    pgbouncer_use=0
     path_site_from_links=$BS_PATH_DEFAULT_SITE
     php_enable_php_fpm_xdebug='N'
     new_version_php="$default_version";
@@ -441,6 +697,22 @@ add_site(){
         done
       ;;
       full )
+          local mysql_available=false
+          local postgresql_available=false
+
+          if is_mysql_installed; then
+            mysql_available=true
+          fi
+          if [ -n "$(get_installed_postgresql_versions_raw)" ]; then
+            postgresql_available=true
+          fi
+
+          if ! $mysql_available && ! $postgresql_available; then
+            echo "   Neither MySQL nor PostgreSQL is installed. Install a database first."
+            press_any_key_to_return_menu
+            return 1
+          fi
+
           # Choose PHP version for site
           while true; do
               read_by_def "   Enter PHP version for site from installed (default: $default_version): " new_version_php "$new_version_php"
@@ -502,6 +774,10 @@ add_site(){
               BS_PATH_USER_HOME="${BS_USER_SERVER_SITES}"
               BS_PATH_SITES="${BS_PATH_USER_HOME_PREFIX}/${BS_PATH_USER_HOME}"
 
+              if ! select_site_database_type "$mysql_available" "$postgresql_available"; then
+                  press_any_key_to_return_menu
+                  return 1
+              fi
 
               # Create the user if it doesn't exist
               if ! id "$BS_USER_SERVER_SITES" &>/dev/null; then
@@ -514,7 +790,7 @@ add_site(){
             db_name=$(sanitize_name "db_$domain" "$BS_MAX_CHAR_DB_NAME")
             db_user=$(sanitize_name "usr_$domain" "$BS_MAX_CHAR_DB_USER")
 
-            if db_exists "$db_name" || user_exists "$db_user"; then
+            if database_exists_by_type "$db_type" "$db_name" || user_exists_by_type "$db_type" "$db_user"; then
                 printf "Warning: Database '%s' or User '%s' already exists. Generating unique names...\n" "$db_name" "$db_user" >&2
                 local unique_hash; unique_hash=$(generate_random_hash)
                 db_name=$(sanitize_name "db_$domain_$unique_hash" "$BS_MAX_CHAR_DB_NAME")
@@ -522,7 +798,7 @@ add_site(){
             fi
 
             # Ensure generated names are unique
-            while db_exists "$db_name" || user_exists "$db_user"; do
+            while database_exists_by_type "$db_type" "$db_name" || user_exists_by_type "$db_type" "$db_user"; do
                 printf "Error: Generated names '%s' or '%s' already exist. Regenerating...\n" "$db_name" "$db_user" >&2
                 unique_hash=$(generate_random_hash)
                 db_name=$(sanitize_name "db_$domain_$unique_hash" "$BS_MAX_CHAR_DB_NAME")
@@ -533,7 +809,7 @@ add_site(){
                 read_by_def "   Enter database name: (default: $db_name): " db_name $db_name
                 db_name=$(sanitize_name "$db_name" "$BS_MAX_CHAR_DB_NAME")
 
-                if db_exists "$db_name"; then
+                if database_exists_by_type "$db_type" "$db_name"; then
                     printf "Error: Database '%s' already exists.\n" "$db_name" >&2
                     unique_hash=$(generate_random_hash)
                     db_name=$(sanitize_name "db_$domain_$unique_hash" "$BS_MAX_CHAR_DB_NAME")
@@ -547,7 +823,7 @@ add_site(){
                 read_by_def "   Enter database user: (default: $db_user): " db_user $db_user
                 db_user=$(sanitize_name "$db_user" "$BS_MAX_CHAR_DB_USER")
 
-                if user_exists "$db_user"; then
+                if user_exists_by_type "$db_type" "$db_user"; then
                     printf "Error: User '%s' already exists.\n" "$db_user" >&2
                     unique_hash=$(generate_random_hash)
                     db_user=$(sanitize_name "usr_$domain_$unique_hash" "$BS_MAX_CHAR_DB_USER")
@@ -599,6 +875,17 @@ add_site(){
         echo "   Selected PHP version: $new_version_php"
         echo "   Xdebug enabled: $php_enable_php_fpm_xdebug"
         echo "   Push-server config: $push_server_bx_settings"
+        echo "   Database type: $db_type"
+        if [ "$db_type" == "pgsql" ]; then
+          echo "   PostgreSQL version: $postgresql_version"
+          if [ "$pgbouncer_use" -eq 1 ]; then
+            echo "   Pgbouncer: Y"
+          else
+            echo "   Pgbouncer: N"
+          fi
+        fi
+        echo "   Database host: $db_host"
+        echo "   Database port: $db_port"
         echo "   Database name: $db_name";
         echo "   Database user: $db_user";
         echo "   Database password: $db_password";
@@ -2281,7 +2568,7 @@ function install_delete_pgbouncer() {
 
 function install_postgresql() {
   clear
-  local versions filtered_versions
+  local versions filtered_versions distro_postgresql_version
   versions=$(get_installed_postgresql_versions)
   filtered_versions=$(validate_numeric_version "$versions")
   
@@ -2289,19 +2576,40 @@ function install_postgresql() {
       get_postgresql_info "$version"
   done
 
-  postgresql_version='17';
-  postgresql_port='5432';
+  postgresql_repository_source="${BS_POSTGRESQL_REPOSITORY_SOURCE}"
+  postgresql_version="${BS_POSTGRESQL_VERSION}"
+  postgresql_port='5432'
 
   action="INSTALL"
 
   action_color="\e[33m ${action} \e[0m"
 
-  read -r -p "   Avaliable version: https://wiki.postgresql.org/wiki/Apt
-   Enter postgresql version (default: $postgresql_version): " input_version
-            postgresql_version=${input_version:-$postgresql_version}
+  while true; do
+    read_by_def "   Enter PostgreSQL repository source (official/distro) [${postgresql_repository_source}]: " postgresql_repository_source "${postgresql_repository_source}"
+    postgresql_repository_source="${postgresql_repository_source,,}"
+    case "${postgresql_repository_source}" in
+      official|distro) break ;;
+      *) echo "   Please enter official or distro." ;;
+    esac
+  done
 
-read -r -p "   Specify the port that this version will use (default: $postgresql_port): " input_port
-            postgresql_port=${input_port:-$postgresql_port}
+  if [ "${postgresql_repository_source}" = "distro" ]; then
+    distro_postgresql_version=$(get_distribution_postgresql_version)
+    if [ -z "${distro_postgresql_version}" ]; then
+      echo "   Unable to determine PostgreSQL version from distribution repository."
+      press_any_key_to_return_menu
+      return 1
+    fi
+    postgresql_version="${distro_postgresql_version}"
+    echo "   Distribution repository version: ${postgresql_version}"
+  else
+    read -r -p "   Avaliable version: https://wiki.postgresql.org/wiki/Apt
+   Enter postgresql version (default: $postgresql_version): " input_version
+    postgresql_version=${input_version:-$postgresql_version}
+  fi
+
+  read -r -p "   Specify the port that this version will use (default: $postgresql_port): " input_port
+  postgresql_port=${input_port:-$postgresql_port}
 
   while true; do
     read -r -p "   Do you really want to$(echo -e "${action_color}")PostgreSQL? (Y/N): " answer
@@ -2316,7 +2624,7 @@ read -r -p "   Specify the port that this version will use (default: $postgresql
 
 get_installed_postgresql_versions() {
     local versions
-    versions=$(ls -d /usr/lib/postgresql/[0-9]* 2>/dev/null | xargs -n1 basename | sort -n | tr '\n' ' ')
+    versions=$(get_installed_postgresql_versions_raw)
     printf "   Installed versions: %s\n" "$versions"
 }
 
@@ -2332,15 +2640,17 @@ validate_numeric_version() {
 get_postgresql_info() {
     local version=$1
     local port socket
-    port=$(grep -r "/var/lib/postgresql/$version/main" /run/postgresql/ | grep -oP '(?<=PGSQL.)\d+')
+    port=$(get_postgresql_port_by_version "$version")
     socket="/run/postgresql/.s.PGSQL.$port"
 
     if [ -n "$port" ] && [ -S "$socket" ]; then
         printf "   \n   Version: %s\n   Port: %s\n   Unix socket: %s\n\n" "$version" "$port" "$socket"
         export postgresql_port="$port"
         export postgresql_socket="$socket"
+        return 0
     else
         printf "   PostgreSQL for version %s not found\n" "$version"
+        return 1
     fi
 }
 
@@ -2367,6 +2677,127 @@ function delete_postgresql() {
    Do you really want to$(echo -e "${action_color}")PostgreSQL? (Y/N):" answer
     case $answer in
       [Yy]* ) action_delete_postgresql; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function upgrade_postgresql() {
+  clear
+  local versions filtered_versions available_versions distro_postgresql_version default_from input_from
+
+  versions=$(get_installed_postgresql_versions_raw)
+  filtered_versions=$(validate_numeric_version "$versions")
+
+  if [[ -z "${filtered_versions// }" ]]; then
+      echo "   PostgreSQL is not installed."
+      press_any_key_to_return_menu
+      return 1
+  fi
+
+  echo "   Installed PostgreSQL versions:"
+  for version in $filtered_versions; do
+      print_postgresql_cluster_info "$version"
+  done
+
+  postgresql_repository_source="${BS_POSTGRESQL_REPOSITORY_SOURCE}"
+  postgresql_upgrade_to_version="${BS_POSTGRESQL_VERSION}"
+  default_from=""
+
+  if [[ $(wc -w <<< "$filtered_versions") -eq 1 ]]; then
+      default_from=$(printf '%s\n' "$filtered_versions" | awk '{print $1}')
+  fi
+
+  while true; do
+    if [[ -n "$default_from" ]]; then
+        read_by_def "   Enter installed PostgreSQL version to upgrade from [${default_from}]: " postgresql_upgrade_from_version "${default_from}"
+    else
+        read -r -p "   Enter installed PostgreSQL version to upgrade from: " input_from
+        postgresql_upgrade_from_version="${input_from}"
+    fi
+
+    if [[ " ${filtered_versions} " =~ " ${postgresql_upgrade_from_version} " ]] && postgresql_cluster_exists "${postgresql_upgrade_from_version}"; then
+        break
+    fi
+
+    echo "   PostgreSQL version ${postgresql_upgrade_from_version} is not installed."
+  done
+
+  while true; do
+    read_by_def "   Enter PostgreSQL repository source for target version (official/distro) [${postgresql_repository_source}]: " postgresql_repository_source "${postgresql_repository_source}"
+    postgresql_repository_source="${postgresql_repository_source,,}"
+    case "${postgresql_repository_source}" in
+      official|distro) break ;;
+      *) echo "   Please enter official or distro." ;;
+    esac
+  done
+
+  available_versions=$(get_available_postgresql_versions_for_source "${postgresql_repository_source}")
+  if [[ -n "${available_versions// }" ]]; then
+      echo "   Available PostgreSQL versions for installation: ${available_versions}"
+  else
+      echo "   Unable to determine available PostgreSQL versions from current APT cache."
+  fi
+
+  if [ "${postgresql_repository_source}" = "distro" ]; then
+    distro_postgresql_version=$(get_distribution_postgresql_version)
+    if [ -z "${distro_postgresql_version}" ]; then
+      echo "   Unable to determine PostgreSQL version from distribution repository."
+      press_any_key_to_return_menu
+      return 1
+    fi
+    postgresql_upgrade_to_version="${distro_postgresql_version}"
+    echo "   Distribution repository version: ${postgresql_upgrade_to_version}"
+  else
+    while true; do
+      read_by_def "   Enter PostgreSQL version to upgrade to [${postgresql_upgrade_to_version}]: " postgresql_upgrade_to_version "${postgresql_upgrade_to_version}"
+
+      if ! [[ "${postgresql_upgrade_to_version}" =~ ^[0-9]+$ ]]; then
+        echo "   PostgreSQL version must be numeric."
+        continue
+      fi
+
+      break
+    done
+  fi
+
+  if ! [[ "${postgresql_upgrade_to_version}" =~ ^[0-9]+$ ]]; then
+      echo "   PostgreSQL version must be numeric."
+      press_any_key_to_return_menu
+      return 1
+  fi
+
+  if (( 10#${postgresql_upgrade_to_version} <= 10#${postgresql_upgrade_from_version} )); then
+      echo "   Target PostgreSQL version must be greater than source version."
+      press_any_key_to_return_menu
+      return 1
+  fi
+
+  if postgresql_cluster_exists "${postgresql_upgrade_to_version}"; then
+      echo "   PostgreSQL cluster for version ${postgresql_upgrade_to_version} already exists."
+      echo "   Remove it first or choose another target version."
+      press_any_key_to_return_menu
+      return 1
+  fi
+
+  action="UPGRADE"
+
+  echo -e "\n   Entered data:\n"
+  echo "   Task: ${action} PostgreSQL"
+  echo "   Upgrade from version: ${postgresql_upgrade_from_version}"
+  echo "   Upgrade to version: ${postgresql_upgrade_to_version}"
+  echo "   Target repository source: ${postgresql_repository_source}"
+  echo
+  echo "   Databases, users and cluster config will be migrated to the new version."
+  echo "   The new cluster will keep the original port."
+  echo "   The old PostgreSQL version will be removed after successful upgrade."
+  echo
+
+  while true; do
+    read -r -p "   Confirm that you have a backup and want to upgrade PostgreSQL? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_upgrade_postgresql; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac
@@ -2792,6 +3223,132 @@ detect_mysql_version() {
     MYSQL_VERSION_MAJOR="$major"
 }
 
+get_debian_major_version() {
+    local os_id version_id major_version
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "debian" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+            return 0
+        fi
+    fi
+
+    if [ -r /etc/debian_version ]; then
+        major_version=$(cut -d. -f1 /etc/debian_version)
+        if [[ "${major_version}" =~ ^[0-9]+$ ]]; then
+            printf '%s\n' "${major_version}"
+        fi
+    fi
+}
+
+get_ubuntu_major_version() {
+    local os_id version_id
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "ubuntu" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+        fi
+    fi
+}
+
+function install_mysql() {
+    clear
+    local input_flavor input_version input_charset input_collation debian_major_version ubuntu_major_version
+
+    action="INSTALL"
+    debian_major_version=$(get_debian_major_version)
+    ubuntu_major_version=$(get_ubuntu_major_version)
+
+    while true; do
+        read_by_def "   Enter MySQL flavor (percona/mariadb) [${BS_DB_FLAVOR}]: " input_flavor "${BS_DB_FLAVOR}"
+        input_flavor="${input_flavor,,}"
+        case "${input_flavor}" in
+            percona|mariadb)
+                BS_DB_FLAVOR="${input_flavor}"
+                break
+                ;;
+            *)
+                echo "   Please enter percona or mariadb."
+                ;;
+        esac
+    done
+
+    if [ "${BS_DB_FLAVOR}" = "percona" ]; then
+        while true; do
+            read_by_def "   Enter Percona version (5.7/8.0/8.4) [${BS_DB_VERSION}]: " input_version "${BS_DB_VERSION}"
+            case "${input_version}" in
+                5.7|8.0|8.4)
+                    if [ -n "${debian_major_version}" ] &&
+                       [ "${debian_major_version}" -ge 13 ] &&
+                       { [ "${input_version}" = "5.7" ] || [ "${input_version}" = "8.0" ]; }; then
+                        echo "   Percona ${input_version} is not available on Debian ${debian_major_version}. Enter another version."
+                        continue
+                    fi
+                    if [ -n "${ubuntu_major_version}" ] &&
+                       [ "${ubuntu_major_version}" -ge 24 ] &&
+                       [ "${input_version}" = "5.7" ]; then
+                        echo "   Percona ${input_version} is not available on Ubuntu ${ubuntu_major_version}.04+. Enter another version."
+                        continue
+                    fi
+                    BS_DB_VERSION="${input_version}"
+                    break
+                    ;;
+                *)
+                    echo "   Please enter 5.7, 8.0 or 8.4."
+                    ;;
+            esac
+        done
+    else
+        BS_DB_VERSION="10.11"
+    fi
+
+    read_by_def "   Enter BS_DB_CHARACTER_SET_SERVER (default: ${BS_DB_CHARACTER_SET_SERVER}): " input_charset "${BS_DB_CHARACTER_SET_SERVER}"
+    BS_DB_CHARACTER_SET_SERVER="${input_charset}"
+
+    read_by_def "   Enter BS_DB_COLLATION (default: ${BS_DB_COLLATION}): " input_collation "${BS_DB_COLLATION}"
+    BS_DB_COLLATION="${input_collation}"
+
+    echo -e "\n   Entered data:\n"
+    echo "   Action: ${action} MySQL"
+    echo "   MySQL flavor: ${BS_DB_FLAVOR}"
+    echo "   MySQL version: ${BS_DB_VERSION}"
+    echo "   Character set: ${BS_DB_CHARACTER_SET_SERVER}"
+    echo "   Collation: ${BS_DB_COLLATION}"
+    echo -e "\n"
+
+    while true; do
+        read -r -p "   Do you really want to install MySQL? (Y/N): " answer
+        case $answer in
+          [Yy]* ) action_install_mysql; break;;
+          [Nn]* ) break;;
+          * ) echo "   Please enter Y or N.";;
+        esac
+    done
+}
+
+function delete_mysql() {
+    clear
+    action="DELETE"
+
+    echo -e "   All MySQL databases, users and data files will be deleted."
+    echo
+
+    while true; do
+        read -r -p "   Do you really want to delete MySQL? (Y/N): " answer
+        case $answer in
+          [Yy]* ) action_delete_mysql; break;;
+          [Nn]* ) break;;
+          * ) echo "   Please enter Y or N.";;
+        esac
+    done
+}
+
 function re-generate_mysql_config() {
     clear;
     while true; do
@@ -2914,8 +3471,13 @@ function delete_site() {
     echo -e "\n   Menu ->\e[33m Delete site:\e[0m\n";
 
     site=''
+    db_type='mysql'
     db_name=''
     db_user=''
+    db_host=''
+    db_port=''
+    postgresql_port=''
+    pgbouncer_use=0
     path_site_from_links='';
 
     read_by_def "  Enter path to site (example: /var/www/html/bx-site): " path_site_from_links "${path_site_from_links}";
@@ -2954,6 +3516,23 @@ function delete_site() {
 
         db_name="${results[0]}"
         db_user="${results[1]}"
+        db_type="${results[2]:-mysql}"
+        db_host="${results[3]}"
+        db_port="${results[4]}"
+
+        if [ "$db_type" = "pgsql" ]; then
+          postgresql_port="${db_port:-5432}"
+          if command -v pgbouncer >/dev/null 2>&1 && [ "${db_port}" = "$(get_pgbouncer_listen_port)" ]; then
+            local backend_port
+            backend_port=$(get_pgbouncer_backend_port_for_user "$db_user")
+            if [ -n "$backend_port" ]; then
+              postgresql_port="$backend_port"
+              pgbouncer_use=1
+            fi
+          fi
+
+          postgresql_version=$(find_postgresql_version_by_port "$postgresql_port" || true)
+        fi
 
         echo -e "\n  \e[33m The site directory (${full_path_site}) will be permanently deleted!!!\e[0m";
         echo -e "\n  \e[33m The database (${db_name}) and the user database (${db_user}) will be permanently deleted!!!\e[0m";

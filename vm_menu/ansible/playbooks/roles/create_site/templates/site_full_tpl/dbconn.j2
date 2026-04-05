@@ -1,12 +1,20 @@
 <?php
+/* {{ ansible_managed }} */
+{% if db_type | default("mysql") != 'pgsql' %}
 define('DBPersistent', false);
-$DBType = 'mysql';
-$DBHost = "localhost";
+{% endif %}
+$DBType = '{{ db_type | default("mysql") }}';
+{% if db_type | default("mysql") == 'pgsql' %}
+$DBHost = "{{ db_host | default('127.0.0.1') }}";
+{% else %}
+$DBHost = "{{ db_host | default('localhost') }}";
+{% endif %}
 $DBName = "{{ db_name }}";
 $DBLogin = '{{ db_user }}';
 $DBPassword = '{{ db_password }}';
 $DBDebug = false;
 $DBDebugToFile = false;
+{% if db_type | default("mysql") != 'pgsql' %}
 define('DELAY_DB_CONNECT', true);
 define('CACHED_b_file', 3600);
 define('CACHED_b_file_bucket_size', 10);
@@ -17,20 +25,34 @@ define('CACHED_b_site_template', 3600);
 define('CACHED_b_event', 3600);
 define('CACHED_b_agent', 3660);
 define('CACHED_menu', 3600);
+{% endif %}
 
 define('BX_FILE_PERMISSIONS', {{ permissions_sites_files }});
 define('BX_DIR_PERMISSIONS', {{ permissions_sites_dirs }});
 @umask(~BX_DIR_PERMISSIONS);
 
+{% if db_type | default("mysql") == 'mysql' %}
 define('MYSQL_TABLE_TYPE', 'INNODB');
-define('SHORT_INSTALL', true);
 define('VM_INSTALL', true);
+{% endif %}
+define('SHORT_INSTALL', true);
+{% if db_type | default("mysql") == 'pgsql' %}
+define('SHORT_INSTALL_CHECK', true);
+{% endif %}
 
 define('BX_UTF', true);
 define('BX_CRONTAB_SUPPORT', true);
+{% if db_type | default("mysql") == 'mysql' %}
 define('BX_COMPRESSION_DISABLED', true);
+{% endif %}
 
 define('BX_DISABLE_INDEX_PAGE', true);
+{% if db_type | default("mysql") == 'mysql' %}
 define('BX_USE_MYSQLI', true);
+{% endif %}
 define('BX_TEMPORARY_FILES_DIRECTORY', '{{ bx_temporary_files_directory }}');
-
+{% if db_type | default("mysql") == 'pgsql' %}
+@ini_set('memory_limit', '1024M');
+mb_internal_encoding('UTF-8');
+{% endif %}
+?>

@@ -3,6 +3,13 @@
 Список доступных для настройками переменных можно посмотреть в файлах `vm_menu/bash_scripts/config.sh` и `.env.menu.example`  
 Скопируйте `.env.menu.example` в `/root/.env.menu` и измените настройки согласно своим требованиям.
 
+Для выбора БД при первичной установке используются переменные:
+- `BS_INSTALL_DATABASE` — что устанавливать по умолчанию: `mysql` или `pgsql`.
+- `BS_DB_FLAVOR`, `BS_DB_VERSION`, `BS_DB_CHARACTER_SET_SERVER`, `BS_DB_COLLATION` — параметры установки MySQL.
+- `BS_POSTGRESQL_REPOSITORY_SOURCE` — источник PostgreSQL: `distro` или `official`.
+- `BS_POSTGRESQL_VERSION` — версия PostgreSQL для установки из `official`-репозитория.
+- `BS_INSTALL_PGBOUNCER` — устанавливать ли `pgbouncer` вместе с PostgreSQL.
+
 1) `List of sites dirs`
    Вывести список сайтов. Сайты разбиты по пользователям.  
 
@@ -26,6 +33,10 @@
       - `Enter PHP version for site from installed (default: 8.3):` — указать версию php для сайта. **Внимание!** Указывать можно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `6) Add/Change global PHP version`
       - `Do you want to add local push-server config to /bitrix/.setting.php? (Y/N) [Y]:` — добавить блок настроек push-сервер в `bitrix/.setting.php`. Если это не б24, то он там не нужен.
       - `Enter username for the site user:` — имя системного пользователя в домашней директории которого будет создан сайт.
+      - Если на сервере установлены и `mysql`, и `postgresql`, меню покажет выбор:
+        `Enter database type (mysql|pgsql):`
+      - Если выбран `pgsql` и на сервере установлено несколько версий PostgreSQL, меню дополнительно попросит выбрать нужную версию.
+      - Если для PostgreSQL установлен `pgbouncer`, пользователь сайта будет автоматически добавлен в его конфиг, а в `bitrix/.settings.php` будет записано подключение через `pgbouncer`.
       - `Enter database name:` — имя бд
       - `Enter database user:` — имя пользователя бд
       - `Enter database password:` — пароль пользователя бд
@@ -42,8 +53,8 @@
       - `Enter Y or N for setting SSL Let`s Encrypt site (default: N):` — создать сертификат для сайта.  
         Для сайта `default` домен сертификата запрашивается отдельно, потому что имя каталога сайта не является реальным доменом.
 
-   `3) Delete site` — удаление сайта  
-      - `Enter path to site:` — ввести путь к директории сайта. Директория сайта будет удалена безвозвратно. База данных и пользователь бд будут удалены безвозвратно. Введите сгенерированный код для продолжения.  
+   `3) Delete site` — удаление сайта
+      - `Enter path to site:` — ввести путь к директории сайта. Директория сайта будет удалена безвозвратно. База данных и пользователь бд будут удалены безвозвратно. Для PostgreSQL-сайтов удаление также снимает пользователя из `pgbouncer`, если он использовался. Введите сгенерированный код для продолжения.
 
    `4) Block/Unblock access by ip` — блокировать доступ к nginx по ip-адресу сервера. То есть, если ввести в браузере `http://ip-сервера`, то сайт по умолчанию не откроется. (будет добавлен `/etc/nginx/bx/site_enabled/bx_ext_ip.conf`)  
       Без блокировки будет открываться сайт по умолчанию.  
@@ -104,11 +115,17 @@
 
    `8) MySQL`
 
+     - Если MySQL ещё не установлен, меню показывает `1) Install MySQL` и спрашивает:
+       тип `percona` или `mariadb`,
+       для `percona` — версию `5.7/8.0/8.4`,
+       `BS_DB_CHARACTER_SET_SERVER`,
+       `BS_DB_COLLATION`.
+       Для `mariadb` версия не уточняется и используется `BS_DB_VERSION=10.11`.
+       На Debian 13 версии `percona 5.7` и `8.0` недоступны, а на Ubuntu 24.04+ недоступна `percona 5.7`, меню не даст продолжить с этими вариантами.
      - `1) Re-generate MySQL config` — повторная генерация конфига mysql
-
      - `2) Upgrade percona 5.7 to 8.0` — обновление percona mysql с 5.7 до 8.0
-
      - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
+     - `Delete MySQL` — полное удаление MySQL/MariaDB, его пакетов и каталогов с данными.
 
    `9) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
 
@@ -117,11 +134,12 @@
    `11) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
 
    Подменю `PostgreSQL`:
-   - `1) Install PostgreSQL` — установка разных версии postgresql из официальных репозиториев.  
+   - `1) Install PostgreSQL` — установка PostgreSQL либо из репозитория дистрибутива, либо из официального репозитория `apt.postgresql.org`. Для `distro`-варианта меню само определяет доступную версию дистрибутива.
    - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
-   - `3) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
-   - `4) Remove user and db from PostgreSQL` — удалить пользователя и бд.  
-   - `5) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`  
+   - `3) Upgrade PostgreSQL` — обновление major-версии PostgreSQL на Debian-like системах через `pg_upgradecluster`. Меню показывает установленные версии, просит выбрать `from` и `to`, даёт выбрать источник target-версии (`distro` или `official`) и по возможности показывает версии, доступные для установки из текущего APT-кэша. После успешного upgrade новая версия получает прежний порт и конфиги кластера, поэтому менять настройки сайтов не требуется. Старая версия после успешного переноса автоматически удаляется.
+   - `4) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
+   - `5) Remove user and db from PostgreSQL` — удалить пользователя и бд.
+   - `6) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`
 
 9) `Security settings` — отдельное меню для security-настроек.  
    `1) SSH/Updates` — повторная настройка параметров безопасности без полной переустановки окружения. Пункт запускает тот же playbook, что и настройка безопасности при первичной установке через `.env.menu`, и сохраняет выбранные значения в `/root/.env.menu`.  

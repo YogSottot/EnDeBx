@@ -144,6 +144,13 @@
         owner: "{{ user_server_sites }}"
         group: "{{ group_user_server_sites }}"
         mode: "{{ permissions_sites_files }}"
+      when: db_type | default('mysql') == 'mysql'
+
+    - name: Remove after_connect_d7.php for PostgreSQL
+      ansible.builtin.file:
+        path: "{{ document_root }}/bitrix/php_interface/after_connect_d7.php"
+        state: absent
+      when: db_type | default('mysql') == 'pgsql'
 
     - name: Adding logrotate file
       ansible.builtin.template:

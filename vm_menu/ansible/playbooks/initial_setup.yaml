@@ -6,11 +6,12 @@
   gather_facts: true
   vars:
     bx_temporary_files_directory: "{{ path_sites }}/.bx_temp/{{ db_name }}/"
+    database_type: "{{ database_type | default('mysql') }}"
     bx_install_push_server: "{{ bx_install_push_server | default(true) | bool }}"
+    install_pgbouncer: "{{ install_pgbouncer | default(false) | bool }}"
     marcelnijenhof_firewalld_allow_ports: "{{ bx_install_push_server | ternary([
       {'port': '8893/tcp', 'immediate': false},
-      {'port': '8894/tcp', 'immediate': false}
-    ], []) }}"
+      {'port': '8894/tcp', 'immediate': false} ], []) }}"
     marcelnijenhof_firewalld_allow_services:
       - service: https
         immediate: false
@@ -27,6 +28,51 @@
         host: "localhost"
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
+    postgresql_user_state: present
+    postgresql_socket: /run/postgresql/
+    postgresql_user_port: "{{ postgresql_port }}"
+    postgresql_db_lc_collate_effective: "{{ postgresql_db_lc_collate | default('ru_RU.UTF-8') }}"
+    postgresql_db_lc_ctype_effective: "{{ postgresql_db_lc_ctype | default(postgresql_db_lc_collate_effective) }}"
+    postgresql_db_encoding_effective: "{{ postgresql_db_encoding | default('UTF-8') }}"
+    postgresql_users:
+      - name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        encrypted: true
+        login_unix_socket: "{{ postgresql_socket }}"
+        port: "{{ postgresql_user_port | int }}"
+        state: "{{ postgresql_user_state }}"
+    postgresql_databases:
+      - name: "{{ db_name }}"
+        lc_collate: "{{ postgresql_db_lc_collate_effective }}"
+        lc_ctype: "{{ postgresql_db_lc_ctype_effective }}"
+        encoding: "{{ postgresql_db_encoding_effective }}"
+        login_unix_socket: "{{ postgresql_socket }}"
+        port: "{{ postgresql_user_port }}"
+        owner: "{{ db_user }}"
+        state: "{{ postgresql_user_state }}"
+    postgresql_privs:
+      - roles: "{{ db_user }}"
+        db: "{{ db_name }}"
+        privs: ALL
+        objs: public
+        type: schema
+        state: "{{ postgresql_user_state }}"
+        port: "{{ postgresql_user_port }}"
+        login_unix_socket: "{{ postgresql_socket }}"
+      - roles: "{{ db_user }}"
+        db: "{{ db_name }}"
+        privs: ALL
+        objs: "{{ db_name }}"
+        type: database
+        state: "{{ postgresql_user_state }}"
+        port: "{{ postgresql_user_port }}"
+        login_unix_socket: "{{ postgresql_socket }}"
+    postgresql_extensions:
+      - name: pgcrypto
+        db: "{{ db_name }}"
+        port: "{{ postgresql_user_port }}"
+        login_unix_socket: "{{ postgresql_socket }}"
+        state: "{{ postgresql_user_state }}"
 
   pre_tasks:
     - name: Set facts for Astra Linux
@@ -51,11 +97,28 @@
     - geerlingguy.apache
     - geerlingguy.php
     - geerlingguy.apache-php-fpm
-    - geerlingguy.mysql
+    - role: geerlingguy.mysql
+      when: database_type == "mysql"
+    - role: claranet.postgresql
+      when: database_type == "pgsql"
+    - role: mshurutov.pgbouncer
+      vars:
+        pgbouncer_action: INSTALL
+        pgbouncer_state: present
+        pgbouncer_pkg_state: present
+        pgbouncer_db_state: present
+        pgbouncer_db_user: "{{ db_user }}"
+        pgbouncer_db_password: "{{ db_password }}"
+        pgbouncer_db_port: "{{ postgresql_port }}"
+        pgbouncer_db_host: "/run/postgresql/"
+        postgresql_db_encoding: "{{ postgresql_db_encoding_effective }}"
+      when:
+        - database_type == "pgsql"
+        - install_pgbouncer | bool
     - role: geerlingguy.redis
-      when: bx_install_push_server
+      when: bx_install_push_server | bool
     - role: bx_push_server
-      when: bx_install_push_server
+      when: bx_install_push_server | bool
 
   post_tasks:
     - name: Setup repo for Astra Linux (cleanup)

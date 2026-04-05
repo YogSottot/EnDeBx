@@ -32,7 +32,7 @@
     objs: "{{ item.objs | d(omit) }}"
     schema: "{{ item.schema | d(omit) }}"
     grant_option: "{{ item.grant_option | d(omit) }}"
-    db: "{{ item.db | d(omit) }}"
+    database: "{{ item.db | d(omit) }}"
     target_roles: "{{ item.target_roles | d(omit) }}"
     state: "{{ item.state | default('present') }}"
     port: "{{ item.port | default(omit) }}"

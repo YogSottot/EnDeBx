@@ -92,11 +92,13 @@
       ansible.builtin.apt:
         name: python3-pymysql
         state: present
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Creating database
       community.mysql.mysql_db:
         name: "{{ db_name }}"
         state: present
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Check if caching_sha2_password plugin exists
       community.mysql.mysql_query:
@@ -105,10 +107,12 @@
           FROM INFORMATION_SCHEMA.PLUGINS
           WHERE PLUGIN_NAME = 'caching_sha2_password';
       register: mysql_plugin_check
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Set fact if caching_sha2_password exists
       ansible.builtin.set_fact:
         has_caching_sha2: "{{ mysql_plugin_check.query_result[0][0].cnt | int > 0 }}"
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Get MySQL charset and collation
       community.mysql.mysql_query:
@@ -117,11 +121,13 @@
             @@character_set_server AS mysql_character_set_server,
             @@collation_server AS mysql_collation_server;
       register: mysql_vars
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Set MySQL charset and collation facts
       ansible.builtin.set_fact:
         mysql_character_set_server: "{{ mysql_vars.query_result[0][0].mysql_character_set_server }}"
         mysql_collation_server: "{{ mysql_vars.query_result[0][0].mysql_collation_server }}"
+      when: db_type | default('mysql') == 'mysql'
 
     - name: Ensure MySQL users are present.
       community.mysql.mysql_user:
@@ -130,7 +136,7 @@
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: not has_caching_sha2
+      when: db_type | default('mysql') == 'mysql' and not has_caching_sha2
 
     - name: Ensure MySQL users are present with caching_sha2_password plugin
       community.mysql.mysql_user:
@@ -140,7 +146,106 @@
         plugin_auth_string: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         column_case_sensitive: true
-      when: has_caching_sha2
+      when: db_type | default('mysql') == 'mysql' and has_caching_sha2
+
+    - name: Installing of python3-psycopg2
+      ansible.builtin.apt:
+        name: python3-psycopg2
+        state: present
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Ensure PostgreSQL user is present
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        port: "{{ postgresql_port }}"
+        login_user: postgres
+        login_unix_socket: /run/postgresql
+        encrypted: true
+        state: present
+      become: true
+      become_user: postgres
+      become_method: su
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Ensure PostgreSQL database is present
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        port: "{{ postgresql_port }}"
+        lc_collate: "{{ postgresql_db_lc_collate | default('ru_RU.UTF-8') }}"
+        lc_ctype: "{{ postgresql_db_lc_ctype | default(postgresql_db_lc_collate | default('ru_RU.UTF-8')) }}"
+        encoding: "{{ postgresql_db_encoding | default('UTF-8') }}"
+        template: template0
+        login_user: postgres
+        login_unix_socket: /run/postgresql
+        owner: "{{ db_user }}"
+        state: present
+      become: true
+      become_user: postgres
+      become_method: su
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Ensure pgcrypto extension is present
+      community.postgresql.postgresql_ext:
+        name: pgcrypto
+        db: "{{ db_name }}"
+        port: "{{ postgresql_port }}"
+        login_user: postgres
+        login_unix_socket: /run/postgresql
+        state: present
+      become: true
+      become_user: postgres
+      become_method: su
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Grant PostgreSQL privileges on public schema
+      community.postgresql.postgresql_privs:
+        roles: "{{ db_user }}"
+        database: "{{ db_name }}"
+        privs: ALL
+        objs: public
+        type: schema
+        state: present
+        port: "{{ postgresql_port }}"
+        login_user: postgres
+        login_unix_socket: /run/postgresql
+      become: true
+      become_user: postgres
+      become_method: su
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Grant PostgreSQL privileges on database
+      community.postgresql.postgresql_privs:
+        roles: "{{ db_user }}"
+        database: "{{ db_name }}"
+        privs: ALL
+        objs: "{{ db_name }}"
+        type: database
+        state: present
+        port: "{{ postgresql_port }}"
+        login_user: postgres
+        login_unix_socket: /run/postgresql
+      become: true
+      become_user: postgres
+      become_method: su
+      when: db_type | default('mysql') == 'pgsql'
+
+    - name: Add PostgreSQL user to pgbouncer
+      ansible.builtin.include_role:
+        name: mshurutov.pgbouncer
+      vars:
+        pgbouncer_action: INSTALL
+        pgbouncer_state: present
+        pgbouncer_pkg_state: present
+        pgbouncer_db_state: present
+        pgbouncer_db_user: "{{ db_user }}"
+        pgbouncer_db_password: "{{ db_password }}"
+        pgbouncer_db_port: "{{ postgresql_port }}"
+        pgbouncer_db_host: "/run/postgresql/"
+        postgresql_db_encoding: "{{ postgresql_db_encoding | default('UTF-8') }}"
+      when:
+        - db_type | default('mysql') == 'pgsql'
+        - pgbouncer_use | default(false) | bool
 
     - name: Creating directory bitrix/php_interface
       ansible.builtin.file:
@@ -197,6 +302,13 @@
         owner: "{{ user_server_sites }}"
         group: "{{ group_user_server_sites }}"
         mode: "{{ permissions_sites_files }}"
+      when: db_type | default('mysql') == 'mysql'
+
+    - name: Remove after_connect_d7.php for PostgreSQL
+      ansible.builtin.file:
+        path: "{{ document_root }}/bitrix/php_interface/after_connect_d7.php"
+        state: absent
+      when: db_type | default('mysql') == 'pgsql'
 
     - name: Creating directory from bitrix temporary files
       ansible.builtin.file:

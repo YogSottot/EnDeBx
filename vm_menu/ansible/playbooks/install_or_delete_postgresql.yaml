@@ -20,7 +20,20 @@
         mode: '0644'
         owner: root
         group: root
-      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      when:
+        - ansible_facts_lsb_id is defined
+        - ansible_facts_lsb_id == 'Astra'
+        - (postgresql_repository_source | default('official')) == "official"
+      tags: always
+
+    - name: Remove pin-priority rules for apt.postgresql.org
+      ansible.builtin.file:
+        path: /etc/apt/preferences.d/postgresql-pin
+        state: absent
+      when:
+        - ansible_facts_lsb_id is defined
+        - ansible_facts_lsb_id == 'Astra'
+        - (postgresql_repository_source | default('official')) == "distro"
       tags: always
     - name: Install gcc
       ansible.builtin.apt:

@@ -11,6 +11,7 @@
     block: |
       Listen 127.0.0.1:{{ apache_listen_port }}
       Listen 127.0.0.1:8091
+    create: true
   notify: restart apache
 
 - name: Enable Apache mods.

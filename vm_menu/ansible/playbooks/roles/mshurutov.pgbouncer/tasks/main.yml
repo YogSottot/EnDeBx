@@ -104,6 +104,7 @@
     owner: "{{ pgbouncer_system_user }}"
     group: "{{ pgbouncer_system_group }}"
     mode: '0600'
+  when: pgbouncer_users is defined
   notify: Pgbouncer restart
   tags: pgbouncer,pgbouncer_user
 
@@ -113,9 +114,10 @@
   become_method: su
   ansible.builtin.lineinfile:
     dest: "{{ pgbouncer_user_file }}"
+    regexp: '^"{{ pgbouncer_db_user | regex_escape }}" '
     line: '"{{ pgbouncer_db_user }}" "{{ pgbouncer_db_password }}"'
     create: true
-    state: "{{ pgbouncer_pkg_state }}"
+    state: "{{ pgbouncer_db_state }}"
     owner: "{{ pgbouncer_system_user }}"
     group: "{{ pgbouncer_system_group }}"
     mode: '0600'
@@ -128,9 +130,10 @@
   become_method: su
   ansible.builtin.lineinfile:
     dest: "{{ pgbouncer_config_file }}"
+    regexp: '^{{ pgbouncer_db_user | regex_escape }} = '
     insertbefore: '^\[pgbouncer\]$'
     line: "{{ pgbouncer_db_user }} = host={{ pgbouncer_db_host }} port={{ pgbouncer_db_port }} client_encoding={{ postgresql_db_encoding }}"
-    state: "{{ pgbouncer_pkg_state }}"
+    state: "{{ pgbouncer_db_state }}"
     owner: "{{ pgbouncer_system_user }}"
     group: "{{ pgbouncer_system_group }}"
     mode: '0600'

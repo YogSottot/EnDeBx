@@ -1,0 +1,257 @@
+---
+- name: Upgrade PostgreSQL cluster
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  vars:
+    postgresql_upgrade_cluster_name: "{{ postgresql_cluster_name | default('main') }}"
+    postgresql_upgrade_old_config_dir: "/etc/postgresql/{{ postgresql_upgrade_from_version }}/{{ postgresql_upgrade_cluster_name }}"
+    postgresql_upgrade_new_config_dir: "/etc/postgresql/{{ postgresql_upgrade_to_version }}/{{ postgresql_upgrade_cluster_name }}"
+    postgresql_upgrade_old_data_dir: "/var/lib/postgresql/{{ postgresql_upgrade_from_version }}/{{ postgresql_upgrade_cluster_name }}"
+    postgresql_upgrade_old_data_parent_dir: "/var/lib/postgresql/{{ postgresql_upgrade_from_version }}"
+    postgresql_upgrade_new_data_dir: "/var/lib/postgresql/{{ postgresql_upgrade_to_version }}/{{ postgresql_upgrade_cluster_name }}"
+    postgresql_upgrade_target_packages:
+      - "postgresql-common"
+      - "postgresql-{{ postgresql_upgrade_to_version }}"
+      - "postgresql-client-{{ postgresql_upgrade_to_version }}"
+      - "postgresql-contrib-{{ postgresql_upgrade_to_version }}"
+    postgresql_upgrade_old_packages:
+      - "postgresql-{{ postgresql_upgrade_from_version }}"
+      - "postgresql-client-{{ postgresql_upgrade_from_version }}"
+      - "postgresql-contrib-{{ postgresql_upgrade_from_version }}"
+
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
+    - name: Add pin-priority rules for apt.postgresql.org
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/postgresql-pin
+        content: |
+          Package: *
+          Pin: origin apt.postgresql.org
+          Pin-Priority: 1000
+        create: true
+        mode: '0644'
+        owner: root
+        group: root
+      when:
+        - ansible_facts_lsb_id is defined
+        - ansible_facts_lsb_id == 'Astra'
+        - (postgresql_repository_source | default('official')) == "official"
+
+    - name: Remove pin-priority rules for apt.postgresql.org
+      ansible.builtin.file:
+        path: /etc/apt/preferences.d/postgresql-pin
+        state: absent
+      when:
+        - ansible_facts_lsb_id is defined
+        - ansible_facts_lsb_id == 'Astra'
+        - (postgresql_repository_source | default('official')) == "distro"
+
+  tasks:
+    - name: Fail when OS family is not Debian
+      ansible.builtin.fail:
+        msg: "PostgreSQL upgrade is currently supported only on Debian-like distributions."
+      when: ansible_os_family | lower != "debian"
+
+    - name: Validate PostgreSQL upgrade versions
+      ansible.builtin.assert:
+        that:
+          - postgresql_upgrade_from_version is match('^[0-9]+$')
+          - postgresql_upgrade_to_version is match('^[0-9]+$')
+          - postgresql_upgrade_from_version | int < postgresql_upgrade_to_version | int
+        fail_msg: "Invalid PostgreSQL upgrade versions. Target version must be greater than source version."
+
+    - name: Check source PostgreSQL cluster
+      ansible.builtin.stat:
+        path: "{{ postgresql_upgrade_old_config_dir }}"
+      register: postgresql_upgrade_old_cluster
+
+    - name: Fail when source PostgreSQL cluster is missing
+      ansible.builtin.fail:
+        msg: "PostgreSQL cluster {{ postgresql_upgrade_from_version }}/{{ postgresql_upgrade_cluster_name }} not found."
+      when: not postgresql_upgrade_old_cluster.stat.exists
+
+    - name: Check target PostgreSQL cluster before package installation
+      ansible.builtin.stat:
+        path: "{{ postgresql_upgrade_new_config_dir }}"
+      register: postgresql_upgrade_new_cluster
+
+    - name: Fail when target PostgreSQL cluster already exists
+      ansible.builtin.fail:
+        msg: "PostgreSQL cluster {{ postgresql_upgrade_to_version }}/{{ postgresql_upgrade_cluster_name }} already exists."
+      when: postgresql_upgrade_new_cluster.stat.exists
+
+    - name: Read source PostgreSQL cluster port
+      ansible.builtin.shell: |
+        port=$(pg_lsclusters --no-header 2>/dev/null | awk '$1 == "{{ postgresql_upgrade_from_version }}" && $2 == "{{ postgresql_upgrade_cluster_name }}" { print $3; exit }')
+        if [ -z "$port" ] && [ -f "{{ postgresql_upgrade_old_config_dir }}/postgresql.conf" ]; then
+          port=$(sed -nE "s/^[[:space:]]*port[[:space:]]*=[[:space:]]*'?([0-9]+)'?.*/\1/p" "{{ postgresql_upgrade_old_config_dir }}/postgresql.conf" | head -n1)
+        fi
+        printf '%s\n' "$port"
+      register: postgresql_upgrade_old_port
+      changed_when: false
+
+    - name: Fail when source PostgreSQL port cannot be determined
+      ansible.builtin.fail:
+        msg: "Unable to determine source PostgreSQL cluster port."
+      when: postgresql_upgrade_old_port.stdout | trim == ""
+
+    - name: Remove postgresql repository file when using distro packages
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/pgdg.list
+        state: absent
+      when: postgresql_repository_source == "distro"
+
+    - name: Remove postgresql repository signing key when using distro packages
+      ansible.builtin.file:
+        path: /etc/apt/trusted.gpg.d/pgdb.asc
+        state: absent
+      when: postgresql_repository_source == "distro"
+
+    - name: Add postgresql repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/pgdg.list
+        content: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main\n"
+        owner: root
+        group: root
+        mode: "0644"
+      when: postgresql_repository_source == "official"
+
+    - name: Add postgresql repository signing key
+      ansible.builtin.uri:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        dest: /etc/apt/trusted.gpg.d/pgdb.asc
+        owner: root
+        group: root
+        mode: "0644"
+        status_code: [200, 304]
+      when: postgresql_repository_source == "official"
+
+    - name: Install target PostgreSQL packages
+      ansible.builtin.apt:
+        name: "{{ postgresql_upgrade_target_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Check PostgreSQL upgrade prerequisites
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/pg_upgradecluster
+          - --check
+          - --method=dump
+          - -v
+          - "{{ postgresql_upgrade_to_version }}"
+          - "{{ postgresql_upgrade_from_version }}"
+          - "{{ postgresql_upgrade_cluster_name }}"
+      changed_when: false
+
+    - name: Upgrade PostgreSQL cluster
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/pg_upgradecluster
+          - --method=dump
+          - -v
+          - "{{ postgresql_upgrade_to_version }}"
+          - "{{ postgresql_upgrade_from_version }}"
+          - "{{ postgresql_upgrade_cluster_name }}"
+
+    - name: Read target PostgreSQL cluster port
+      ansible.builtin.shell: |
+        port=$(pg_lsclusters --no-header 2>/dev/null | awk '$1 == "{{ postgresql_upgrade_to_version }}" && $2 == "{{ postgresql_upgrade_cluster_name }}" { print $3; exit }')
+        if [ -z "$port" ] && [ -f "{{ postgresql_upgrade_new_config_dir }}/postgresql.conf" ]; then
+          port=$(sed -nE "s/^[[:space:]]*port[[:space:]]*=[[:space:]]*'?([0-9]+)'?.*/\1/p" "{{ postgresql_upgrade_new_config_dir }}/postgresql.conf" | head -n1)
+        fi
+        printf '%s\n' "$port"
+      register: postgresql_upgrade_new_port
+      changed_when: false
+
+    - name: Ensure target PostgreSQL cluster kept the original port
+      ansible.builtin.assert:
+        that:
+          - postgresql_upgrade_new_port.stdout | trim == postgresql_upgrade_old_port.stdout | trim
+        fail_msg: "Upgraded PostgreSQL cluster did not keep the original port."
+
+    - name: Ensure upgraded PostgreSQL service is started
+      ansible.builtin.systemd:
+        name: "postgresql@{{ postgresql_upgrade_to_version }}-{{ postgresql_upgrade_cluster_name }}"
+        enabled: true
+        state: started
+
+    - name: Read target PostgreSQL log_directory
+      ansible.builtin.shell: |
+        log_directory=$(sed -nE "s/^[[:space:]]*log_directory[[:space:]]*=[[:space:]]*'?([^'#]+)'?.*/\1/p" "{{ postgresql_upgrade_new_config_dir }}/postgresql.conf" | head -n1 | xargs)
+        if [ -z "$log_directory" ]; then
+          log_directory=log
+        fi
+        printf '%s\n' "$log_directory"
+      register: postgresql_upgrade_new_log_directory
+      changed_when: false
+
+    - name: Build target PostgreSQL effective log directory
+      ansible.builtin.set_fact:
+        postgresql_upgrade_effective_log_dir: >-
+          {{
+            (postgresql_upgrade_new_log_directory.stdout | trim) is match('^/')
+            | ternary(
+                postgresql_upgrade_new_log_directory.stdout | trim,
+                postgresql_upgrade_new_data_dir ~ '/' ~ (postgresql_upgrade_new_log_directory.stdout | trim)
+              )
+          }}
+
+    - name: Refresh PostgreSQL tmpfiles configuration
+      ansible.builtin.copy:
+        dest: "{{ postgresql_tempfile_dest_path | default('/etc/tmpfiles.d/postgresql-common.conf') }}"
+        owner: "{{ postgresql_tempfile_owner | default('root') }}"
+        group: "{{ postgresql_tempfile_group | default('root') }}"
+        mode: "{{ postgresql_tempfile_mode | default('0644') }}"
+        content: |
+          #
+          # Ansible managed
+          #
+          # Directory for PostgreSQL sockets, lockfiles and stats tempfiles
+          # d /run/postgresql 2775 postgres postgres - -
+          {% for item in postgresql_unix_socket_directories | default(['/run/postgresql']) %}
+          d {{ item }} {{ postgresql_unix_socket_directories_mode | default('2775', true) }} {{ postgresql_user | default('postgres') }} {{ postgresql_group | default('postgres') }} - -
+          {% endfor %}
+          # Log directory
+          d {{ postgresql_upgrade_effective_log_dir }} 1775 {{ postgresql_user | default('postgres') }} {{ postgresql_group | default('postgres') }} - -
+
+    - name: Apply refreshed PostgreSQL tmpfiles configuration
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/systemd-tmpfiles
+          - --create
+          - "{{ postgresql_tempfile_dest_path | default('/etc/tmpfiles.d/postgresql-common.conf') }}"
+
+    - name: Drop old PostgreSQL cluster
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/pg_dropcluster
+          - --stop
+          - "{{ postgresql_upgrade_from_version }}"
+          - "{{ postgresql_upgrade_cluster_name }}"
+
+    - name: Remove old PostgreSQL data directory
+      ansible.builtin.file:
+        path: "{{ postgresql_upgrade_old_data_dir }}"
+        state: absent
+
+    - name: Remove old PostgreSQL version data directory when empty
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/rmdir
+          - "{{ postgresql_upgrade_old_data_parent_dir }}"
+      register: postgresql_upgrade_old_data_parent_remove
+      changed_when: postgresql_upgrade_old_data_parent_remove.rc == 0
+      failed_when: postgresql_upgrade_old_data_parent_remove.rc not in [0, 1]
+
+    - name: Purge old PostgreSQL packages
+      ansible.builtin.apt:
+        name: "{{ postgresql_upgrade_old_packages }}"
+        state: absent
+        purge: true
+        autoremove: true

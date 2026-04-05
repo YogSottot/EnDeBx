@@ -98,10 +98,12 @@ BS_ANSIBLE_PB_PUSH_SERVER="install_or_delete_push_server.yaml"
 BS_ANSIBLE_PS_BASIC_AUTH="setup_basic_auth.yaml"
 BS_ANSIBLE_PS_SWAP="setup_swap.yaml"
 BS_ANSIBLE_PS_POSTGRESQL_SETUP="install_or_delete_postgresql.yaml"
+BS_ANSIBLE_PS_POSTGRESQL_UPGRADE="upgrade_postgresql.yaml"
 BS_ANSIBLE_PS_PGBOUNCER="install_or_delete_pgbouncer.yaml"
 BS_ANSIBLE_PS_BOTBLOCKER="enable_or_disable_nginx_ultimate_bot_blocker.yaml"
 BS_ANSIBLE_PS_SETUP_DEBIAN_REPO_ON_ASTRA="setup_tmp_debian_repositories_for_astra.yaml"
 BS_ANSIBLE_PS_RESET_PASSWORDS="reset_passwords.yaml"
+BS_ANSIBLE_PS_MYSQL_SETUP="install_or_delete_mysql.yaml"
 BS_ANSIBLE_PS_RECONFIGURE_MYSQL_CONFIG="mysql_reconfigure_config.yaml"
 BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80="upgrade_mysql_from57_to80.yaml"
 BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84="upgrade_mysql_from80_to84.yaml"
@@ -114,6 +116,8 @@ BS_ANSIBLE_PB_NTLM_AUTH="configure_ntlm_auth.yaml"
 BS_MAX_CHAR_DB_NAME=20
 BS_MAX_CHAR_DB_USER=20
 BS_CHAR_DB_PASSWORD=24
+# Primary database for initial installation (mysql / pgsql)
+BS_INSTALL_DATABASE=mysql
 # (mariadb / percona)
 BS_DB_FLAVOR=mariadb
 # percona version (5.7 / 8.0 / 8.4)
@@ -121,6 +125,12 @@ BS_DB_FLAVOR=mariadb
 BS_DB_VERSION=10.11
 BS_DB_CHARACTER_SET_SERVER=utf8mb4
 BS_DB_COLLATION=utf8mb4_unicode_ci
+# PostgreSQL repository source for installation (distro / official)
+BS_POSTGRESQL_REPOSITORY_SOURCE=distro
+# PostgreSQL version for installation from the official repository
+BS_POSTGRESQL_VERSION=17
+# Install pgbouncer together with PostgreSQL during initial setup (Y / N)
+BS_INSTALL_PGBOUNCER=N
 
 # NGINX configs
 BS_SERVICE_NGINX_NAME="nginx"

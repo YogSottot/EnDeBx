@@ -26,6 +26,56 @@ generate_password() {
     echo "$password"
 }
 
+get_distribution_postgresql_version() {
+    apt-cache depends postgresql 2>/dev/null |
+        awk '/Depends: postgresql-[0-9]+/ {sub("postgresql-", "", $2); print $2; exit}'
+}
+
+get_effective_postgresql_version() {
+    local repository_source=$1
+    local configured_version=$2
+
+    if [ "$repository_source" = "distro" ]; then
+        get_distribution_postgresql_version
+    else
+        printf '%s\n' "$configured_version"
+    fi
+}
+
+get_debian_major_version() {
+    local os_id version_id major_version
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "debian" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+            return 0
+        fi
+    fi
+
+    if [ -r /etc/debian_version ]; then
+        major_version=$(cut -d. -f1 /etc/debian_version)
+        if [[ "${major_version}" =~ ^[0-9]+$ ]]; then
+            printf '%s\n' "${major_version}"
+        fi
+    fi
+}
+
+get_ubuntu_major_version() {
+    local os_id version_id
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "ubuntu" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+        fi
+    fi
+}
+
 BRANCH="feature/php-fpm"
 REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM"
 
@@ -95,6 +145,64 @@ else
     echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
     pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
     pipx inject ansible jmespath passlib python-debian
+fi
+
+case "${BS_INSTALL_DATABASE}" in
+  mysql|pgsql) ;;
+  *)
+    echo "Unsupported BS_INSTALL_DATABASE value: ${BS_INSTALL_DATABASE}"
+    exit 1
+    ;;
+esac
+
+case "${BS_POSTGRESQL_REPOSITORY_SOURCE}" in
+  distro|official) ;;
+  *)
+    echo "Unsupported BS_POSTGRESQL_REPOSITORY_SOURCE value: ${BS_POSTGRESQL_REPOSITORY_SOURCE}"
+    exit 1
+    ;;
+esac
+
+DEBIAN_MAJOR_VERSION=$(get_debian_major_version)
+UBUNTU_MAJOR_VERSION=$(get_ubuntu_major_version)
+if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
+   [ "${BS_DB_FLAVOR}" = "percona" ] &&
+   [ -n "${DEBIAN_MAJOR_VERSION}" ] &&
+   [ "${DEBIAN_MAJOR_VERSION}" -ge 13 ] &&
+   { [ "${BS_DB_VERSION}" = "5.7" ] || [ "${BS_DB_VERSION}" = "8.0" ]; }; then
+  echo "Percona ${BS_DB_VERSION} is not available on Debian ${DEBIAN_MAJOR_VERSION}. Use Percona 8.4 or MariaDB."
+  exit 1
+fi
+
+if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
+   [ "${BS_DB_FLAVOR}" = "percona" ] &&
+   [ -n "${UBUNTU_MAJOR_VERSION}" ] &&
+   [ "${UBUNTU_MAJOR_VERSION}" -ge 24 ] &&
+   [ "${BS_DB_VERSION}" = "5.7" ]; then
+  echo "Percona ${BS_DB_VERSION} is not available on Ubuntu ${UBUNTU_MAJOR_VERSION}.04+. Use Percona 8.0/8.4 or MariaDB."
+  exit 1
+fi
+
+POSTGRESQL_VERSION_EFFECTIVE=""
+SITE_DB_TYPE="${BS_INSTALL_DATABASE}"
+SITE_DB_HOST="localhost"
+SITE_DB_PORT="3306"
+INSTALL_PGBOUNCER=false
+
+if [ "${BS_INSTALL_DATABASE}" = "pgsql" ]; then
+  POSTGRESQL_VERSION_EFFECTIVE=$(get_effective_postgresql_version "${BS_POSTGRESQL_REPOSITORY_SOURCE}" "${BS_POSTGRESQL_VERSION}")
+  if [ -z "${POSTGRESQL_VERSION_EFFECTIVE}" ]; then
+    echo "Unable to determine PostgreSQL version for repository source: ${BS_POSTGRESQL_REPOSITORY_SOURCE}"
+    exit 1
+  fi
+
+  SITE_DB_HOST="127.0.0.1"
+  SITE_DB_PORT="5432"
+
+  if [ "${BS_INSTALL_PGBOUNCER}" = "Y" ]; then
+    INSTALL_PGBOUNCER=true
+    SITE_DB_PORT="6432"
+  fi
 fi
 
 if [ "${BS_HTACCESS_SUPPORT}" == Y ]; then
@@ -173,6 +281,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
 # setup user / nginx / mysql / apache2 / firewalld / php-fpm
 extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
+  database_type=${BS_INSTALL_DATABASE} \
   db_name=${DB_NAME} \
   db_user=${DB_USER} \
   db_password=${DBPASS} \
@@ -180,6 +289,11 @@ extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
   mysql_version=${BS_DB_VERSION} \
   mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
   mysql_collation_server=${BS_DB_COLLATION} \
+  postgresql_repository_source=${BS_POSTGRESQL_REPOSITORY_SOURCE} \
+  postgresql_version=${POSTGRESQL_VERSION_EFFECTIVE} \
+  postgresql_port=5432 \
+  postgresql_db_encoding=UTF-8 \
+  install_pgbouncer=${INSTALL_PGBOUNCER} \
   site_user_password=${site_user_password} \
   path_sites=${BS_PATH_SITES} \
   document_root=${DOCUMENT_ROOT} \
@@ -245,11 +359,16 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   -e "domain=${BS_DEFAULT_SITE_NAME} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
 
+  db_type=${SITE_DB_TYPE} \
   db_name=${DB_NAME} \
   db_user=${DB_USER} \
   db_password=${DBPASS} \
+  db_host=${SITE_DB_HOST} \
+  db_port=${SITE_DB_PORT} \
   mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
   mysql_collation_server=${BS_DB_COLLATION} \
+  postgresql_port=5432 \
+  pgbouncer_use=${INSTALL_PGBOUNCER} \
 
   site_user_password=${site_user_password} \
 

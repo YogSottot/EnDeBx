@@ -1,4 +1,13 @@
 ---
+- name: Ensure MySQL config include directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ ([mysql_config_include_dir] + ((ansible_os_family | lower == 'debian') | ternary(['/etc/mysql', '/etc/mysql/conf.d'], []))) | unique }}"
+
 - name: Get MySQL version
   ansible.builtin.command: 'mysql --version'
   register: mysql_cli_version
@@ -100,6 +109,15 @@
     creates: "{{ mysql_slow_query_log_file }}"
   when: mysql_slow_query_log_enabled
 
+- name: Remove MariaDB datadir before bootstrap
+  ansible.builtin.file:
+    path: "{{ mysql_datadir }}"
+    state: absent
+  when:
+    - mysql_flavor == 'mariadb'
+    - mysql_install_packages | bool
+    - ansible_os_family in ['Debian', 'Astra Linux']
+
 - name: Create datadir if it does not exist
   ansible.builtin.file:
     path: "{{ mysql_datadir }}"
@@ -108,6 +126,24 @@
     group: mysql
     mode: "0755"
     setype: mysqld_db_t
+
+- name: Bootstrap MariaDB system tables
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/mariadb-install-db
+      - --rpm
+      - --cross-bootstrap
+      - --user=mysql
+      - --disable-log-bin
+      - --skip-test-db
+      - --defaults-file=/etc/mysql/my.cnf
+  environment:
+    TMPDIR: /tmp
+  changed_when: true
+  when:
+    - mysql_flavor == 'mariadb'
+    - mysql_install_packages | bool
+    - ansible_os_family in ['Debian', 'Astra Linux']
 
 - name: Set ownership on slow query log file (if configured).
   ansible.builtin.file:

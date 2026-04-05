@@ -8,15 +8,24 @@ action_create_site(){
 
   pb_redirect_http_to_https=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ENABLE_OR_DISABLE_REDIRECT_HTTP_TO_HTTPS}")
 
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "domain=${domain} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
 
   mode=${mode} \
 
+  db_type=${db_type} \
   db_name=${db_name} \
   db_user=${db_user} \
   db_password=${db_password} \
+  db_host=${db_host} \
+  db_port=${db_port} \
+  postgresql_version=${postgresql_version} \
+  postgresql_port=${postgresql_port} \
+  postgresql_db_lc_collate=${postgresql_db_lc_collate} \
+  postgresql_db_lc_ctype=${postgresql_db_lc_ctype} \
+  postgresql_db_encoding=${postgresql_db_encoding} \
+  pgbouncer_use=$((pgbouncer_use == 1)) \
 
   path_site_from_links=${path_site_from_links} \
   ssl_lets_encrypt=${ssl_lets_encrypt} \
@@ -78,7 +87,7 @@ action_edit_site(){
 
   pb_redirect_http_to_https=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ENABLE_OR_DISABLE_REDIRECT_HTTP_TO_HTTPS}")
 
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "domain=${domain} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
 
@@ -160,7 +169,7 @@ action_get_lets_encrypt_certificate(){
 action_enable_or_disable_redirect_http_to_https(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ENABLE_OR_DISABLE_REDIRECT_HTTP_TO_HTTPS}")
 
-  ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+  ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
   -e "path_site=${path_site} \
 
   user_server_sites=${BS_USER_SERVER_SITES} \
@@ -178,7 +187,7 @@ action_enable_or_disable_redirect_http_to_https(){
 action_enable_or_disable_bot_blocker(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_BOTBLOCKER}")
 
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "path_site=${path_site_from_links} \
 
   path_nginx_sites_conf=${BS_PATH_NGINX_SITES_CONF} \
@@ -263,7 +272,7 @@ function action_update_server() {
 function action_setup_security() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_SECURITY}")
 
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "security_ssh_port=${BS_SSH_PORT} \
       security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
       security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
@@ -300,9 +309,9 @@ function action_change_php_version(){
     cat > /tmp/php_extra.yml <<EOF
   php_packages_extra: ${BX_ADDITIONAL_PHP_EXTENSIONS}
 EOF
-    ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}" -e @/tmp/php_extra.yml
+    ansible-playbook -v "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}" -e @/tmp/php_extra.yml
   else
-    ansible-playbook "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
+    ansible-playbook -v "${pb}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
   fi
 
   press_any_key_to_return_menu;
@@ -311,7 +320,7 @@ EOF
 function action_settings_smtp_sites() {
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
       -e "is_actions_account=Y \
       account_name=${site} \
       email_from=${email_from} \
@@ -345,7 +354,7 @@ function action_install_or_delete_netdata() {
     fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_NETDATA}")
-    ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
       -e "netdata_action=${action} \
       service_nginx_name=${BS_SERVICE_NGINX_NAME}"
 
@@ -362,7 +371,7 @@ function action_install_or_delete_netdata() {
 
 function action_install_or_delete_sphinx() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SPHINX}")
-    ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
       -e "sphinx_action=${action}"
 
     press_any_key_to_return_menu;
@@ -376,7 +385,7 @@ function action_install_or_delete_file_conversion_server() {
     #fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_FILE_CONVERSION_SERVER}")
-    ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
       -e "file_conversion_server_action=${action} \
       domain=${domain} \
       full_path_site=${full_path_site} \
@@ -408,7 +417,7 @@ function action_install_or_delete_crowdsec() {
 
 function action_install_or_delete_rkhunter() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_RKHUNTER}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "rkhunter_action=${action} \
       rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
@@ -426,7 +435,7 @@ function action_install_or_delete_rkhunter() {
 
 function action_install_or_delete_maldet() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MALDET}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "maldet_action=${action} \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
@@ -444,7 +453,7 @@ function action_install_or_delete_maldet() {
 
 function action_install_or_delete_memcached() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MEMCACHED}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "memcached_action=${action}"
 
     if [ "${action}" = "INSTALL" ]; then
@@ -460,7 +469,7 @@ function action_install_or_delete_memcached() {
 
 function action_install_or_delete_deadsnakes_ppa() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DEADSNAKES_PPA}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "deadsnakes_action=${action}"
 
     if [ "${action}" = "INSTALL" ]; then
@@ -476,7 +485,7 @@ function action_install_or_delete_deadsnakes_ppa() {
 
 function action_install_or_delete_docker() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DOCKER}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "docker_action=${action} \
       docker_packages_state=${docker_packages_state} \
       docker_user_list=${BS_DEFAULT_USER_SERVER_SITES}"
@@ -494,7 +503,7 @@ function action_install_or_delete_docker() {
 
 function action_install_or_delete_push_server() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_PUSH_SERVER}")
-  ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "push_server_action=${action} \
       push_server_remove_redis=${push_server_remove_redis} \
       user_server_sites=${BS_USER_SERVER_SITES} \
@@ -518,12 +527,15 @@ function action_install_or_delete_push_server() {
 
 function action_delete_site() {
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DELETE_SITE}")
-    ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    ansible-playbook -v "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
       -e "site=${site} \
       full_path_site=${full_path_site} \
       db_name=${db_name} \
       db_user=${db_user} \
+      db_type=${db_type} \
       type=${type} \
+      postgresql_port=${postgresql_port} \
+      pgbouncer_use=$((pgbouncer_use == 1)) \
 
       user_server_sites=${BS_USER_SERVER_SITES} \
       default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
@@ -540,7 +552,7 @@ function action_delete_site() {
 
 function action_add_remove_ftp_user() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_FTP}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "pureftp_action=${pureftp_action} \
       ftp_user_name=${ftp_user_name} \
       ftp_user_password=${ftp_user_password} \
@@ -551,8 +563,9 @@ function action_add_remove_ftp_user() {
 
 function action_add_postgresql() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "postgresql_action=${action} \
+      postgresql_repository_source=${postgresql_repository_source} \
       postgresql_version=${postgresql_version} \
       postgresql_port=${postgresql_port}" \
       --tags installation,initialise,autotune,configuration
@@ -560,9 +573,39 @@ function action_add_postgresql() {
     press_any_key_to_return_menu
 }
 
+function action_upgrade_postgresql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_UPGRADE}")
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "postgresql_repository_source=${postgresql_repository_source} \
+      postgresql_upgrade_from_version=${postgresql_upgrade_from_version} \
+      postgresql_upgrade_to_version=${postgresql_upgrade_to_version}"
+
+    press_any_key_to_return_menu
+}
+
+function action_install_mysql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_SETUP}")
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "mysql_action=${action} \
+        mysql_flavor=${BS_DB_FLAVOR} \
+        mysql_version=${BS_DB_VERSION} \
+        mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
+        mysql_collation_server=${BS_DB_COLLATION}"
+
+    press_any_key_to_return_menu
+}
+
+function action_delete_mysql() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_SETUP}")
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    -e "mysql_action=${action}"
+
+    press_any_key_to_return_menu
+}
+
 function action_delete_postgresql() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "postgresql_action=${action} \
       postgresql_version=${postgresql_version} \
       postgresql_uninstall_1='true' \
@@ -574,7 +617,7 @@ function action_delete_postgresql() {
 
 function action_add_db_user_postgresql() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "postgresql_action=${action} \
 
       postgresql_version=${postgresql_version} \
@@ -588,12 +631,12 @@ function action_add_db_user_postgresql() {
       postgresql_db_lc_ctype=${postgresql_db_lc_ctype} \
       postgresql_db_encoding=${postgresql_db_encoding} \
       postgresql_socket='/run/postgresql/'" \
-      --tags users,databases,privileges
+      --tags users,databases,privileges,extensions
 
     is_install_delete_pgbouncer=$(which pgbouncer);
       pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
 
-        ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+        ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
         -e "pgbouncer_action=${action} \
             pgbouncer_pkg_state='present' \
             pgbouncer_db_user=${postgresql_username} \
@@ -611,7 +654,7 @@ function action_add_db_user_postgresql() {
 
 function action_delete_user_and_db_postgresql() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_POSTGRESQL_SETUP}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "postgresql_action=${action} \
 
       postgresql_version=${postgresql_version} \
@@ -627,7 +670,7 @@ function action_delete_user_and_db_postgresql() {
       postgresql_socket='/run/postgresql/'" \
       --tags databases
 
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "postgresql_action=${action} \
 
       postgresql_version=${postgresql_version} \
@@ -646,7 +689,7 @@ function action_delete_user_and_db_postgresql() {
     is_install_delete_pgbouncer=$(which pgbouncer);
       pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
 
-        ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+        ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
         -e "pgbouncer_action=${action} \
             pgbouncer_pkg_state='absent' \
             pgbouncer_db_user=${postgresql_username} \
@@ -666,12 +709,12 @@ function action_add_delete_pgbouncer() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_PGBOUNCER}")
 
   if [ "$action" == "DELETE" ]; then
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "pgbouncer_action=${action} \
         pgbouncer_pkg_state=${pgbouncer_state}" \
         --tags pgbouncer_install
   else
-      ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+      ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "pgbouncer_action=${action} \
         pgbouncer_pkg_state=${pgbouncer_state}" \
         --tags pgbouncer_install,pgbouncer_config
@@ -682,7 +725,7 @@ function action_add_delete_pgbouncer() {
 
 function action_enable_or_disable_basic_auth() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_BASIC_AUTH}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "basic_auth_action=${basic_auth_action} \
       htpasswd_path_file=${htpasswd_path_file} \
       htpasswd_basic_auth_conf=${htpasswd_basic_auth_conf} \
@@ -726,7 +769,7 @@ function action_configure_ntlm_auth() {
 
 function action_setup_debian_repositories_for_astra() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_SETUP_DEBIAN_REPO_ON_ASTRA}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "setup_debian_repositories_for_astra_action=${action}"
 
     press_any_key_to_return_menu
@@ -734,7 +777,7 @@ function action_setup_debian_repositories_for_astra() {
 
 function action_re-generate_mysql_config() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_RECONFIGURE_MYSQL_CONFIG}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
         mysql_collation_server=${BS_DB_COLLATION}"
 
@@ -743,7 +786,7 @@ function action_re-generate_mysql_config() {
 
 function action_upgrade_percona_5.7_to_8.0() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_UPGRADE_57_80}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
         mysql_collation_server=${BS_DB_COLLATION}"
 
@@ -752,7 +795,7 @@ function action_upgrade_percona_5.7_to_8.0() {
 
 function action_upgrade_percona_8.0_to_8.4() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PS_MYSQL_UPGRADE_80_84}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "mysql_character_set_server=${BS_DB_CHARACTER_SET_SERVER} \
         mysql_collation_server=${BS_DB_COLLATION}"
 
@@ -778,7 +821,7 @@ function action_install_or_delete_snapd() {
 
 function action_change_timezone() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}")
-    ansible-playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+    ansible-playbook -v "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
     -e "server_timezone=${server_timezone}"
 
       echo -e "

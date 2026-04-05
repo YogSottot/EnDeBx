@@ -1,0 +1,89 @@
+---
+- name: "MySQL {{ mysql_action }}"
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
+    - name: Setup repo for Astra Linux
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+
+  roles:
+    - role: geerlingguy.mysql
+      when: mysql_action == "INSTALL"
+
+  tasks:
+    - name: Stop MySQL service before removal
+      ansible.builtin.service:
+        name: mysql
+        state: stopped
+        enabled: false
+      when: mysql_action == "DELETE"
+      failed_when: false
+
+    - name: Stop MariaDB service before removal
+      ansible.builtin.service:
+        name: mariadb
+        state: stopped
+        enabled: false
+      when: mysql_action == "DELETE"
+      failed_when: false
+
+    - name: Purge MySQL and MariaDB packages
+      ansible.builtin.apt:
+        name:
+          - default-mysql-server
+          - default-mysql-client
+          - mariadb-server
+          - mariadb-client
+          - mysql-server
+          - mysql-client
+          - percona-release
+          - percona-server-server
+          - percona-server-server-5.7
+        state: absent
+        purge: true
+        autoremove: true
+      when: mysql_action == "DELETE"
+
+    - name: Remove MySQL directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/mysql
+        - /var/log/mysql
+        - /etc/mysql
+      when: mysql_action == "DELETE"
+
+    - name: Persist MySQL settings in /root/.env.menu
+      ansible.builtin.lineinfile:
+        path: /root/.env.menu
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: true
+      loop:
+        - { key: 'BS_DB_FLAVOR', value: '{{ mysql_flavor }}' }
+        - { key: 'BS_DB_VERSION', value: '{{ mysql_version }}' }
+        - { key: 'BS_DB_CHARACTER_SET_SERVER', value: '{{ mysql_character_set_server }}' }
+        - { key: 'BS_DB_COLLATION', value: '{{ mysql_collation_server }}' }
+      when: mysql_action == "INSTALL"
+
+  post_tasks:
+    - name: Setup repo for Astra Linux (cleanup)
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always

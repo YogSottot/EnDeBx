@@ -182,7 +182,7 @@ disable_xdebug_for_installed_php_versions() {
 
 run_a2dismod() {
     # make sure apache modules disabled
-    a2dismod --force deflate filter negotiation ssl
+    a2dismod --force deflate filter negotiation
 }
 
 apache_fix_site() {
