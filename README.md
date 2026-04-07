@@ -2,9 +2,9 @@
 
 ## Главное меню
 
-![Главное меню](https://github.com/user-attachments/assets/66e29751-7c0e-4550-a429-a9313db77144)  
+![Главное меню](docs/images/main_menu.jpg)  
 
-![image](https://github.com/user-attachments/assets/0884279a-d223-4b9a-8902-db2edd57ad11)
+![extensions](docs/images/menu_ext.jpg)
 
 ## Информация
 
