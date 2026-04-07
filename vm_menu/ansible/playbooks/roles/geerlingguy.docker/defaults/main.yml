@@ -59,7 +59,18 @@ docker_yum_repo_enable_test: '0'
 docker_yum_gpg_key: "{{ docker_repo_url }}/centos/gpg"
 
 # A list of users who will be added to the docker group.
-docker_users: "{{ docker_user_list }}"
+docker_users: >-
+  {{
+    docker_user_list
+    | default(
+        ansible_facts.getent_passwd
+        | default({})
+        | dict2items
+        | selectattr('value.1', 'match', '^(1000|[1-9][0-9]{3,})$')
+        | map(attribute='key')
+        | list
+      )
+  }}
 
 # Docker daemon options as a dict
 docker_daemon_options: {

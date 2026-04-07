@@ -496,8 +496,7 @@ function action_install_or_delete_docker() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_DOCKER}")
   run_ansible_playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "docker_action=${action} \
-      docker_packages_state=${docker_packages_state} \
-      docker_user_list=${BS_DEFAULT_USER_SERVER_SITES}"
+      docker_packages_state=${docker_packages_state}"
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "

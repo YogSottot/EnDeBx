@@ -81,6 +81,12 @@
 - include_tasks: docker-compose.yml
   when: docker_install_compose | bool
 
+- name: Get passwd entries using getent.
+  getent:
+    database: passwd
+    split: ':'
+  when: docker_user_list is not defined
+
 - name: Get docker group info using getent.
   getent:
     database: group
