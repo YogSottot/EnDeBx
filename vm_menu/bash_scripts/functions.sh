@@ -28,31 +28,29 @@ main_menu(){
     local update_menu_action="";
     if [ -f "/tmp/new_version_menu.tmp" ]; then
       local nv=$(cat /tmp/new_version_menu.tmp)
-      msg_new_version_menu="\e[33m          New version of Debian Like BitrixVM
+      msg_new_version_menu="\e[33m          New version of EnDeBx
           (your version ${BS_VERSION_MENU} -> new version ${nv}) please follow the link
           \e]8;;${BS_REPOSITORY_URL}\a${BS_REPOSITORY_URL}\e]8;;\a or enter \"update_menu\" to update your menu\n\e[0m"
       update_menu_action="Enter \"update_menu\" to update your menu";
     fi
 
-    echo -e "          Welcome to the menu \"Debian Like BitrixVM\" version ${BS_VERSION_MENU}         \n\n";
+    echo -e "          Welcome to the menu \"EnDeBx\" version ${BS_VERSION_MENU}         \n\n";
     if [ $BS_SHOW_IP_CURRENT_SERVER_IN_MENU = true ]; then
       echo -e "          ${CURRENT_SERVER_IP}\n";
     fi
     echo -e "${msg_new_version_menu}";
     echo "          1) List of sites dirs";
     echo "          2) Add/Change site";
-    echo "          3) Configure Let\`s Encrypt certificate";
-    echo "          4) Enable or Disable redirect HTTP to HTTPS";
-    echo "          5) Add/Remove FTP user";
-    echo "          6) Add/Change global PHP version";
-    echo "          7) Settings SMTP sites";
+    echo "          3) Add/Remove FTP user";
+    echo "          4) Add/Change global PHP version";
+    echo "          5) Settings SMTP sites";
+    echo "          6) MySQL";
+    echo "          7) PostgreSQL";
     echo "          8) Installing Extensions";
     echo "          9) Security settings";
     echo "          10) Change server timezone";
     echo "          11) Update server";
     echo "          R) Restart the server";
-    echo "          P) Turn off the server";
-    echo "          DELETE_SITE) Delete a site";
     # check_reboot_needed;
     if [ -n "${update_menu_action}" ]; then
       echo -e "\e[33m             ${update_menu_action}\e[0m";
@@ -66,18 +64,16 @@ main_menu(){
 
       "1") show_sites_dirs ;;
       "2") menu_edit_sites ;;
-      "3") get_lets_encrypt_certificate ;;
-      "4") enable_or_disable_redirect_http_to_https ;;
-      "5") add_remove_ftp_user ;;
-      "6") change_php_version ;;
-      "7") settings_smtp_sites ;;
+      "3") add_remove_ftp_user ;;
+      "4") change_php_version ;;
+      "5") settings_smtp_sites ;;
+      "6") menu_mysql ;;
+      "7") menu_postgresql ;;
       "8") menu_install_extensions ;;
       "9") menu_security_settings ;;
       "10") change_timezone ;;
       "11") update_server ;;
       "R") reboot_server ;;
-      "P") power_off_server ;;
-      "DELETE_SITE") delete_site ;;
       "update_menu") update_menu;;
 
     0|z)  exit
@@ -103,14 +99,12 @@ menu_install_extensions(){
     echo "          4) Install/Delete File Conversion Server (transformer)";
     echo "          5) Install/Delete Netdata";
     echo "          6) Install/Delete Docker";
-    echo "          7) PostgreSQL";
-    echo "          8) MySQL";
-    echo "          9) Install/Delete Snapd";
+    echo "          7) Install/Delete Snapd";
 if [ "$OS_DISTRO" == ubuntu ] ; then
-    echo "          10) Install/Delete Deadsnakes PPA";
+    echo "          8) Install/Delete Deadsnakes PPA";
 fi
 if [ "$OS_DISTRO" == astra ] ; then
-    echo "          11) Install/Delete Debian repo on Astra Linux";
+    echo "          8) Install/Delete Debian repo on Astra Linux";
 fi
     echo "          0) Return to main menu";
     echo -e "\n\n";
@@ -125,19 +119,12 @@ fi
     "4") install_file_conversion_server ;;
     "5") install_netdata ;;
     "6") install_docker ;;
-    "7") menu_postgresql ;;
-    "8") menu_mysql ;;
-    "9") purge_snapd ;;
-    "10")
-      if [ "$OS_DISTRO" == ubuntu ] ; then
-        install_deadsnakes_ppa
-      else
-        echo "Error unknown command"
-      fi
-      ;;
-    "11")
+    "7") purge_snapd ;;
+    "8")
       if [ "$OS_DISTRO" == astra ] ; then
         install_debian_repo_on_astra_linux
+      elif [ "$OS_DISTRO" == ubuntu ] ; then
+        install_deadsnakes_ppa
       else
         echo "Error unknown command"
       fi
@@ -195,10 +182,12 @@ menu_edit_sites(){
     echo "          1) Add site";
     echo "          2) Edit existing website";
     echo "          3) Delete site";
-    echo "          4) Block/Unblock access by ip";
-    echo "          5) Enable/Disable Basic Auth in ${BS_SERVICE_NGINX_NAME}";
-    echo "          6) Enable/Disable Bot Blocker in ${BS_SERVICE_NGINX_NAME}";
-    echo "          7) Configure NTLM auth for sites";
+    echo "          4) Configure Let\`s Encrypt certificate";
+    echo "          5) Enable or Disable redirect HTTP to HTTPS";
+    echo "          6) Block/Unblock access by ip";
+    echo "          7) Enable/Disable Basic Auth in ${BS_SERVICE_NGINX_NAME}";
+    echo "          8) Enable/Disable Bot Blocker in ${BS_SERVICE_NGINX_NAME}";
+    echo "          9) Configure NTLM auth for sites";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -209,10 +198,12 @@ menu_edit_sites(){
       "1") add_site ;;
       "2") edit_site_config ;;
       "3") delete_site ;;
-      "4") block_access_by_ip ;;
-      "5") enable_or_disable_basic_auth ;;
-      "6") enable_or_disable_bot_blocker ;;
-      "7") menu_ntlm_auth_sites ;;
+      "4") get_lets_encrypt_certificate ;;
+      "5") enable_or_disable_redirect_http_to_https ;;
+      "6") block_access_by_ip ;;
+      "7") enable_or_disable_basic_auth ;;
+      "8") enable_or_disable_bot_blocker ;;
+      "9") menu_ntlm_auth_sites ;;
 
     0|z)  main_menu
     ;;
@@ -2212,6 +2203,7 @@ function settings_smtp_sites() {
     password="";
     authentication_method="auto";
     enable_TLS="Y";
+    enable_STARTTLS="N";
 
     echo -e "\n   Menu -> Settings SMTP sites:\n";
 
@@ -2260,6 +2252,39 @@ function settings_smtp_sites() {
 
     read_by_def "   Enter From email address (example: test@example.com): " email_from $email_from;
     read_by_def "   Enter SMTP server address ( smtp.yandex.ru / smtp.gmail.com / smtp.mail.ru / mail.domain.tld ): " host $host;
+
+    while true; do
+      read_by_def "   Enter Y or N to enable TLS for ${host} (default: $enable_TLS): " enable_TLS $enable_TLS;
+      enable_TLS="${enable_TLS^^}"
+
+      if [[ $enable_TLS != "Y" && $enable_TLS != "N" ]]; then
+        echo "   Please enter Y or N for TLS."
+        continue
+      fi
+
+      if [[ $enable_TLS == "Y" ]]; then
+        read_by_def "   Enter Y or N to enable STARTTLS for ${host} (default: $enable_STARTTLS): " enable_STARTTLS $enable_STARTTLS;
+        enable_STARTTLS="${enable_STARTTLS^^}"
+
+        if [[ $enable_STARTTLS != "Y" && $enable_STARTTLS != "N" ]]; then
+          echo "   Please enter Y or N for STARTTLS."
+          continue
+        fi
+      else
+        enable_STARTTLS="N"
+      fi
+
+      break
+    done
+
+    if [[ $enable_TLS == "N" ]]; then
+      port="25"
+    elif [[ $enable_STARTTLS == "Y" ]]; then
+      port="587"
+    else
+      port="465"
+    fi
+
     read_by_def "   Enter SMTP server port (default: ${port}): " port $port;
 
     read_by_def "   Enter Y or N for to use SMTP authentication on ${host}:${port} (default: $is_auth): " is_auth $is_auth;
@@ -2272,9 +2297,6 @@ function settings_smtp_sites() {
       echo -e "\e[1;34m\n   Available methods are plain,scram-sha-1,cram-md5,gssapi,external,digest-md5,login,ntlm\n\e[0m"
       read_by_def "   Enter SMTP authentication method (default: $authentication_method): " authentication_method $authentication_method;
     fi
-
-    read_by_def "   Enter Y or N to enable TLS for ${host}:${port} (default: $enable_TLS): " enable_TLS $enable_TLS;
-    enable_TLS="${enable_TLS^^}"
 
     echo -e "\n   Entered data:\n"
     echo "   Site dir (account): $site";
@@ -2290,6 +2312,7 @@ function settings_smtp_sites() {
     fi
 
     echo "   Enable TLS: $enable_TLS"
+    echo "   Enable STARTTLS: $enable_STARTTLS"
 
     echo -e "\n\n"
 

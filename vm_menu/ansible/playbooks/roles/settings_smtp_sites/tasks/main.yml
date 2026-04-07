@@ -140,7 +140,11 @@
           tls off
           {% endif %}
           tls_certcheck off
+          {% if enable_STARTTLS == 'Y' %}
+          tls_starttls on
+          {% else %}
           tls_starttls off
+          {% endif %}
         insertafter: EOF
 
 - block:

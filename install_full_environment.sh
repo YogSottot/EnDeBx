@@ -5,10 +5,10 @@ set -euo pipefail
 # MASTER branch
 
 # use curl
-# bash <(curl -sL https://raw.githubusercontent.com/EduardRe/DebianLikeBitrixVM/master/install_full_environment.sh)
+# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/EnDeBx/master/install_full_environment.sh)
 
 # use wget
-# bash <(wget -qO- https://raw.githubusercontent.com/EduardRe/DebianLikeBitrixVM/master/install_full_environment.sh)
+# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/master/install_full_environment.sh)
 
 cat > /root/temp_install_full_environment.sh <<\END
 #!/usr/bin/env bash
@@ -30,8 +30,8 @@ generate_password() {
 }
 
 BRANCH="master"
-SETUP_BITRIX_DEBIAN_URL="https://raw.githubusercontent.com/EduardRe/DebianLikeBitrixVM/$BRANCH/repositories/bitrix-gt/custom_from_install_full_environment_bitrix_setup_vanilla.sh"
-REPO_URL="https://github.com/EduardRe/DebianLikeBitrixVM.git"
+SETUP_BITRIX_DEBIAN_URL="https://raw.githubusercontent.com/YogSottot/EnDeBx/$BRANCH/repositories/bitrix-gt/custom_from_install_full_environment_bitrix_setup_vanilla.sh"
+REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 DB_NAME="bitrix"
 DB_USER="bitrix"
@@ -78,14 +78,14 @@ password="${root_pass}"
 CONFIG_MYSQL_ROOT_MY_CNF
 
 # Clone directory vm_menu with repositories
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/DebianLikeBitrixVM"
-cd "$DEST_DIR_MENU/DebianLikeBitrixVM"
+git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
+cd "$DEST_DIR_MENU/EnDeBx"
 git sparse-checkout set $DIR_NAME_MENU
 
 # Move vm_menu in /root and clean
 rm -rf $DEST_DIR_MENU/$DIR_NAME_MENU
 mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-rm -rf "$DEST_DIR_MENU/DebianLikeBitrixVM"
+rm -rf "$DEST_DIR_MENU/EnDeBx"
 
 cd $DEST_DIR_MENU
 

@@ -30,7 +30,7 @@
       - `Do you want htaccess support? (Y/N) [default: N]:` — нужна ли поддержка htaccess (apache). Значение по умолчанию управляется переменной `$BS_HTACCESS_SUPPORT`  
       - `Enter Y or N for setting SSL Let's Encrypt site (default: N):` — создать сертификат для сайта.  
       Для сайта full:
-      - `Enter PHP version for site from installed (default: 8.3):` — указать версию php для сайта. **Внимание!** Указывать можно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `6) Add/Change global PHP version`
+      - `Enter PHP version for site from installed (default: 8.3):` — указать версию php для сайта. **Внимание!** Указывать можно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `4) Add/Change global PHP version`
       - `Do you want to add local push-server config to /bitrix/.setting.php? (Y/N) [Y]:` — добавить блок настроек push-сервер в `bitrix/.setting.php`. Если это не б24, то он там не нужен.
       - `Enter username for the site user:` — имя системного пользователя в домашней директории которого будет создан сайт.
       - Если на сервере установлены и `mysql`, и `postgresql`, меню покажет выбор:
@@ -45,7 +45,7 @@
 
    `2) Edit existing website` — отредактировать уже созданный сайт.
       - `Enter existing path to site` — ввести путь к директории сайта  
-      - `Enter PHP version for site from installed` — указать версию php. **Внимание!** Указывать нужно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `6) Add/Change global PHP version`
+      - `Enter PHP version for site from installed` — указать версию php. **Внимание!** Указывать нужно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `4) Add/Change global PHP version`
       - `Do you want to use xdebug? (Y/N) [N]:` — использовать php-fpm с подключённым xdebug для сайта
       - `Do you want htaccess support? (Y/N) [default: N]:` — включить поддержку htaccess (apache).
       - `Do you want nginx-composite from files support? (Y/N) [default: N]:` — включение и обновление
@@ -56,14 +56,18 @@
    `3) Delete site` — удаление сайта
       - `Enter path to site:` — ввести путь к директории сайта. Директория сайта будет удалена безвозвратно. База данных и пользователь бд будут удалены безвозвратно. Для PostgreSQL-сайтов удаление также снимает пользователя из `pgbouncer`, если он использовался. Введите сгенерированный код для продолжения.
 
-   `4) Block/Unblock access by ip` — блокировать доступ к nginx по ip-адресу сервера. То есть, если ввести в браузере `http://ip-сервера`, то сайт по умолчанию не откроется. (будет добавлен `/etc/nginx/bx/site_enabled/bx_ext_ip.conf`)  
+   `4) Configure Let's Encrypt certificate` — создать сертификат для сайта. Конфигурационный файл в `/etc/nginx/bx/site_settings/домен/ssl.conf`. Конфигурация вынесена в отдельный файл, чтобы не затиралась при редактировании сайта через пункт меню `Edit existing website`.
+
+   `5) Enable or Disable redirect HTTP to HTTPS` — помещает файл `.htsecure` в корень выбранного сайта. Это приводит к включению редиректа с http на https.
+
+   `6) Block/Unblock access by ip` — блокировать доступ к nginx по ip-адресу сервера. То есть, если ввести в браузере `http://ip-сервера`, то сайт по умолчанию не откроется. (будет добавлен `/etc/nginx/bx/site_enabled/bx_ext_ip.conf`)  
       Без блокировки будет открываться сайт по умолчанию.  
 
-   `5) Enable/Disable Basic Auth in nginx` — включить/выключить базовую авторизацию в nginx для сайта. Логи и пароль можно задать в меню или использовать переменные `BS_NGINX_BASIC_AUTH_LOGIN` `BS_NGINX_BASIC_AUTH_PASSWORD`  
+   `7) Enable/Disable Basic Auth in nginx` — включить/выключить базовую авторизацию в nginx для сайта. Логи и пароль можно задать в меню или использовать переменные `BS_NGINX_BASIC_AUTH_LOGIN` `BS_NGINX_BASIC_AUTH_PASSWORD`  
 
-   `6) Enable/Disable Bot Blocker in nginx` — скачать и установить [mitchellkrogza/nginx-ultimate-bad-bot-blocker](https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker). Подключается для каждого сайта отдельно.  Изучите документация по ссылке для более тонкой настройки. Конфигурационные файлы в `/etc/nginx/bots.d/`.  
+   `8) Enable/Disable Bot Blocker in nginx` — скачать и установить [mitchellkrogza/nginx-ultimate-bad-bot-blocker](https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker). Подключается для каждого сайта отдельно.  Изучите документация по ссылке для более тонкой настройки. Конфигурационные файлы в `/etc/nginx/bots.d/`.  
 
-   `7) Configure NTLM auth for sites` — настройка NTLM-авторизации через отдельные Apache vhost на портах `8890/8891`. Для сайтов с общим ядром настройка применяется ко всей группе.
+   `9) Configure NTLM auth for sites` — настройка NTLM-авторизации через отдельные Apache vhost на портах `8890/8891`. Для сайтов с общим ядром настройка применяется ко всей группе.
       - Перед подключением к AD убедитесь, что сервер Bitrix в локальной сети использует ваш офисный DNS-сервер. Это может быть контроллер домена или отдельный внутренний DNS-сервер.
       - До запуска данного меню предварительно выполните пункты `1-3` из документации Bitrix: [Настройка NTLM модуля Linux для Битрикс](https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=41&LESSON_ID=5078&LESSON_PATH=3911.27946.5076.5078). Данное меню закрывает пункт `4`.
       - Синхронизация времени должна идти с вашим офисным источником времени, например с контроллером домена. Один из вариантов для `chrony`: указать в конфиге `server ip_ntp_сервера iburst`, затем выполнить `systemctl restart chrony`.
@@ -78,13 +82,11 @@
       - Пункт `Use existing NTLM settings for the site` добавляет NTLM-конфиг для нового сайта без повторного ввода параметров домена.
       - Пункт `Delete NTLM settings` удаляет NTLM-конфиги Apache, отключает сервер от AD, закрывает порты в `firewalld` и очищает пакеты/config-файлы samba/winbind.
 
-3) `Configure Let's Encrypt certificate` — создать сертификат для сайта. Конфигурационный файл в `/etc/nginx/bx/site_settings/домен/ssl.conf`. Конфигурация вынесена в отдельный файл, чтобы не затиралась при редактировании сайта через пункт меню `Edit existing website`.  
-4) `Enable or Disable redirect HTTP to HTTPS` — помещает файл `.htsecure` в корень выбранного сайта. Это приводит к включению редиректа с http на https.  
-5) `Add/Remove FTP user` — создать или удалить пользователя ftp. Используется pureftpd. Конфигурационные файлы в `/etc/pure-ftpd/  
-6) `Add/Change global PHP version`. — Добавление новой версии php.  
+3) `Add/Remove FTP user` — создать или удалить пользователя ftp. Используется pureftpd. Конфигурационные файлы в `/etc/pure-ftpd/  
+4) `Add/Change global PHP version`. — Добавление новой версии php.  
    `Set this version of php as the default version? All sites on bitrix that use the default version will be switched to this version.` — установить новую версию php как версию php по умолчанию. То есть `/usr/bin/php` будет использовать новую версию.
    Это затрагивает только сайты пользователя по умолчанию (www-data или bitrix).  
-7) `Settings SMTP sites` — по умолчанию на сервер устанавливается postfix. Отправка почты идёт прямо с сервера без аккаунта.  Если сервер за анти-ддос панелью, то такая отправка приводит к утечке ip-адреса сервера. Поэтому, для отправки почты нужно настроить использование стороннего smtp-сервера. Этот пункт меню позволяет создать конфиг для msmtp. Конфигурационный файл в `/etc/msmtprc`.  
+5) `Settings SMTP sites` — по умолчанию на сервер устанавливается postfix. Отправка почты идёт прямо с сервера без аккаунта.  Если сервер за анти-ддос панелью, то такая отправка приводит к утечке ip-адреса сервера. Поэтому, для отправки почты нужно настроить использование стороннего smtp-сервера. Этот пункт меню позволяет создать конфиг для msmtp. Конфигурационный файл в `/etc/msmtprc`.  
    - `Enter site dir` — введите имя директории сайта. Для создания конфига для сайта `example.com` нужно ввести `example.com`.  
    - `Enter From email address` — адрес отправителя.  
    - `Enter SMTP server address` — доменное имя или ip-адрес smtp-сервера.  
@@ -97,6 +99,30 @@
    Первый созданный аккаунт станет аккаунтом по умолчанию. Все сайты на сервере будут использовать его. Если хотите, чтобы какие-то сайты продолжали использовать локальный `postfix` просто добавьте для них аккаунт с ip 127.0.0.1 и портом 25.  
    Если сервер не за анти-ддосом, то рекомендую использовать локальный `postfix`, так как большинство почтовых сервисов имеют лимиты на отправку почты. Типичный интернет-магазин вполне легко может превысить эти лимиты при большом количестве заказов.  
    Если грамотно настроить dns-записи (spf / rDNS), то письма будут доходить до получателей не попадая в спам. Убедитесь только, что ip-сервера нет в чёрных списках. Для проверки настроек можно использовать [сервис](https://www.mail-tester.com/). Или используйте собственный почтовый сервер, например [mailcow](https://mailcow.email/), [mailu](https://mailu.io/).  
+
+6) `MySQL`
+
+   - Если MySQL ещё не установлен, меню показывает `1) Install MySQL` и спрашивает:
+     тип `percona` или `mariadb`,
+     для `percona` — версию `5.7/8.0/8.4`,
+     `BS_DB_CHARACTER_SET_SERVER`,
+     `BS_DB_COLLATION`.
+     Для `mariadb` версия не уточняется и используется `BS_DB_VERSION=10.11`.
+     На Debian 13 версии `percona 5.7` и `8.0` недоступны, а на Ubuntu 24.04+ недоступна `percona 5.7`, меню не даст продолжить с этими вариантами.
+   - `1) Re-generate MySQL config` — повторная генерация конфига mysql
+   - `2) Upgrade percona 5.7 to 8.0` — обновление percona mysql с 5.7 до 8.0
+   - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
+   - `Delete MySQL` — полное удаление MySQL/MariaDB, его пакетов и каталогов с данными.
+
+7) `PostgreSQL` — меню для управления postgresql.
+
+   Подменю `PostgreSQL`:
+   - `1) Install PostgreSQL` — установка PostgreSQL либо из репозитория дистрибутива, либо из официального репозитория `apt.postgresql.org`. Для `distro`-варианта меню само определяет доступную версию дистрибутива.
+   - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.
+   - `3) Upgrade PostgreSQL` — обновление major-версии PostgreSQL на Debian-like системах через `pg_upgradecluster`. Меню показывает установленные версии, просит выбрать `from` и `to`, даёт выбрать источник target-версии (`distro` или `official`) и по возможности показывает версии, доступные для установки из текущего APT-кэша. После успешного upgrade новая версия получает прежний порт и конфиги кластера, поэтому менять настройки сайтов не требуется. Старая версия после успешного переноса автоматически удаляется.
+   - `4) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
+   - `5) Remove user and db from PostgreSQL` — удалить пользователя и бд.
+   - `6) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`
 
 8) `Installing Extensions` — меню для установки дополнительного ПО  
    `1) Install/Delete Memcached` — установка memcached. Конфиг в `/etc/memcached.conf`. Сокет в `/tmp/memcached.sock`  
@@ -111,35 +137,11 @@
 
    `6) Install/Delete Docker` — установка свежей версии докера из официальных репозиториев. Роль меняет log-driver c json на local, так как json очень сильно забивает место на диске.  
 
-   `7) PostgreSQL` — меню для управления postgresql.  
+   `7) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
 
-   `8) MySQL`
+   `8) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Пункт отображается только на Ubuntu. Не рекомендуется использовать ppa в debian.  
 
-     - Если MySQL ещё не установлен, меню показывает `1) Install MySQL` и спрашивает:
-       тип `percona` или `mariadb`,
-       для `percona` — версию `5.7/8.0/8.4`,
-       `BS_DB_CHARACTER_SET_SERVER`,
-       `BS_DB_COLLATION`.
-       Для `mariadb` версия не уточняется и используется `BS_DB_VERSION=10.11`.
-       На Debian 13 версии `percona 5.7` и `8.0` недоступны, а на Ubuntu 24.04+ недоступна `percona 5.7`, меню не даст продолжить с этими вариантами.
-     - `1) Re-generate MySQL config` — повторная генерация конфига mysql
-     - `2) Upgrade percona 5.7 to 8.0` — обновление percona mysql с 5.7 до 8.0
-     - `3) Upgrade percona 8.0 to 8.4` — обновление percona mysql с 8.0 до 8.4
-     - `Delete MySQL` — полное удаление MySQL/MariaDB, его пакетов и каталогов с данными.
-
-   `9) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
-
-   `10) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Пункт отображается только на Ubuntu. Не рекомендуется использовать ppa в debian.  
-
-   `11) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
-
-   Подменю `PostgreSQL`:
-   - `1) Install PostgreSQL` — установка PostgreSQL либо из репозитория дистрибутива, либо из официального репозитория `apt.postgresql.org`. Для `distro`-варианта меню само определяет доступную версию дистрибутива.
-   - `2) Delete PostgreSQL` — удаление выбранной версии postgresql. **Внимание!** Будут удалены все базы данных этой версии.  
-   - `3) Upgrade PostgreSQL` — обновление major-версии PostgreSQL на Debian-like системах через `pg_upgradecluster`. Меню показывает установленные версии, просит выбрать `from` и `to`, даёт выбрать источник target-версии (`distro` или `official`) и по возможности показывает версии, доступные для установки из текущего APT-кэша. После успешного upgrade новая версия получает прежний порт и конфиги кластера, поэтому менять настройки сайтов не требуется. Старая версия после успешного переноса автоматически удаляется.
-   - `4) Add user and db in PostgreSQL` — создать пользователя и бд для выбранной версии. Если установлен `pgbouncer`, то в него будет добавлен конфиг для этой бд.пользователя.
-   - `5) Remove user and db from PostgreSQL` — удалить пользователя и бд.
-   - `6) Install/Delete Pgbouncer` — установить или удалить `pgbouncer`
+   `8) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
 
 9) `Security settings` — отдельное меню для security-настроек.  
    `1) SSH/Updates` — повторная настройка параметров безопасности без полной переустановки окружения. Пункт запускает тот же playbook, что и настройка безопасности при первичной установке через `.env.menu`, и сохраняет выбранные значения в `/root/.env.menu`.  
@@ -171,7 +173,5 @@
 11) `Update server` — Обновление пакетов. Запуск `apt update -y; apt upgrade -y`.  
 
 `R) Restart the server` — перезагрузка сервера. Запуск команды `reboot`.  
-
-`P) Turn off the server` — выключение сервера. Запуск команды `poweroff`.  
 
 `0) Exit` — выход из меню

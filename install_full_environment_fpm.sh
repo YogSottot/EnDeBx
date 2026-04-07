@@ -4,13 +4,13 @@ set -euo pipefail
 # MASTER branch
 
 # use curl
-# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/install_full_environment_fpm.sh)
+# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
 
 # use wget
 # apt install wget -y
-# wget https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/.env.menu.example -O /root/.env.menu
+# wget https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/.env.menu.example -O /root/.env.menu
 # edit .env.menu with your settings.
-# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/install_full_environment_fpm.sh)
+# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
 
 generate_password() {
     local length=$1
@@ -77,7 +77,7 @@ get_ubuntu_major_version() {
 }
 
 BRANCH="feature/php-fpm"
-REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM"
+REPO_URL="https://github.com/YogSottot/EnDeBx"
 
 DB_NAME="bitrix"
 DB_USER="bitrix"
@@ -102,14 +102,14 @@ fi
 site_user_password=$(generate_password 24)
 
 # Clone directory vm_menu with repositories
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/DebianLikeBitrixVM"
-cd "$DEST_DIR_MENU/DebianLikeBitrixVM"
+git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
+cd "$DEST_DIR_MENU/EnDeBx"
 git sparse-checkout set $DIR_NAME_MENU
 
 # Move vm_menu in /root and clean
 rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
 mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
+rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
 
 cd $DEST_DIR_MENU
 
@@ -475,7 +475,7 @@ else
 fi
 
 # fix cloudflare ip detection
-wget https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/${BRANCH}/repositories/bitrix-gt/cloudflare_ip_updater.sh -N -P /etc/cron.monthly/
+wget https://raw.githubusercontent.com/YogSottot/EnDeBx/${BRANCH}/repositories/bitrix-gt/cloudflare_ip_updater.sh -N -P /etc/cron.monthly/
 chmod +x /etc/cron.monthly/cloudflare_ip_updater.sh
 /etc/cron.monthly/cloudflare_ip_updater.sh
 

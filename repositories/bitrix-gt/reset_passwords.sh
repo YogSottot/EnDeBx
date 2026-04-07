@@ -151,7 +151,7 @@ apt upgrade -y --enable-upgrade
 
 # update menu to latest version
 BRANCH="feature/php-fpm"
-REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"
+REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 DIR_NAME_MENU="vm_menu"
 DEST_DIR_MENU="/root"
@@ -169,16 +169,16 @@ mkdir -p "${DEST_DIR_MENU}/${DIR_NAME_MENU}"
 mv -f "${DEST_DIR_MENU}/${DIR_NAME_MENU}" "${full_path_backup_menu}"
 
 # Clone directory vm_menu with repositories
-rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/DebianLikeBitrixVM"
-cd "$DEST_DIR_MENU/DebianLikeBitrixVM"
+rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
+git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
+cd "$DEST_DIR_MENU/EnDeBx"
 git sparse-checkout set $DIR_NAME_MENU
 
 # Move vm_menu in /root and clean
 rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
 mv -f $DIR_NAME_MENU $DEST_DIR_MENU
 cd "$DEST_DIR_MENU"
-rm -rf "${DEST_DIR_MENU:?}/DebianLikeBitrixVM"
+rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
 chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
 
 rm -f "/tmp/configs.tmp"

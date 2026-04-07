@@ -1,4 +1,6 @@
-# Главное меню
+# EnDeBx
+
+## Главное меню
 
 ![Главное меню](https://github.com/user-attachments/assets/66e29751-7c0e-4550-a429-a9313db77144)  
 
@@ -12,9 +14,9 @@
 
 ## Возможности окружения
 
-- При установки окружения устанавливается все необходимое, а также устанавливается и настраивается Push and Pool сервер
+- При установки окружения устанавливается все необходимое
 - Поддержка композита из коробки, в том числе отдача файлов композита из nginx (как в bitrix-env)
-- Отдача статики через Brotli / Zstd из коробки
+- Отдача статики через Brotli из коробки
 - Гибко применять свои конфиги для Nginx не меняя стандартные конфиги
 
 ## Возможности меню
@@ -30,11 +32,10 @@
 - Для каждого сайта можно включить/выключить базовую авторизацию в nginx
 - Для каждого сайта можно включить/выключить [mitchellkrogza/nginx-ultimate-bad-bot-blocker](https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker)
 - Каждое ядро, по умолчанию, устанавливается под отдельным пользователем
-- Установка mariabd или percona mysql на выбор
+- Установка mariadb или percona mysql на выбор
 - Настройка SMTP как по умолчанию, так и для каждого сайта по отдельности
 - Обновление сервера
 - Перезагрузка сервера
-- Выключение сервера
 - Возможность установки полнотекстового поиска Sphinx
 - Возможность установки мониторинга Netdata
 - Информирование о выходе новой версии меню
@@ -45,11 +46,18 @@
 - Возможность установки memcached
 - Возможность установки Linux Malware Detect
 - Возможность установки Postgresql + pgbouncer (создание пользователей и бд)
+- Возможность настройки NTLM-авторизации (как в bitrix-env)
 - Создание/Удаление FTP-пользователей
+- Установка/Удаление Push-server
 
-## Краткий видео обзор
+Актуальный сгруппированный каталог возможностей в документации: [docs/features.md](docs/features.md)
 
-[![Watch the video](images/youtube.png)](https://www.youtube.com/watch?v=W8SrohS-l0o)
+Локальная сборка документации без предупреждения о `MkDocs 2.0`:
+
+```bash
+NO_MKDOCS_2_WARNING=1 mkdocs serve
+NO_MKDOCS_2_WARNING=1 mkdocs build --strict
+```
 
 ## Установка
 
@@ -61,12 +69,12 @@
 
 ```bash
 apt install wget -y
-wget https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/.env.menu.example -O /root/.env.menu
+wget https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/.env.menu.example -O /root/.env.menu
 # Отредактируйте .env.menu указав желаемые опции.
 cd /root/
 nano .env.menu
 # Установка окружения. Опции из .env.menu будут использованы при установке. Если упал с ошибкой, то его можно перезапускать без переустановки ос.
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/install_full_environment_fpm.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
 ```
 
 ## Обновление меню
@@ -77,7 +85,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/
 Обновления используя WGET  
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/feature/php-fpm/update_menu.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/update_menu.sh)
 ```
 
 ## Использование
@@ -96,4 +104,4 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/DebianLikeBitrixVM/
 
 ## Инструкция по пунктам меню
 
-[MANUAL.md](/MANUAL.md)
+[MANUAL.md](https://yogsottot.github.io/EnDeBx/)

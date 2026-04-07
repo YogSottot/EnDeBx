@@ -2,12 +2,12 @@
 set -euo pipefail
 
 readonly BRANCH="feature/php-fpm"
-readonly REPO_URL="https://github.com/YogSottot/DebianLikeBitrixVM.git"
+readonly REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 readonly DIR_NAME="vm_menu"
 readonly DEST_DIR="/root"
 readonly BACKUP_DIR="${DEST_DIR}/backup_vm_menu"
-readonly TMP_CLONE_DIR="${DEST_DIR}/DebianLikeBitrixVM"
+readonly TMP_CLONE_DIR="${DEST_DIR}/EnDeBx"
 
 readonly FULL_MENU_PATH="${DEST_DIR}/${DIR_NAME}/menu.sh"
 

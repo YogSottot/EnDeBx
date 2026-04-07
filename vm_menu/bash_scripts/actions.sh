@@ -331,6 +331,7 @@ function action_settings_smtp_sites() {
       password=${password} \
       authentication_method=${authentication_method} \
       enable_TLS=${enable_TLS} \
+      enable_STARTTLS=${enable_STARTTLS} \
 
       smtp_file_sites_config=${BS_SMTP_FILE_SITES_CONFIG} \
       smtp_file_user_config=${BS_SMTP_FILE_USER_CONFIG} \
