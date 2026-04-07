@@ -4,13 +4,13 @@ set -euo pipefail
 # MASTER branch
 
 # use curl
-# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
+# bash <(curl -sL https://raw.githubusercontent.com/YogSottot/EnDeBx/main/install_full_environment_fpm.sh)
 
 # use wget
 # apt install wget -y
-# wget https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/.env.menu.example -O /root/.env.menu
+# wget https://raw.githubusercontent.com/YogSottot/EnDeBx/main/.env.menu.example -O /root/.env.menu
 # edit .env.menu with your settings.
-# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
+# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/install_full_environment_fpm.sh)
 
 generate_password() {
     local length=$1
@@ -26,7 +26,7 @@ generate_password() {
     echo "$password"
 }
 
-BRANCH="feature/php-fpm"
+BRANCH="main"
 REPO_URL="https://github.com/YogSottot/EnDeBx"
 
 DB_NAME="bitrix"

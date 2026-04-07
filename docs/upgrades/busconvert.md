@@ -8,8 +8,8 @@
 
 Полезные ссылки:
 
-- [Скачать `busconvert_11.php`](https://github.com/YogSottot/EnDeBx/raw/refs/heads/feature/php-fpm/repositories/bitrix-gt/busconvert_11.php)
-- [Оригинальная markdown-инструкция в репозитории](https://github.com/YogSottot/EnDeBx/blob/feature/php-fpm/repositories/bitrix-gt/busconvert.md)
+- [Скачать `busconvert_11.php`](https://github.com/YogSottot/EnDeBx/raw/refs/heads/main/repositories/bitrix-gt/busconvert_11.php)
+- [Оригинальная markdown-инструкция в репозитории](https://github.com/YogSottot/EnDeBx/blob/main/repositories/bitrix-gt/busconvert.md)
 - [Источник, откуда был взят скрипт](https://tuning-soft.ru/articles/bitrix/busconvert-conversion-of-1c-bitrix-database-from-utf8-to-utf8mb4.html)
 
 ## Когда это использовать

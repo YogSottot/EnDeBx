@@ -16,9 +16,9 @@
 
 ```bash
 apt install wget -y
-wget https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/.env.menu.example -O /root/.env.menu
+wget https://raw.githubusercontent.com/YogSottot/EnDeBx/main/.env.menu.example -O /root/.env.menu
 nano /root/.env.menu
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/install_full_environment_fpm.sh)
 ```
 
 ## Что делает скрипт
@@ -27,7 +27,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-
 
 - обновляет пакеты системы;
 - ставит `pipx`, `git`, `python3-debian`, `locales-all`;
-- клонирует только каталог `vm_menu` из ветки `feature/php-fpm`;
+- клонирует только каталог `vm_menu` из ветки `main`;
 - размещает меню в `/root/vm_menu` и создает ссылку `/root/menu.sh`;
 - ставит или переустанавливает `ansible` нужной версии через `pipx`;
 - применяет таймзону, опционально swap, системные репозитории и security-настройки;

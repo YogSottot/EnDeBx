@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly BRANCH="feature/php-fpm"
+readonly BRANCH="main"
 readonly REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 readonly DIR_NAME="vm_menu"

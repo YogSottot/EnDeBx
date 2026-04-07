@@ -108,7 +108,7 @@ systemctl restart mysql
 Инструкция:
 
 - [Busconvert для utf8mb4](busconvert.md)
-- [Скачать `busconvert_11.php`](https://github.com/YogSottot/EnDeBx/raw/refs/heads/feature/php-fpm/repositories/bitrix-gt/busconvert_11.php)
+- [Скачать `busconvert_11.php`](https://github.com/YogSottot/EnDeBx/raw/refs/heads/main/repositories/bitrix-gt/busconvert_11.php)
 
 Не забудьте скорректировать в самом скрипте требуемые значения:
 

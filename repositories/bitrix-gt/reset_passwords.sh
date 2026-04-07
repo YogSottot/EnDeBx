@@ -150,7 +150,7 @@ apt update -y
 apt upgrade -y --enable-upgrade
 
 # update menu to latest version
-BRANCH="feature/php-fpm"
+BRANCH="main"
 REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 DIR_NAME_MENU="vm_menu"

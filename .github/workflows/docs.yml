@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/php-fpm
   workflow_dispatch:
 
 permissions:

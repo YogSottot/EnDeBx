@@ -69,12 +69,12 @@ NO_MKDOCS_2_WARNING=1 mkdocs build --strict
 
 ```bash
 apt install wget -y
-wget https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/.env.menu.example -O /root/.env.menu
+wget https://raw.githubusercontent.com/YogSottot/EnDeBx/main/.env.menu.example -O /root/.env.menu
 # Отредактируйте .env.menu указав желаемые опции.
 cd /root/
 nano .env.menu
 # Установка окружения. Опции из .env.menu будут использованы при установке. Если упал с ошибкой, то его можно перезапускать без переустановки ос.
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/install_full_environment_fpm.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/install_full_environment_fpm.sh)
 ```
 
 ## Обновление меню
@@ -85,7 +85,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-
 Обновления используя WGET  
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/update_menu.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/update_menu.sh)
 ```
 
 ## Использование

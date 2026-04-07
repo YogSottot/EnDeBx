@@ -13,7 +13,7 @@ update_menu
 Если команда еще не доступна в shell:
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/update_menu.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/update_menu.sh)
 ```
 
 ## Что делает обновление

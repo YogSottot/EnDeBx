@@ -2,7 +2,7 @@
 set +x
 set -euo pipefail
 
-# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/feature/php-fpm/repositories/bitrix-gt/security.sh)
+# bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/repositories/bitrix-gt/security.sh)
 apt update -y
 apt upgrade -y --enable-upgrade
 
@@ -20,7 +20,7 @@ if [ -e /root/.env.menu ]; then
   source /root/.env.menu
 fi
 
-BRANCH="feature/php-fpm"
+BRANCH="main"
 REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
 DIR_NAME_MENU="vm_menu"
