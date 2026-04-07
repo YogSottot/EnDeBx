@@ -48,8 +48,7 @@
       - `Enter PHP version for site from installed` — указать версию php. **Внимание!** Указывать нужно только версию php из списка `All installed PHP versions:`. Меню не даст ввести другую версию. Установить дополнительные версии можно из главного меню `4) Add/Change global PHP version`
       - `Do you want to use xdebug? (Y/N) [N]:` — использовать php-fpm с подключённым xdebug для сайта
       - `Do you want htaccess support? (Y/N) [default: N]:` — включить поддержку htaccess (apache).
-      - `Do you want nginx-composite from files support? (Y/N) [default: N]:` — включение и обновление
-настроек NGINX для композита. (Хранение композита в файлах). Предварительно нужно включить композит в админке сайта.  
+      - `Do you want nginx-composite from files support? (Y/N) [default: N]:` — включение и обновление настроек NGINX для композита. (Хранение композита в файлах). Предварительно нужно включить композит в админке сайта.  
       - `Enter Y or N for setting SSL Let`s Encrypt site (default: N):` — создать сертификат для сайта.  
         Для сайта `default` домен сертификата запрашивается отдельно, потому что имя каталога сайта не является реальным доменом.
 

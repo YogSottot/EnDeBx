@@ -2225,7 +2225,7 @@ function settings_smtp_sites() {
     fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}")
-    res=$(ansible-playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+    res=$(run_ansible_playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
       -e "print_account=Y \
       account_name=${site} \
       smtp_file_sites_config=${BS_SMTP_FILE_SITES_CONFIG} \

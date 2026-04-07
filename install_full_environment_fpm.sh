@@ -130,6 +130,14 @@ fi
 BIN_DIR="$HOME/.local/bin"
 export PATH="$BIN_DIR:$PATH"
 
+run_ansible_playbook() {
+    if [ "${BS_ANSIBLE_DEBUG_MODE^^}" = "Y" ]; then
+        command ansible-playbook -v "$@"
+    else
+        command ansible-playbook "$@"
+    fi
+}
+
 # check ansible installation
 if pipx list | grep -q "package ansible "; then
     ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
@@ -233,24 +241,24 @@ INSTALL_MENU
 fi
 
 # set timezone
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" -e "server_timezone=${BS_SERVER_TIMEZONE}"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" -e "server_timezone=${BS_SERVER_TIMEZONE}"
 
 DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
 
 # setup swap
 if [ "$BS_SETUP_SWAP" == 'Y'  ]; then
-    ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+    run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "swap_file_state='present' \
     swap_file_size_mb=${BS_SWAP_SIZE}"
 fi
 
 if [ "$BS_SETUP_REPOS" == 'Y'  ]; then
 # setup repos
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
 # install deps
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 if [ "$BS_USER_SERVER_SITES" != 'www-data' ]; then
     if ! id "$BS_PATH_USER_HOME" &>/dev/null; then
@@ -263,7 +271,7 @@ fi
 
 if [ "$BS_INSTALL_BASH_ALIASES" == Y  ]; then
   # setup bashrc
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "user_server_sites=${BS_USER_SERVER_SITES} \
     group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
     default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
@@ -272,11 +280,11 @@ fi
 
 if [ "$BS_OPTIMIZE_SYSCTL" == Y  ]; then
   # setup sysctl
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SYSCTL}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SYSCTL}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
 # setup postfix
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_POSTFIX}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_POSTFIX}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 # setup user / nginx / mysql / apache2 / firewalld / php-fpm
 extra_vars="domain=${BS_DEFAULT_SITE_NAME} \
@@ -331,19 +339,19 @@ if [ -n "${BX_ADDITIONAL_PHP_EXTENSIONS}" ]; then
   cat > /tmp/php_extra.yml <<EOF
 php_packages_extra: ${BX_ADDITIONAL_PHP_EXTENSIONS}
 EOF
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INITIAL_SETUP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}" -e @/tmp/php_extra.yml
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INITIAL_SETUP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}" -e @/tmp/php_extra.yml
 else
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INITIAL_SETUP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INITIAL_SETUP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
 fi
 
 # setup nginx modules repo
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_NGINX_MOD_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_NGINX_MOD_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 # setup mydumper repo
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MYDUMPER_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MYDUMPER_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 # SMTP
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "is_new_install_env=Y \
   account_name='' \
   smtp_file_sites_config=${BS_SMTP_FILE_SITES_CONFIG} \
@@ -355,7 +363,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   smtp_path_wrapp_script_sh=${BS_SMTP_PATH_WRAPP_SCRIPT_SH}"
 
 # Full enviroment
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_NEW_FULL_ENVIRONMENT}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_NEW_FULL_ENVIRONMENT}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "domain=${BS_DEFAULT_SITE_NAME} \
   default_domain=${BS_DEFAULT_SITE_NAME} \
 
@@ -416,7 +424,7 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   server_timezone=${BS_SERVER_TIMEZONE}"
 
 if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e 'crowdsec_action="'"INSTALL"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/\n  /g; s/^/  /;')"'" \
@@ -427,21 +435,21 @@ if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
 fi
 
 if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "rkhunter_action='INSTALL' \
       rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
 fi
 
 if [ "$BS_SETUP_MALDET" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "maldet_action='INSTALL' \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "security_ssh_port=${BS_SSH_PORT} \
       security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
       security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
@@ -458,7 +466,7 @@ if [ "$BS_SETUP_SECURITY" == "Y" ]; then
 fi
 
 if [ "$BS_DELETE_SNAPD" == "Y" ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "snapd_action=DELETE"
 fi
 

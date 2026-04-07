@@ -1,6 +1,8 @@
 #!/bin/bash
 # shellcheck disable=SC2034
 
+export ANSIBLE_CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/ansible.cfg"
+
 # General configs
 BS_VERSION_MENU="1.3.12"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
@@ -64,6 +66,7 @@ BS_DOWNLOAD_BITRIX_CONFIGS="https://dev.1c-bitrix.ru/docs/chm_files/debian.zip"
 
 # Ansible configs
 BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS="-i localhost, -c local"
+BS_ANSIBLE_DEBUG_MODE=N
 BS_PATH_ANSIBLE_PLAYBOOKS="../ansible/playbooks"
 
 # Ansible playbooks names
