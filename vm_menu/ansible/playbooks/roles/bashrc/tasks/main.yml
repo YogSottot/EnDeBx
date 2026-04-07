@@ -32,3 +32,6 @@
 
 - name: Liquidprompt setup
   ansible.builtin.include_tasks: liquidprompt.yml
+
+- name: Zellij setup
+  ansible.builtin.include_tasks: zellij.yml

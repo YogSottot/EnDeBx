@@ -1,0 +1,19 @@
+---
+- name: Install deps
+  ansible.builtin.apt:
+    name:
+      - zellij
+
+- name: Create a /root/.config/zellij/ directory
+  ansible.builtin.file:
+    path: /root/.config/zellij/
+    state: directory
+    mode: '0755'
+
+- name: Copy zellij config
+  ansible.builtin.copy:
+    src: "zellij/config.kdl"
+    dest: "/root/.config/zellij/config.kdl"
+    owner: root
+    group: root
+    mode: '0644'
