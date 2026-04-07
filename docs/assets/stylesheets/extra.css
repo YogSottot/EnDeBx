@@ -1,0 +1,107 @@
+:root {
+  --md-primary-fg-color: #183b87;
+  --md-primary-fg-color--light: #2756b2;
+  --md-accent-fg-color: #00a7d1;
+  --dlbvm-hero-start: #102a5c;
+  --dlbvm-hero-end: #1f6ca8;
+}
+
+.md-typeset .hero-panel {
+  padding: 2rem;
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(circle at top right, rgb(255 255 255 / 0.18), transparent 34%),
+    linear-gradient(135deg, var(--dlbvm-hero-start), var(--dlbvm-hero-end));
+  color: #fff;
+  box-shadow: 0 1.2rem 3rem rgb(15 35 77 / 0.18);
+}
+
+.md-typeset .hero-panel h1,
+.md-typeset .hero-panel p,
+.md-typeset .hero-panel li {
+  color: inherit;
+}
+
+.md-typeset .hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 0.8rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-typeset .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.md-typeset .hero-actions .md-button {
+  margin: 0;
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.72);
+  background-color: rgb(255 255 255 / 0.12);
+  backdrop-filter: blur(0.35rem);
+}
+
+.md-typeset .hero-actions .md-button:hover,
+.md-typeset .hero-actions .md-button:focus {
+  color: #fff;
+  border-color: #fff;
+  background-color: rgb(255 255 255 / 0.2);
+}
+
+.md-typeset .hero-actions .md-button--primary {
+  color: var(--dlbvm-hero-start);
+  border-color: #fff;
+  background-color: #fff;
+}
+
+.md-typeset .hero-actions .md-button--primary:hover,
+.md-typeset .hero-actions .md-button--primary:focus {
+  color: var(--dlbvm-hero-start);
+  background-color: rgb(255 255 255 / 0.9);
+}
+
+.md-typeset .section-intro {
+  font-size: 1.05rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset img.screenshot {
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 2.5rem rgb(18 31 53 / 0.12);
+}
+
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid.cards > ol > li {
+  border-radius: 1rem;
+}
+
+.md-typeset .path-table code {
+  white-space: nowrap;
+}
+
+.md-sidebar .md-nav__item .md-nav {
+  margin-inline-start: 0.7rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 0.08rem solid rgb(24 59 135 / 0.18);
+}
+
+.md-sidebar .md-nav__item--nested > .md-nav__link {
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-sidebar .md-nav__item .md-nav {
+  border-inline-start-color: rgb(255 255 255 / 0.12);
+}
+
+[data-md-color-scheme="slate"] {
+  --dlbvm-hero-start: #0d1c3f;
+  --dlbvm-hero-end: #174d8d;
+}

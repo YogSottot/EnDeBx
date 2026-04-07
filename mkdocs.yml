@@ -1,0 +1,125 @@
+site_name: EnDeBx
+site_description: Документация по EnDeBx — окружению и меню для Debian-like дистрибутивов
+site_url: https://yogsottot.github.io/EnDeBx/
+repo_url: https://github.com/YogSottot/EnDeBx
+repo_name: YogSottot/EnDeBx
+docs_dir: docs
+
+theme:
+  name: material
+  language: ru
+  icon:
+    repo: fontawesome/brands/github
+    logo: fontawesome/brands/debian
+  font:
+    text: IBM Plex Sans
+    code: JetBrains Mono
+  features:
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+#    - navigation.sections
+    - navigation.indexes
+    - navigation.path
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Переключить на темную тему
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Переключить на светлую тему
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/YogSottot/EnDeBx
+
+nav:
+  - Главная: index.md
+  - Возможности: features.md
+  - Начало работы:
+      - Установка окружения: getting-started/installation.md
+      - Обновление меню: getting-started/update-menu.md
+      - Как устроено меню: getting-started/layout.md
+      - Файл .env.menu: configuration/env-file.md
+  - Главное меню:
+      - 0. Обзор: menu/index.md
+      - 1. List of sites dirs: menu/1-list-sites.md
+      - 2. Add/Change site:
+          - menu/2-site-management/index.md
+          - 1. Add site: menu/2-site-management/add-site.md
+          - 2. Edit existing website: menu/2-site-management/edit-site.md
+          - 3. Delete site: menu/2-site-management/delete-site.md
+          - 4. Configure Let's Encrypt certificate: menu/2-site-management/lets-encrypt.md
+          - 5. Enable/Disable redirect HTTP to HTTPS: menu/2-site-management/http-to-https.md
+          - 6. Block/Unblock access by IP: menu/2-site-management/ip-blocking.md
+          - 7. Basic Auth: menu/2-site-management/basic-auth.md
+          - 8. Bot Blocker: menu/2-site-management/bot-blocker.md
+          - 9. NTLM auth: menu/2-site-management/ntlm.md
+      - 3. Add/Remove FTP user: menu/3-ftp.md
+      - 4. Add/Change global PHP version: menu/4-php.md
+      - 5. Settings SMTP sites: menu/5-smtp.md
+      - 6. MySQL: menu/6-mysql.md
+      - 7. PostgreSQL: menu/7-postgresql.md
+      - 8. Installing Extensions:
+          - menu/8-extensions/index.md
+          - 1. Сервисы и утилиты: menu/8-extensions/services.md
+          - 2. Системные репозитории и Snapd: menu/8-extensions/system-tools.md
+      - 9. Security settings:
+          - menu/9-security/index.md
+          - 1. SSH и автообновления: menu/9-security/ssh-updates.md
+          - 2. CrowdSec, Rkhunter, Maldet: menu/9-security/security-tools.md
+      - 10. Change server timezone: menu/10-timezone.md
+      - 11. Update server: menu/11-update-server.md
+      - R. Перезагрузка сервера: menu/rp-power.md
+  - Upgrade дистрибутивов:
+      - Обзор: upgrades/index.md
+      - Debian:
+          - 12 -> 13: upgrades/debian-12-to-13.md
+      - Ubuntu:
+          - 24.04 -> 26.04: upgrades/ubuntu-24-to-26.md
+      - Busconvert для utf8mb4: upgrades/busconvert.md
+  - Changelog: changelog.md
