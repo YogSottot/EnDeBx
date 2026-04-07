@@ -7,6 +7,7 @@
 ## Что входит в раздел
 
 - `SSH/Updates`
+- `Firewall management`
 - `Install/Delete Crowdsec`
 - `Install/Delete Rkhunter`
 - `Install/Delete Linux Malware Detect`
@@ -17,4 +18,5 @@
 
 - что у вас есть доступ к root-консоли или out-of-band доступ;
 - что новый SSH-порт не занят;
-- что у альтернативного sudo-пользователя корректный ключ и пароль.
+- что у альтернативного sudo-пользователя корректный ключ и пароль;
+- что изменения в `firewalld` не закроют ваш текущий доступ к серверу.

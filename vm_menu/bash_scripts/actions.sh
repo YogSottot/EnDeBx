@@ -298,6 +298,45 @@ function action_setup_security() {
   press_any_key_to_return_menu;
 }
 
+function action_manage_firewall_port() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_FIREWALL}")
+  firewall_vars="{\"marcelnijenhof_firewalld_allow_ports\":[{\"port\":\"${firewall_port_rule}\",\"zone\":\"${firewall_zone}\",\"state\":\"${firewall_rule_state}\",\"permanent\":true,\"immediate\":true}]}"
+
+  run_ansible_playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS -e "${firewall_vars}"
+
+  press_any_key_to_return_menu;
+}
+
+function action_manage_firewall_service() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_FIREWALL}")
+  firewall_vars="{\"marcelnijenhof_firewalld_allow_services\":[{\"service\":\"${firewall_service_name}\",\"zone\":\"${firewall_zone}\",\"state\":\"${firewall_rule_state}\",\"permanent\":true,\"immediate\":true}]}"
+
+  run_ansible_playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS -e "${firewall_vars}"
+
+  press_any_key_to_return_menu;
+}
+
+function action_manage_firewall_source() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_FIREWALL}")
+  firewall_vars="{\"marcelnijenhof_firewalld_zones\":[{\"zone\":\"drop\",\"source\":\"${firewall_source}\",\"state\":\"${firewall_rule_state}\",\"permanent\":true}]}"
+
+  run_ansible_playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS -e "${firewall_vars}"
+
+  press_any_key_to_return_menu;
+}
+
+function action_reload_firewall() {
+  if ! command -v firewall-cmd >/dev/null 2>&1; then
+    echo "   firewall-cmd is not available."
+    press_any_key_to_return_menu;
+    return 1
+  fi
+
+  firewall-cmd --complete-reload
+
+  press_any_key_to_return_menu;
+}
+
 function action_change_php_version(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_ADD_PHP_VERSIONS}")
 

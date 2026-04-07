@@ -12,6 +12,8 @@
 
 Проект пока находится в стадии тестирования.
 
+[Основная документация](https://yogsottot.github.io/EnDeBx/)
+
 ## Возможности окружения
 
 - При установки окружения устанавливается все необходимое
@@ -104,4 +106,4 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/update_
 
 ## Инструкция по пунктам меню
 
-[MANUAL.md](https://yogsottot.github.io/EnDeBx/)
+[MANUAL](https://yogsottot.github.io/EnDeBx/menu/)

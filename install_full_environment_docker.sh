@@ -234,22 +234,23 @@ systemctl try-restart postfix@-.service
 firewall-cmd --reload
 
 # fix journald sizes
-sed -i -e 's/#SystemMaxUse=/SystemMaxUse=100M/g' /etc/systemd/journald.conf
-sed -i -e 's/#RuntimeMaxUse=/RuntimeMaxUse=100M/g' /etc/systemd/journald.conf
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/10-endebx.conf <<'EOF'
+[Journal]
+SystemMaxUse=100M
+RuntimeMaxUse=100M
+EOF
 systemctl restart systemd-journald
 
 # remove compilers
 apt remove build-essential gcc gcc-12 -y
 apt autoremove -y
 
-
-
 if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
   for package in ${BX_ADDITIONAL_PACKAGES}; do
     apt -y install "$package"
   done
 fi
-
 
 echo -e "\n\n";
 echo "Full environment installed";

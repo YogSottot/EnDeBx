@@ -150,6 +150,7 @@ menu_security_settings(){
     echo "          2) Install/Delete Crowdsec";
     echo "          3) Install/Delete Rkhunter";
     echo "          4) Install/Delete Linux Malware Detect";
+    echo "          5) Firewall management";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -161,8 +162,51 @@ menu_security_settings(){
       "2") install_crowdsec ;;
       "3") install_rkhunter ;;
       "4") install_linux_malware_detect ;;
+      "5") menu_firewall_management ;;
 
     0|z)  main_menu
+    ;;
+     *)
+      echo "Error unknown command"
+      ;;
+
+    esac
+    done
+}
+
+menu_firewall_management(){
+    local comand=
+    until [[ "$comand" == "0" ]]; do
+    clear;
+
+    local default_zone
+    default_zone=$(get_firewall_default_zone)
+
+    echo -e "\n          Menu -> Firewall management:\n";
+    echo "          Default zone: ${default_zone}";
+    echo "          1) List active rules";
+    echo "          2) Add port/service";
+    echo "          3) Delete port/service";
+    echo "          4) Block/Unblock IP/CIDR";
+    echo "          5) List blocked IP/CIDR";
+    echo "          6) List available services";
+    echo "          7) Reload firewalld";
+    echo "          0) Return to security menu";
+    echo -e "\n\n";
+    echo -n "Enter command: "
+    read -r comand
+
+    case $comand in
+
+      "1") firewall_list_active_rules ;;
+      "2") firewall_manage_port_service "enabled" ;;
+      "3") firewall_manage_port_service "disabled" ;;
+      "4") firewall_manage_source ;;
+      "5") firewall_list_blocked_sources ;;
+      "6") firewall_list_available_services ;;
+      "7") firewall_reload ;;
+
+    0|z)  return
     ;;
      *)
       echo "Error unknown command"
@@ -2844,6 +2888,70 @@ validate_port_number() {
     (( port >= 1 && port <= 65535 ))
 }
 
+validate_firewall_port_rule() {
+    local port_rule="$1"
+    local port_from
+    local port_to
+
+    if [[ ! "$port_rule" =~ ^([0-9]{1,5})(-([0-9]{1,5}))?/(tcp|udp)$ ]]; then
+        return 1
+    fi
+
+    port_from="${BASH_REMATCH[1]}"
+    port_to="${BASH_REMATCH[3]:-${BASH_REMATCH[1]}}"
+
+    validate_port_number "$port_from" || return 1
+    validate_port_number "$port_to" || return 1
+    (( port_from <= port_to ))
+}
+
+validate_firewall_service_name() {
+    local service_name="$1"
+
+    [[ "$service_name" =~ ^[A-Za-z0-9._-]+$ ]] || return 1
+
+    if command -v firewall-cmd >/dev/null 2>&1; then
+        firewall-cmd --get-services 2>/dev/null | tr ' ' '\n' | grep -Fxq -- "$service_name" || return 1
+    fi
+
+    return 0
+}
+
+validate_firewall_source() {
+    local source="$1"
+    [[ "$source" =~ ^[0-9A-Fa-f:.]+(/[0-9]{1,3})?$ ]] || return 1
+
+    if command -v firewall-cmd >/dev/null 2>&1 && firewall-cmd --state >/dev/null 2>&1; then
+        firewall-cmd --permanent --zone=drop --query-source="$source" >/dev/null 2>&1
+        case $? in
+            0|1) return 0 ;;
+            *) return 1 ;;
+        esac
+    fi
+
+    return 0
+}
+
+get_firewall_default_zone() {
+    local zone="public"
+
+    if command -v firewall-cmd >/dev/null 2>&1; then
+        zone=$(firewall-cmd --get-default-zone 2>/dev/null)
+    fi
+
+    if [[ -z "$zone" ]]; then
+        zone="public"
+    fi
+
+    printf '%s\n' "$zone"
+}
+
+firewall_source_is_blocked() {
+    local source="$1"
+    command -v firewall-cmd >/dev/null 2>&1 || return 1
+    firewall-cmd --permanent --zone=drop --query-source="$source" >/dev/null 2>&1
+}
+
 get_current_ssh_port() {
     local port
     port=$(sshd -T 2>/dev/null | awk '/^port / {print $2; exit}')
@@ -3079,6 +3187,257 @@ function security_settings() {
             y )
                 BS_SETUP_SECURITY="Y"
                 action_setup_security
+                break
+                ;;
+            n ) break ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+function firewall_list_active_rules() {
+    clear
+
+    if ! command -v firewall-cmd >/dev/null 2>&1; then
+        echo -e "\n   firewall-cmd is not available.\n"
+        press_any_key_to_return_menu
+        return 1
+    fi
+
+    echo -e "\n   Default zone: $(get_firewall_default_zone)"
+    echo -e "\n   Active zones:\n"
+    firewall-cmd --get-active-zones 2>/dev/null || echo "   Unable to get active zones."
+
+    echo -e "\n   Rules in all zones:\n"
+    firewall-cmd --list-all-zones 2>/dev/null || echo "   Unable to get firewalld rules."
+
+    press_any_key_to_return_menu
+}
+
+function firewall_manage_port_service() {
+    clear
+
+    local requested_state="${1}"
+    local default_zone
+    local default_type="port"
+    local action_name="add"
+    local type_input
+    local direct_rule_input=""
+    local port_input
+    local service_input
+
+    if [[ "$requested_state" == "disabled" ]]; then
+        action_name="delete"
+    fi
+
+    default_zone=$(get_firewall_default_zone)
+
+    firewall_rule_type="${firewall_rule_type:-$default_type}"
+    firewall_zone="${firewall_zone:-$default_zone}"
+
+    echo -e "\n   Menu -> Firewall management -> ${action_name} port/service:\n"
+
+    while true; do
+        read_by_def "   Enter type or value (port/service, 80/tcp, http) [${firewall_rule_type}]: " type_input "${firewall_rule_type}"
+        type_input="${type_input,,}"
+
+        if [[ "${type_input}" == "port" || "${type_input}" == "service" ]]; then
+            firewall_rule_type="${type_input}"
+            direct_rule_input=""
+            break
+        fi
+
+        if validate_firewall_port_rule "${type_input}"; then
+            firewall_rule_type="port"
+            direct_rule_input="${type_input}"
+            break
+        fi
+
+        if validate_firewall_service_name "${type_input}"; then
+            firewall_rule_type="service"
+            direct_rule_input="${type_input}"
+            break
+        fi
+
+        echo "   Please enter port, service, valid port/protocol or firewalld service name."
+    done
+
+    read_by_def "   Enter firewalld zone [${firewall_zone}]: " firewall_zone "${firewall_zone}"
+
+    if [[ "${firewall_rule_type}" == "port" ]]; then
+        if [[ -n "${direct_rule_input}" ]]; then
+            firewall_port_rule="${direct_rule_input}"
+        else
+            while true; do
+                read_by_def "   Enter port/protocol (example: 80/tcp or 10000-10100/udp): " port_input "${firewall_port_rule}"
+                if validate_firewall_port_rule "${port_input}"; then
+                    firewall_port_rule="${port_input}"
+                    break
+                fi
+                echo "   Invalid value. Use port/protocol or range/protocol."
+            done
+        fi
+
+        echo -e "\n   Entered data:\n"
+        echo "   Action: ${action_name}"
+        echo "   Type: port"
+        echo "   Zone: ${firewall_zone}"
+        echo "   Rule: ${firewall_port_rule}"
+        echo -e "\n"
+
+        while true; do
+            read -r -p "   Do you really want to ${action_name} this firewall port rule? (Y/N): " answer
+            case ${answer,,} in
+                y )
+                    firewall_rule_state="${requested_state}"
+                    action_manage_firewall_port
+                    break
+                    ;;
+                n ) break ;;
+                * ) echo "   Please enter Y or N." ;;
+            esac
+        done
+
+        return
+    fi
+
+    if [[ -n "${direct_rule_input}" ]]; then
+        firewall_service_name="${direct_rule_input}"
+    else
+        while true; do
+            read_by_def "   Enter firewalld service name: " service_input "${firewall_service_name}"
+            if validate_firewall_service_name "${service_input}"; then
+                firewall_service_name="${service_input}"
+                break
+            fi
+            echo "   Invalid service name or the service is absent in firewalld."
+        done
+    fi
+
+    echo -e "\n   Entered data:\n"
+    echo "   Action: ${action_name}"
+    echo "   Type: service"
+    echo "   Zone: ${firewall_zone}"
+    echo "   Rule: ${firewall_service_name}"
+    echo -e "\n"
+
+    while true; do
+        read -r -p "   Do you really want to ${action_name} this firewall service rule? (Y/N): " answer
+        case ${answer,,} in
+            y )
+                firewall_rule_state="${requested_state}"
+                action_manage_firewall_service
+                break
+                ;;
+            n ) break ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+function firewall_manage_source() {
+    clear
+
+    local default_action="block"
+
+    echo -e "\n   Menu -> Firewall management -> block/unblock IP/CIDR:\n"
+
+    while true; do
+        read_by_def "   Enter IP or CIDR (example: 203.0.113.10 or 203.0.113.0/24): " firewall_source "${firewall_source}"
+        if validate_firewall_source "${firewall_source}"; then
+            break
+        fi
+        echo "   Invalid IP/CIDR format."
+    done
+
+    if firewall_source_is_blocked "${firewall_source}"; then
+        default_action="unblock"
+        echo "   Current state: blocked in drop zone."
+    else
+        echo "   Current state: not blocked in drop zone."
+    fi
+
+    while true; do
+        read_by_def "   Enter action (block/unblock) [${default_action}]: " firewall_source_action "${default_action}"
+        firewall_source_action="${firewall_source_action,,}"
+        if [[ "${firewall_source_action}" == "block" || "${firewall_source_action}" == "unblock" ]]; then
+            break
+        fi
+        echo "   Please enter block or unblock."
+    done
+
+    firewall_rule_state="enabled"
+    if [[ "${firewall_source_action}" == "unblock" ]]; then
+        firewall_rule_state="disabled"
+    fi
+
+    echo -e "\n   Entered data:\n"
+    echo "   Action: ${firewall_source_action}"
+    echo "   Zone: drop"
+    echo "   Source: ${firewall_source}"
+    echo -e "\n"
+
+    while true; do
+        read -r -p "   Do you really want to ${firewall_source_action} this IP/CIDR in firewalld? (Y/N): " answer
+        case ${answer,,} in
+            y )
+                action_manage_firewall_source
+                break
+                ;;
+            n ) break ;;
+            * ) echo "   Please enter Y or N." ;;
+        esac
+    done
+}
+
+function firewall_list_blocked_sources() {
+    clear
+
+    if ! command -v firewall-cmd >/dev/null 2>&1; then
+        echo -e "\n   firewall-cmd is not available.\n"
+        press_any_key_to_return_menu
+        return 1
+    fi
+
+    local blocked_sources
+    blocked_sources=$(firewall-cmd --zone=drop --list-sources 2>/dev/null)
+
+    echo -e "\n   Blocked IP/CIDR in drop zone:\n"
+    if [[ -n "${blocked_sources}" ]]; then
+        printf '   %s\n' "${blocked_sources}" | tr ' ' '\n'
+    else
+        echo "   No blocked IP/CIDR found in drop zone."
+    fi
+
+    echo -e "\n   Drop zone details:\n"
+    firewall-cmd --zone=drop --list-all 2>/dev/null || echo "   Unable to get drop zone rules."
+
+    press_any_key_to_return_menu
+}
+
+function firewall_list_available_services() {
+    clear
+
+    if ! command -v firewall-cmd >/dev/null 2>&1; then
+        echo -e "\n   firewall-cmd is not available.\n"
+        press_any_key_to_return_menu
+        return 1
+    fi
+
+    echo -e "\n   Available firewalld services:\n"
+    firewall-cmd --get-services 2>/dev/null | tr ' ' '\n' | sort || echo "   Unable to get services list."
+
+    press_any_key_to_return_menu
+}
+
+function firewall_reload() {
+    clear
+
+    while true; do
+        read -r -p "   Do you really want to reload firewalld? (Y/N): " answer
+        case ${answer,,} in
+            y )
+                action_reload_firewall
                 break
                 ;;
             n ) break ;;

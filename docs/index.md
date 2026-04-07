@@ -47,7 +47,7 @@
 
 -   :material-shield-check: **Защищает и обслуживает сервер**
 
-    Есть блок `SSH/Updates`, инструменты `CrowdSec`, `Rkhunter` и `Maldet`, системный `Update server`, reboot по `R`, уведомления о новых версиях меню и runbook-и для upgrade дистрибутивов.
+    Есть блок `SSH/Updates`, отдельное управление `firewalld`, инструменты `CrowdSec`, `Rkhunter` и `Maldet`, системный `Update server`, reboot по `R`, уведомления о новых версиях меню и runbook-и для upgrade дистрибутивов.
 
 </div>
 
