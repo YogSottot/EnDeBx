@@ -1,0 +1,23 @@
+---
+- name: Install YARA-X updater scripts
+  ansible.builtin.template:
+    src: update_yara_x.sh.j2
+    dest: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ maldet_yara_x_update_script_path }}"
+    - "{{ maldet_yara_x_weekly_script_path }}"
+
+- name: Install or update YARA-X CLI
+  ansible.builtin.command: "{{ maldet_yara_x_update_script_path }}"
+  register: maldet_yara_x_update_result
+  changed_when: "'UPDATED:' in maldet_yara_x_update_result.stdout"
+
+- name: Generate YARA-X bash completion
+  ansible.builtin.shell: |
+    set -o pipefail
+    {{ maldet_yara_x_binary_path }} completion bash > /etc/bash_completion.d/yara
+  args:
+    executable: /bin/bash

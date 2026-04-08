@@ -15,3 +15,6 @@
     name: maldet
     state: stopped
     enabled: false
+
+- name: Remove YARA-X CLI
+  ansible.builtin.import_tasks: delete_yara_x.yml

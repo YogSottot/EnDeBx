@@ -43,6 +43,20 @@ Playbook получает:
 
 - email для уведомлений — используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`;
 - корневой путь пользовательских каталогов.
+- при установке из меню можно отдельно включить постоянный inotify мониторинг; в этом случае playbook получает `maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths` и `maldet_service_enabled=true`.
+
+Во время установки вместе с `Maldet` автоматически устанавливается актуальный `YARA-X CLI` из релизов `VirusTotal/yara-x`:
+
+- бинарник `yr` кладется в `/usr/local/bin/yr`;
+- weekly updater ставится в `/etc/cron.weekly/update-yara-x`;
+- текущую версию можно проверить командой `yr --version`.
+- посмотреть логи в `/usr/local/maldetect/logs/`
+
+Во время установки также заполняются списки исключений:
+
+- `/usr/local/maldetect/ignore_paths`;
+- `/usr/local/maldetect/ignore_file_ext`;
+- `/usr/local/maldetect/ignore_inotify`.
 
 После установки основной конфиг находится в:
 
@@ -54,4 +68,4 @@ Playbook получает:
 
 - `CrowdSec` - если нужен сетевой поведенческий бан и обработка логов;
 - `Rkhunter` - если нужен host-based аудит руткитов;
-- `Maldet` - если вы хотите регулярную проверку пользовательских каталогов на вредоносный код.
+- `Maldet` - если вы хотите регулярную проверку пользовательских каталогов на вредоносный код и `YARA-X CLI` для дополнительных сигнатурных проверок.

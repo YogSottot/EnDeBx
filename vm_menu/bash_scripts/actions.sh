@@ -483,17 +483,28 @@ function action_install_or_delete_rkhunter() {
 
 function action_install_or_delete_maldet() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MALDET}")
+  local maldet_monitoring_vars=""
+
+  if [ "${action}" = "INSTALL" ] && [ "${maldet_enable_monitoring:-false}" = "true" ]; then
+    maldet_monitoring_vars=" \
+      maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths \
+      maldet_service_enabled=true"
+  fi
+
   run_ansible_playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "maldet_action=${action} \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
-      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
+      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}${maldet_monitoring_vars}"
 
     if [ "${action}" = "INSTALL" ]; then
       echo -e "
-      Maldet is installed and configured.\n      Config in /usr/local/maldetect/conf.maldet"
+      Maldet is installed and configured.\n      Config in /usr/local/maldetect/conf.maldet\n      YARA-X CLI is installed in /usr/local/bin/yr and updated weekly via /etc/cron.weekly/update-yara-x"
+      if [ "${maldet_enable_monitoring:-false}" = "true" ]; then
+        echo "      Continuous monitoring is enabled via /usr/local/maldetect/monitor_paths"
+      fi
     elif [ "${action}" = "DELETE" ]; then
       echo -e "
-      Maldet is deleted."
+      Maldet and YARA-X are deleted."
     fi
 
     press_any_key_to_return_menu;

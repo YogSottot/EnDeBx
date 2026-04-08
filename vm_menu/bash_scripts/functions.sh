@@ -2522,8 +2522,20 @@ function install_linux_malware_detect() {
 
   is_install_linux_malware_detect=$(which maldet);
   action="INSTALL"
+  maldet_enable_monitoring="false"
   if [ -n "$is_install_linux_malware_detect" ]; then
       action="DELETE"
+  fi
+
+  if [ "${action}" = "INSTALL" ]; then
+    while true; do
+      read -r -p "   Enable continuous monitoring for Maldet? (Y/N): " answer_monitoring
+      case $answer_monitoring in
+        [Yy]* ) maldet_enable_monitoring="true"; break;;
+        [Nn]* ) break;;
+        * ) echo "   Please enter Y or N.";;
+      esac
+    done
   fi
 
   action_color="\e[33m ${action} \e[0m"

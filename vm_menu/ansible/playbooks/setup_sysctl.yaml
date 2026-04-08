@@ -112,6 +112,8 @@
             value: 1
           - name: kernel.dmesg_restrict
             value: 1
+          - name: fs.inotify.max_user_watches
+            value: 262144
 
     - role: buluma.ulimit
       when: ansible_virtualization_type != 'lxc'

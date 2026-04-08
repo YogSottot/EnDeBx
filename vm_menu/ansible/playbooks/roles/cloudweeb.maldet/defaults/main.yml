@@ -74,3 +74,54 @@ maldet_inotify_cpunice: '19'
 
 # Process IO scheduling (ionice) priority levels for scan operations.
 inotify_ionice: '6'
+
+# Maldet ignore lists
+# -------------------
+
+maldet_ignore_paths:
+  - 'bitrix/managed_cache/'
+  - 'bitrix/cache/'
+  - 'bitrix/stack_cache/'
+  - 'bitrix/html_pages/'
+  - 'bitrix/backup/'
+  - 'bitrix/tmp/'
+  - 'upload/'
+  - 'logs/'
+  - 'log/'
+
+maldet_ignore_file_ext:
+  - '.png'
+  - '.jpg'
+  - '.jpeg'
+  - '.gif'
+  - '.webp'
+  - '.css'
+  - '.log'
+
+maldet_ignore_inotify:
+  - '.*/bitrix/managed_cache/.*'
+  - '.*/bitrix/cache/.*'
+  - '.*/bitrix/stack_cache/.*'
+  - '.*/bitrix/html_pages/.*'
+  - '.*/bitrix/backup/.*'
+  - '.*/bitrix/tmp/.*'
+  - '.*/upload/.*'
+  - '.*/logs/.*'
+  - '.*/log/.*'
+  - '.*/.cache/.*'
+  - '.*.png$'
+  - '.*.jpg$'
+  - '.*.jpeg$'
+  - '.*.gif$'
+  - '.*.webp$'
+  - '.*.css$'
+  - '.*.log$'
+
+# YARA-X CLI
+# ----------
+
+maldet_yara_x_release_api_url: 'https://api.github.com/repos/VirusTotal/yara-x/releases/latest'
+maldet_yara_x_asset_name_pattern: '^yara-x-v.*-x86_64-unknown-linux-gnu\.gz$'
+maldet_yara_x_binary_path: '/usr/local/bin/yr'
+maldet_yara_x_update_script_path: '/usr/local/sbin/update-yara-x'
+maldet_yara_x_weekly_script_path: '/etc/cron.weekly/update-yara-x'

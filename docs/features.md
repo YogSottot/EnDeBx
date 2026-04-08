@@ -61,7 +61,7 @@
 - [Firewall management](menu/9-security/firewall-management.md) - просмотр активных правил `firewalld`, управление портами, сервисами и blocklist по IP/CIDR.
 - [CrowdSec](menu/9-security/security-tools.md) - install/delete с whitelist и cloud-console enroll key.
 - [Rkhunter](menu/9-security/security-tools.md) - install/delete host-based аудита руткитов.
-- [Linux Malware Detect](menu/9-security/security-tools.md) - install/delete проверки пользовательских каталогов на вредоносный код.
+- [Linux Malware Detect](menu/9-security/security-tools.md) - install/delete проверки пользовательских каталогов на вредоносный код с автоматической установкой `YARA-X CLI` и weekly update.
 - Отдельные защитные переключатели на уровне сайтов тоже входят в проект: IP blocking, Basic Auth, Bot Blocker.
 
 ## Системное обслуживание

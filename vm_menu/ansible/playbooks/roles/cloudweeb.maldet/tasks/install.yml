@@ -2,6 +2,7 @@
 - name: Install maldet dependency
   ansible.builtin.apt:
     name:
+      - curl
       - ed
       - inotify-tools
     state: present
@@ -44,12 +45,43 @@
     path: /usr/local/maldetect/monitor_paths
     line: "{{ maldet_home_prefix }}"
     state: present
+    create: true
+
+- name: Configure ignored paths
+  ansible.builtin.lineinfile:
+    path: /usr/local/maldetect/ignore_paths
+    line: "{{ item }}"
+    state: present
+    create: true
+  loop: "{{ maldet_ignore_paths }}"
+  notify: restart maldet
+
+- name: Configure ignored file extensions
+  ansible.builtin.lineinfile:
+    path: /usr/local/maldetect/ignore_file_ext
+    line: "{{ item }}"
+    state: present
+    create: true
+  loop: "{{ maldet_ignore_file_ext }}"
+  notify: restart maldet
+
+- name: Configure ignored inotify patterns
+  ansible.builtin.lineinfile:
+    path: /usr/local/maldetect/ignore_inotify
+    line: "{{ item }}"
+    state: present
+    create: true
+  loop: "{{ maldet_ignore_inotify }}"
+  notify: restart maldet
 
 - name: Cron custom exec
   ansible.builtin.lineinfile:
     path: /usr/local/maldetect/cron/custom.cron
     line: "$inspath/maldet -b -r {{ maldet_home_prefix }} $scan_days >> /dev/null 2>&1"
     state: present
+
+- name: Install YARA-X CLI
+  ansible.builtin.import_tasks: install_yara_x.yml
 
 - name: Start and enable maldet service
   ansible.builtin.service:

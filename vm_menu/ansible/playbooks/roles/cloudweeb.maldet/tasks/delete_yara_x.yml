@@ -1,0 +1,20 @@
+---
+- name: Remove YARA-X weekly updater
+  ansible.builtin.file:
+    path: "{{ maldet_yara_x_weekly_script_path }}"
+    state: absent
+
+- name: Remove YARA-X updater script
+  ansible.builtin.file:
+    path: "{{ maldet_yara_x_update_script_path }}"
+    state: absent
+
+- name: Remove YARA-X bash completion
+  ansible.builtin.file:
+    path: /etc/bash_completion.d/yara
+    state: absent
+
+- name: Remove YARA-X binary
+  ansible.builtin.file:
+    path: "{{ maldet_yara_x_binary_path }}"
+    state: absent
