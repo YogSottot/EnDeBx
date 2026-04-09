@@ -16,9 +16,20 @@
 - whitelist CIDR;
 - список коллекций;
 - список сценариев;
-- enroll key для cloud console, если он задан — ключ для подключения к [облачной консоли](https://app.crowdsec.net)
+- enroll key для cloud console, если он задан — ключ для подключения к [облачной консоли](https://app.crowdsec.net);
+- ответ на отдельный вопрос про AppSec; default для него берется из `BS_INSTALL_CROWDSEC_APPSEC`.
 
 После установки выводится подсказка про web-console и restart `crowdsec`, если используется enroll key.
+
+Если `BS_INSTALL_CROWDSEC_APPSEC=Y`, дополнительно выполняется базовая AppSec-настройка:
+
+- ставятся пакеты `crowdsec-nginx-bouncer` и `lua-cjson`;
+- создается `/etc/crowdsec/acquis.d/appsec.yaml`;
+- создается `/etc/crowdsec/bouncers/crowdsec-nginx-bouncer.conf.local` с `APPSEC_URL=http://127.0.0.1:7422`;
+- создается symlink `/etc/nginx/bx/maps/crowdsec_nginx.conf` -> `/etc/nginx/conf.d/crowdsec_nginx.conf`;
+- роль перезапускает `crowdsec` и делает `reload nginx`.
+
+В меню и при первичной установке включается только базовая AppSec-конфигурация. Для более тонкой настройки правил и режимов работы ориентируйтесь на официальную документацию: [CrowdSec AppSec quickstart](https://docs.crowdsec.net/docs/appsec/quickstart/general_setup).
 
 ## `Install/Delete Rkhunter`
 

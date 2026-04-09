@@ -1,6 +1,7 @@
 ---
 default_os_firewall: "firewalld"
 crowdsec_install_firewall_bouncer: true
+crowdsec_install_appsec: false
 enable_crowdsec: true
 cs_collections_list:
   - crowdsecurity/sshd
@@ -65,6 +66,19 @@ cs_parsers_mywhitelists_cidr: |
 
 crowdsec_enroll_key: ""
 crowdsec_enroll_name: "{{ ansible_fqdn }}"
+crowdsec_appsec_acquis_path: /etc/crowdsec/acquis.d/appsec.yaml
+crowdsec_appsec_nginx_conf_path: /etc/nginx/conf.d/crowdsec_nginx.conf
+crowdsec_appsec_nginx_symlink_path: /etc/nginx/bx/maps/crowdsec_nginx.conf
+crowdsec_appsec_bouncer_local_path: /etc/crowdsec/bouncers/crowdsec-nginx-bouncer.conf.local
+crowdsec_appsec_acquis_config: |
+  appsec_configs:
+    - crowdsecurity/appsec-default
+  labels:
+    type: appsec
+  listen_addr: 127.0.0.1:7422
+  source: appsec
+crowdsec_appsec_bouncer_local_config: |
+  APPSEC_URL=http://127.0.0.1:7422
 
 
 # LAPI server in host vars...

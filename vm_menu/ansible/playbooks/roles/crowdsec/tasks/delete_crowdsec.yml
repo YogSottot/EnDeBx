@@ -1,4 +1,7 @@
 ---
+- name: Delete CrowdSec AppSec files
+  ansible.builtin.include_tasks: delete_appsec.yml
+
 - name: Delete crowdsec
   ansible.builtin.package:
     name:

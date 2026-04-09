@@ -1,0 +1,26 @@
+---
+- name: Delete CrowdSec AppSec nginx symlink
+  ansible.builtin.file:
+    path: "{{ crowdsec_appsec_nginx_symlink_path }}"
+    state: absent
+  notify: Reload nginx
+
+- name: Delete CrowdSec AppSec acquis config
+  ansible.builtin.file:
+    path: "{{ crowdsec_appsec_acquis_path }}"
+    state: absent
+
+- name: Delete CrowdSec AppSec bouncer local config
+  ansible.builtin.file:
+    path: "{{ crowdsec_appsec_bouncer_local_path }}"
+    state: absent
+  notify: Reload nginx
+
+- name: Delete CrowdSec AppSec packages
+  ansible.builtin.package:
+    name:
+      - crowdsec-nginx-bouncer
+      - lua-cjson
+    state: absent
+  when: ansible_os_family | lower == "debian"
+  notify: Reload nginx

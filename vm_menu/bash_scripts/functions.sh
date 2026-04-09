@@ -2480,8 +2480,20 @@ function install_crowdsec() {
 
   is_install_crowdsec=$(which crowdsec);
   action="INSTALL"
+  crowdsec_enable_appsec="${BS_INSTALL_CROWDSEC_APPSEC:-N}"
   if [ ! -z "$is_install_crowdsec" ]; then
       action="DELETE"
+  fi
+
+  if [ "${action}" = "INSTALL" ]; then
+    while true; do
+      read_by_def "   Enable CrowdSec AppSec basic setup? (Y/N) [${crowdsec_enable_appsec}]: " crowdsec_enable_appsec "${crowdsec_enable_appsec}"
+      case $crowdsec_enable_appsec in
+        [Yy]* ) crowdsec_enable_appsec="Y"; break;;
+        [Nn]* ) crowdsec_enable_appsec="N"; break;;
+        * ) echo "   Please enter Y or N.";;
+      esac
+    done
   fi
 
   action_color="\e[33m ${action} \e[0m"

@@ -48,7 +48,7 @@
 
 - `BS_EMAIL_ADMIN_FOR_NOTIFY` - адрес для Let's Encrypt и security-инструментов;
 - `BS_INSTALL_PUSH_SERVER`, `BS_PUSH_SERVER_BX_SETTINGS` - локальный push-сервер;
-- `BS_INSTALL_CROWDSEC`, `BS_CROWDSEC_*` - установка и базовая настройка CrowdSec.
+- `BS_INSTALL_CROWDSEC`, `BS_INSTALL_CROWDSEC_APPSEC`, `BS_CROWDSEC_*` - установка CrowdSec, его базовой AppSec-конфигурации и сопутствующих параметров.
 - `BS_SETUP_MALDET`, `BS_SETUP_MALDET_MONITORING_SERVICE` - установка `Maldet` и включение его постоянного мониторинга при первичной установке.
 
 ### Безопасность и SSH

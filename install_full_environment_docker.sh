@@ -181,10 +181,16 @@ ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_P
   -e '{"marcelnijenhof_firewalld_allow_services":[{"service":"https","immediate":false},{"service":"http","immediate":false}]}'
 
 if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
+  CROWDSEC_INSTALL_APPSEC=false
+  if [[ "${BS_INSTALL_CROWDSEC_APPSEC:-N}" =~ ^[Yy]$ ]]; then
+    CROWDSEC_INSTALL_APPSEC=true
+  fi
+
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e 'crowdsec_action="'"INSTALL"'" \
+      crowdsec_install_appsec="'"${CROWDSEC_INSTALL_APPSEC}"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
-      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/\n  /g; s/^/  /;')"'" \
+      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'

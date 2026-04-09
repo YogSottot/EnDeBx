@@ -197,6 +197,8 @@ BS_OPTIMIZE_SYSCTL=N
 
 # Install crowdsec by default
 BS_INSTALL_CROWDSEC=N
+# Install crowdsec AppSec by default
+BS_INSTALL_CROWDSEC_APPSEC=N
 # Whitelist bitrix voximplant address
 # https://voximplant.kz/kit/docs/basicconcepts/kit_ip_addresses
 # https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=48&LESSON_ID=5017&LESSON_PATH=3918.4635.2699.5017

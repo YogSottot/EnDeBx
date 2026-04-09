@@ -192,6 +192,18 @@
   when:
     - crowdsec_install_firewall_bouncer | bool
 
+- name: CrowdSec AppSec is currently supported only on Debian-like systems
+  ansible.builtin.fail:
+    msg: "crowdsec_install_appsec is currently supported only on Debian-like systems in EnDeBx."
+  when:
+    - crowdsec_install_appsec | bool
+    - ansible_os_family | lower != "debian"
+
+- name: Install CrowdSec AppSec
+  ansible.builtin.include_tasks: install_appsec.yml
+  when:
+    - crowdsec_install_appsec | bool
+
 ### ------------ ####
 # Muti server setup #
 

@@ -1,0 +1,37 @@
+---
+- name: Install CrowdSec AppSec packages
+  ansible.builtin.package:
+    update_cache: false
+    name:
+      - crowdsec-nginx-bouncer
+      - lua-cjson
+    state: present
+  when: ansible_os_family | lower == "debian"
+  notify:
+    - Restart crowdsec
+    - Reload nginx
+
+- name: Create CrowdSec AppSec acquis config
+  ansible.builtin.copy:
+    dest: "{{ crowdsec_appsec_acquis_path }}"
+    content: "{{ crowdsec_appsec_acquis_config }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart crowdsec
+
+- name: Create CrowdSec AppSec bouncer local config
+  ansible.builtin.copy:
+    dest: "{{ crowdsec_appsec_bouncer_local_path }}"
+    content: "{{ crowdsec_appsec_bouncer_local_config }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Create nginx symlink for CrowdSec AppSec
+  ansible.builtin.file:
+    src: "{{ crowdsec_appsec_nginx_conf_path }}"
+    dest: "{{ crowdsec_appsec_nginx_symlink_path }}"
+    state: link
+  notify: Reload nginx

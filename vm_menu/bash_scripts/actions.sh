@@ -445,12 +445,20 @@ function action_install_or_delete_file_conversion_server() {
 }
 
 function action_install_or_delete_crowdsec() {
+    local crowdsec_install_appsec="${crowdsec_enable_appsec:-${BS_INSTALL_CROWDSEC_APPSEC:-N}}"
+
+    if [[ "${crowdsec_install_appsec}" =~ ^[Yy]$ ]]; then
+      crowdsec_install_appsec="true"
+    else
+      crowdsec_install_appsec="false"
+    fi
 
     pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CROWDSEC}")
     run_ansible_playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
       -e 'crowdsec_action="'"${action}"'" \
+      crowdsec_install_appsec="'"${crowdsec_install_appsec}"'" \
       cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
-      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/\n  /g; s/^/  /;')"'" \
+      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
       cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
       crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
