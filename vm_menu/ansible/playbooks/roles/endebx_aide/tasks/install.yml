@@ -1,0 +1,126 @@
+---
+- name: Ensure AIDE notification email is configured
+  ansible.builtin.assert:
+    that:
+      - aide_notification_email | default('') | length > 0
+    fail_msg: "aide_notification_email is empty. Set BS_EMAIL_ADMIN_FOR_NOTIFY before installing AIDE."
+
+- name: Install AIDE package
+  ansible.builtin.package:
+    name: aide
+    state: present
+
+- name: Ensure AIDE log directory exists
+  ansible.builtin.file:
+    path: "{{ aide_log_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Ensure AIDE config directory exists
+  ansible.builtin.file:
+    path: "{{ aide_config_dir_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install Bitrix AIDE exclude rules
+  ansible.builtin.template:
+    src: 80_bitrix.j2
+    dest: "{{ aide_bitrix_rules_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  register: aide_bitrix_rules
+
+- name: Ensure Bitrix AIDE exclude rules are loaded before distro snippets
+  ansible.builtin.file:
+    src: "{{ aide_bitrix_rules_path | basename }}"
+    dest: "{{ aide_bitrix_rules_preload_path }}"
+    state: link
+    force: true
+  register: aide_bitrix_rules_preload
+
+- name: Install AIDE HTML alert script
+  ansible.builtin.template:
+    src: aide-alert-html.sh.j2
+    dest: "{{ aide_alert_script_path }}"
+    owner: root
+    group: root
+    mode: '0700'
+  register: aide_alert_script
+
+- name: Install AIDE cron file
+  ansible.builtin.template:
+    src: aide-alert-html.cron.j2
+    dest: "{{ aide_cron_file_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  register: aide_cron_file
+
+- name: Check existing AIDE database files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ aide_db_paths }}"
+  register: aide_db_stat
+
+- name: Check existing initialized AIDE database files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ aide_db_new_paths }}"
+  register: aide_db_new_stat_existing
+
+- name: Set existing initialized AIDE database path
+  ansible.builtin.set_fact:
+    aide_db_new_path: "{{ (aide_db_new_stat_existing.results | selectattr('stat.exists') | map(attribute='item') | first) }}"
+  when: (aide_db_new_stat_existing.results | selectattr('stat.exists') | list | length) > 0
+
+- name: Initialize AIDE database
+  ansible.builtin.command:
+    cmd: aide --init --config {{ aide_config_path }}
+  register: aide_init_result
+  changed_when: true
+  when:
+    - (aide_db_stat.results | selectattr('stat.exists') | list | length) == 0
+    - aide_db_new_path is not defined
+
+- name: Update AIDE database after Bitrix rules change
+  ansible.builtin.command:
+    cmd: aide --update --config {{ aide_config_path }}
+  register: aide_update_result
+  changed_when: true
+  when:
+    - aide_bitrix_rules is changed or aide_bitrix_rules_preload is changed or aide_alert_script is changed or aide_cron_file is changed
+    - (aide_db_stat.results | selectattr('stat.exists') | list | length) > 0
+
+- name: Check initialized AIDE database files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ aide_db_new_paths }}"
+  register: aide_db_new_stat
+  when:
+    - (aide_init_result is defined and aide_init_result is changed) or (aide_update_result is defined and aide_update_result is changed)
+
+- name: Set initialized AIDE database path
+  ansible.builtin.set_fact:
+    aide_db_new_path: "{{ (aide_db_new_stat.results | selectattr('stat.exists') | map(attribute='item') | first) }}"
+  when:
+    - (aide_init_result is defined and aide_init_result is changed) or (aide_update_result is defined and aide_update_result is changed)
+
+- name: Fail if initialized AIDE database was not created
+  ansible.builtin.fail:
+    msg: "AIDE database initialization finished, but no aide.db.new file was found in /var/lib/aide."
+  when:
+    - (aide_init_result is defined and aide_init_result is changed) or (aide_update_result is defined and aide_update_result is changed)
+    - aide_db_new_path is not defined
+
+- name: Activate initialized AIDE database
+  ansible.builtin.command:
+    cmd: mv "{{ aide_db_new_path }}" "{{ aide_db_new_path | replace('.new', '') }}"
+  changed_when: true
+  when:
+    - aide_db_new_path is defined
+    - (aide_db_stat.results | selectattr('stat.exists') | list | length) == 0 or (aide_update_result is defined and aide_update_result is changed)

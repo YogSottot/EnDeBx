@@ -1,0 +1,8 @@
+---
+- name: Install AIDE
+  ansible.builtin.include_tasks: install.yml
+  when: aide_action == 'INSTALL'
+
+- name: Delete AIDE
+  ansible.builtin.include_tasks: delete.yml
+  when: aide_action == 'DELETE'

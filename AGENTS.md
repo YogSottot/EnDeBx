@@ -85,10 +85,10 @@
 # Проверки
 
 Для `bash`-файлов:
-- запускай `bash -n` на всех изменённых shell-файлах
+- запускай `bash -n` и `shellcheck` на всех изменённых shell-файлах
 
 Для `ansible`:
-- запускай `ansible-playbook --syntax-check` на изменённых playbook-ах
+- запускай `ansible-playbook --syntax-check` и `ansible-lint` на изменённых playbook-ах
 - если стандартный ansible tmp недоступен, используй временные каталоги в `/tmp`
 
 Для изменений меню и сценариев:

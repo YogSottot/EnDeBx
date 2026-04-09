@@ -7,10 +7,11 @@
 ## Что входит в раздел
 
 - `SSH/Updates`
-- `Firewall management`
 - `Install/Delete Crowdsec`
 - `Install/Delete Rkhunter`
 - `Install/Delete Linux Malware Detect`
+- `Install/Delete AIDE`
+- `Firewall management`
 
 ## Общая рекомендация
 

@@ -150,7 +150,8 @@ menu_security_settings(){
     echo "          2) Install/Delete Crowdsec";
     echo "          3) Install/Delete Rkhunter";
     echo "          4) Install/Delete Linux Malware Detect";
-    echo "          5) Firewall management";
+    echo "          5) Install/Delete AIDE";
+    echo "          6) Firewall management";
     echo "          0) Return to main menu";
     echo -e "\n\n";
     echo -n "Enter command: "
@@ -162,7 +163,8 @@ menu_security_settings(){
       "2") install_crowdsec ;;
       "3") install_rkhunter ;;
       "4") install_linux_malware_detect ;;
-      "5") menu_firewall_management ;;
+      "5") install_aide ;;
+      "6") menu_firewall_management ;;
 
     0|z)  main_menu
     ;;
@@ -2556,6 +2558,27 @@ function install_linux_malware_detect() {
     read -r -p "   Do you really want to$(echo -e "${action_color}")Maldet? (Y/N): " answer
     case $answer in
       [Yy]* ) action_install_or_delete_maldet; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_aide() {
+  clear
+
+  is_install_aide=$(which aide);
+  action="INSTALL"
+  if [ -n "$is_install_aide" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")AIDE? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_aide; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac

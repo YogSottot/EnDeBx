@@ -111,7 +111,7 @@ nav:
       - 9. Security settings:
           - menu/9-security/index.md
           - 1. SSH и автообновления: menu/9-security/ssh-updates.md
-          - 2. CrowdSec, Rkhunter, Maldet: menu/9-security/security-tools.md
+          - 2. CrowdSec, Rkhunter, Maldet, AIDE: menu/9-security/security-tools.md
           - 3. Firewall management: menu/9-security/firewall-management.md
       - 10. Change server timezone: menu/10-timezone.md
       - 11. Update server: menu/11-update-server.md

@@ -1,0 +1,90 @@
+# Managed by EnDeBx: Bitrix and project-specific exclusions for AIDE.
+@@ifndef ENDEBX_AIDE_BITRIX_LOADED
+@@define ENDEBX_AIDE_BITRIX_LOADED 1
+@@define BXSITES {{ aide_sites_root | regex_replace('^/', '') }}
+@@define BXCACHE_RE (managed_cache|cache|stack_cache|html_pages|backup|tmp)
+@@define BXSTATIC_RE (png|jpg|jpeg|gif|webp|css|scss|pdf|woff|woff2|ttf|log|ico|xml|csv|mp3|mp4|svg)
+@@define BXTMP_RE (php_sessions|php_upload)
+
+!/@@{BXSITES}/.*/\.bx_temp$ d
+!/@@{BXSITES}/.*/\.bx_temp/.*
+!/tmp/@@{BXTMP_RE}$ d
+!/tmp/@@{BXTMP_RE}/.*
+!/@@{BXSITES}/.*/bitrix/@@{BXCACHE_RE}$ d
+!/@@{BXSITES}/.*/bitrix/@@{BXCACHE_RE}/.*
+!/@@{BXSITES}/.*/upload$ d
+!/@@{BXSITES}/.*/upload/.*
+!/@@{BXSITES}/.*/logs$ d
+!/@@{BXSITES}/.*/logs/.*
+!/@@{BXSITES}/.*/log$ d
+!/@@{BXSITES}/.*/log/.*
+!/var/log$ d
+!/var/log/.*
+!/swapfile$ f
+!/@@{BXSITES}/.*\.@@{BXSTATIC_RE}$ f
+
+!/var/lib/aide$ d
+!/var/lib/aide/.*
+!/var/log/aide$ d
+!/var/log/aide/.*
+
+!/usr/local/maldetect/logs$ d
+!/usr/local/maldetect/logs/.*
+!/usr/local/maldetect/sess$ d
+!/usr/local/maldetect/sess/.*
+!/usr/local/maldetect/tmp$ d
+!/usr/local/maldetect/tmp/.*
+
+!/var/lib/mysql$ d
+!/var/lib/mysql/.*
+
+!/var/lib/crowdsec/data$ d
+!/var/lib/crowdsec/data/.*
+
+!/root/\.bash_history$ f
+!/root/\.ansible/tmp$ d
+!/root/\.ansible/tmp/.*
+!/tmp/ansible_.*
+!/tmp/user/[0-9]+/ansible_.*$ d
+!/tmp/user/[0-9]+/ansible_.*/.*
+!/tmp/tmux-.*$ d
+!/tmp/tmux-.*/.*
+!/tmp/user/[0-9]+/zellij-[0-9]+$ d
+!/tmp/user/[0-9]+/zellij-[0-9]+/.*
+
+!/var/cache/apt$ d
+!/var/cache/apt/.*
+!/var/cache/fwupd$ d
+!/var/cache/fwupd/.*
+!/var/cache/motd-news$ f
+!/var/cache/swcatalog/cache$ d
+!/var/cache/swcatalog/cache/.*
+!/var/crash$ d
+!/var/crash/.*
+
+!/var/lib/PackageKit/transactions\.db$ f
+!/var/lib/apt/lists$ d
+!/var/lib/apt/lists/.*
+!/var/lib/apt/periodic$ d
+!/var/lib/apt/periodic/.*
+!/var/lib/command-not-found$ d
+!/var/lib/command-not-found/.*
+!/var/lib/fwupd/gnupg$ d
+!/var/lib/fwupd/gnupg/.*
+!/var/lib/fwupd/metadata/lvfs$ d
+!/var/lib/fwupd/metadata/lvfs/.*
+!/var/lib/swcatalog/yaml$ d
+!/var/lib/swcatalog/yaml/.*
+!/var/lib/systemd/timers/stamp-.*\.timer$ f
+!/var/lib/update-notifier$ d
+!/var/lib/update-notifier/.*
+!/var/lib/ubuntu-advantage/apt-esm/var/cache/apt$ d
+!/var/lib/ubuntu-advantage/apt-esm/var/cache/apt/.*
+!/var/lib/ubuntu-advantage/apt-esm/var/lib/apt/lists$ d
+!/var/lib/ubuntu-advantage/apt-esm/var/lib/apt/lists/.*
+
+@@undef BXTMP_RE
+@@undef BXSTATIC_RE
+@@undef BXCACHE_RE
+@@undef BXSITES
+@@endif

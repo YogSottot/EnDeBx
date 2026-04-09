@@ -62,6 +62,7 @@
 - [CrowdSec](menu/9-security/security-tools.md) - install/delete с whitelist и cloud-console enroll key.
 - [Rkhunter](menu/9-security/security-tools.md) - install/delete host-based аудита руткитов.
 - [Linux Malware Detect](menu/9-security/security-tools.md) - install/delete проверки пользовательских каталогов на вредоносный код с автоматической установкой `YARA-X CLI` и weekly update.
+- [AIDE](menu/9-security/security-tools.md) - install/delete проверки целостности файлов с локальной базой на сервере, HTML-уведомлениями на email и ежедневной cron-проверкой.
 - Отдельные защитные переключатели на уровне сайтов тоже входят в проект: IP blocking, Basic Auth, Bot Blocker.
 
 ## Системное обслуживание

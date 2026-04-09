@@ -1,0 +1,35 @@
+---
+- name: Delete AIDE cron file
+  ansible.builtin.file:
+    path: "{{ aide_cron_file_path }}"
+    state: absent
+
+- name: Delete AIDE HTML alert script
+  ansible.builtin.file:
+    path: "{{ aide_alert_script_path }}"
+    state: absent
+
+- name: Delete Bitrix AIDE exclude rules
+  ansible.builtin.file:
+    path: "{{ aide_bitrix_rules_path }}"
+    state: absent
+
+- name: Delete preload Bitrix AIDE rules symlink
+  ansible.builtin.file:
+    path: "{{ aide_bitrix_rules_preload_path }}"
+    state: absent
+
+- name: Delete AIDE package
+  ansible.builtin.apt:
+    name: aide
+    state: absent
+    purge: true
+
+- name: Delete AIDE directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ aide_db_dir_path }}"
+    - "{{ aide_log_dir }}"
+    - "{{ aide_etc_dir_path }}"

@@ -11,6 +11,16 @@ run_ansible_playbook() {
   fi
 }
 
+show_action_error() {
+  local rc="$1"
+
+  echo -e "\n   Action failed (rc=${rc}). Check ansible output above."
+  press_any_key_to_return_menu
+}
+
+set -E
+trap 'rc=$?; if [[ ${FUNCNAME[0]-} == action_* ]]; then show_action_error "${rc}"; return "${rc}"; elif [[ ${FUNCNAME[1]-} == action_* || ${FUNCNAME[2]-} == action_* ]]; then return "${rc}"; fi' ERR
+
 action_create_site(){
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_CREATE_SITE}")
 
@@ -514,6 +524,24 @@ function action_install_or_delete_maldet() {
     elif [ "${action}" = "DELETE" ]; then
       echo -e "
       Maldet and YARA-X are deleted."
+    fi
+
+    press_any_key_to_return_menu;
+}
+
+function action_install_or_delete_aide() {
+  pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_AIDE}")
+  run_ansible_playbook "${pb}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  -e "aide_action=${action} \
+      aide_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
+      aide_sites_root=${BS_PATH_USER_HOME_PREFIX}"
+
+    if [ "${action}" = "INSTALL" ]; then
+      echo -e "
+      AIDE is installed and configured.\n      Cron: 0 3 * * * root /usr/local/sbin/aide-alert-html.sh\n      Logs: /var/log/aide"
+    elif [ "${action}" = "DELETE" ]; then
+      echo -e "
+      AIDE is deleted."
     fi
 
     press_any_key_to_return_menu;

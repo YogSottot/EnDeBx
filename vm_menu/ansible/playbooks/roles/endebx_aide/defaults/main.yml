@@ -1,0 +1,18 @@
+---
+aide_etc_dir_path: /etc/aide
+aide_config_path: /etc/aide/aide.conf
+aide_config_dir_path: /etc/aide/aide.conf.d
+aide_bitrix_rules_path: /etc/aide/aide.conf.d/80_aide_bitrix
+aide_bitrix_rules_preload_path: /etc/aide/aide.conf.d/30_aide_bitrix
+aide_alert_script_path: /usr/local/sbin/aide-alert-html.sh
+aide_cron_file_path: /etc/cron.d/aide-alert-html
+aide_cron_schedule: "0 3 * * *"
+aide_log_dir: /var/log/aide
+aide_sites_root: /var/www
+aide_db_dir_path: /var/lib/aide
+aide_db_paths:
+  - /var/lib/aide/aide.db.gz
+  - /var/lib/aide/aide.db
+aide_db_new_paths:
+  - /var/lib/aide/aide.db.new.gz
+  - /var/lib/aide/aide.db.new

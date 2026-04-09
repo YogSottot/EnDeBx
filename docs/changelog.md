@@ -15,6 +15,10 @@
 
 - Новый раздел меню безопасности с настройками SSH/updates, Crowdsec, Rkhunter и Linux Malware Detect.
 
+- В раздел `Security settings` добавлена установка и удаление `AIDE` с локальной инициализацией базы, HTML-email alert script и ежедневной cron-проверкой.
+
+- Для `AIDE` добавлен отдельный snippet `/etc/aide/aide.conf.d/80_bitrix` в debian-like стиле с `@@define` / `@@undef` и исключениями для кэшей Bitrix, upload/logs, `/var/log/` и типовых статических файлов; при изменении snippet роль обновляет локальную базу `AIDE`.
+
 - В раздел `Security settings` добавлено подменю `Firewall management` со списком правил, управлением портами и сервисами, блокировкой IP/CIDR и просмотром blocklist.
 
 - При установке `Maldet` теперь автоматически ставится `YARA-X CLI` (`yr`) из latest release `VirusTotal/yara-x`; добавлен weekly updater через `/etc/cron.weekly/update-yara-x`, а при удалении `Maldet` `YARA-X` тоже удаляется.
@@ -51,6 +55,22 @@
 - При установке Docker в группу `docker` теперь добавляются все локальные пользователи с UID `1000` и выше, а не только default-пользователь сайтов.
 
 ### Исправлено
+
+- Исправлена активация локальной базы `AIDE`: файл `aide.db.new` / `aide.db.new.gz` теперь корректно переименовывается в рабочую базу без ложного `mv ... are the same file`.
+
+- `action_*`-обвязка в меню больше не показывает сообщения об успешной установке или удалении после ошибки `ansible-playbook`: при падении выводится сообщение об ошибке и success-ветка не выполняется.
+
+- При удалении `AIDE` теперь дополнительно очищаются каталоги `/var/lib/aide`, `/var/log/aide` и `/etc/aide`.
+
+- Для `AIDE` исправлены project-specific ignore rules: исключения для `Bitrix` кэшей, `upload/log`, `/var/log`, `tmp/php_sessions`, `tmp/php_upload` и служебных ansible/AIDE путей теперь применяются рекурсивно, а snippet дополнительно подключается через ранний symlink `/etc/aide/aide.conf.d/30_aide_bitrix`, чтобы правила не перекрывались distro-конфигами.
+
+- В `AIDE`-исключения добавлен `/swapfile`, чтобы отчёты не шумели из-за изменений файла подкачки.
+
+- В `AIDE`-исключения добавлены volatile runtime/state пути дистрибутива: `systemd timer stamps`, `apt/fwupd` cache, `PackageKit`, `update-notifier`, `/tmp/tmux-*`, `/root/.bash_history` и `/var/crash`.
+
+- В `AIDE`-исключения добавлен runtime-каталог `zellij` в `/tmp/user/*/zellij-*`.
+
+- В `AIDE`-исключения добавлены user-scoped временные каталоги `ansible` в `/tmp/user/*/ansible_*`.
 
 - Исправлено создание дополнительных full-сайтов.
 

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+RECIPIENTS="{{ aide_notification_email }}"
+HOSTNAME="$(hostname -f 2>/dev/null || hostname)"
+LOGDIR="{{ aide_log_dir }}"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+LOGFILE="${LOGDIR}/aide-check-${TIMESTAMP}.log"
+
+mkdir -p "${LOGDIR}"
+TMPFILE="$(mktemp --tmpdir="${LOGDIR}" aide-check.XXXXXX)"
+HTMLFILE="$(mktemp --tmpdir="${LOGDIR}" aide-mail.XXXXXX)"
+
+trap 'rm -f "${TMPFILE}" "${HTMLFILE}"' EXIT
+
+/usr/bin/aide --check --config /etc/aide/aide.conf > "${TMPFILE}" 2>&1
+EXIT_CODE=$?
+cp "${TMPFILE}" "${LOGFILE}"
+
+if [ "${EXIT_CODE}" -ne 0 ] && [ "${EXIT_CODE}" -lt 14 ]; then
+    cat > "${HTMLFILE}" <<HTMLEOF
+Content-Type: text/html
+Subject: [AIDE ALERT] Changes on ${HOSTNAME}
+To: ${RECIPIENTS}
+
+<html><body>
+<h2 style="color: #cc0000;">AIDE File Integrity Alert</h2>
+<p><strong>Host:</strong> ${HOSTNAME}</p>
+<p><strong>Date:</strong> $(date)</p>
+<p><strong>Exit Code:</strong> ${EXIT_CODE}</p>
+<hr>
+<h3>Report Details</h3>
+<pre style="background: #f5f5f5; padding: 15px; border: 1px solid #ddd;">
+$(cat "${TMPFILE}")
+</pre>
+</body></html>
+HTMLEOF
+
+    sendmail "${RECIPIENTS}" < "${HTMLFILE}"
+fi
+
+exit "${EXIT_CODE}"

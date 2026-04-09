@@ -94,6 +94,7 @@ BS_ANSIBLE_PB_FTP="install_or_delete_ftpuser.yaml"
 BS_ANSIBLE_PB_MYDUMPER_REPO="setup_mydumper_repo.yaml"
 BS_ANSIBLE_PB_RKHUNTER="install_or_delete_rkhunter.yaml"
 BS_ANSIBLE_PB_MALDET="install_or_delete_maldet.yaml"
+BS_ANSIBLE_PB_AIDE="install_or_delete_aide.yaml"
 BS_ANSIBLE_PB_MEMCACHED="install_or_delete_memcached.yaml"
 BS_ANSIBLE_PB_DEADSNAKES_PPA="setup_deadsnakes_ppa.yaml"
 BS_ANSIBLE_PB_DOCKER="install_or_delete_docker.yaml"
@@ -187,7 +188,7 @@ BS_INSTALL_PUSH_SERVER=Y
 BS_PUSH_SERVER_STOPPED=N
 # Add to /bitrix/.settings.php config local push-server (Y/N).
 BS_PUSH_SERVER_BX_SETTINGS=Y
-# Email for let's encrypt and others (rkhunter / maldet / imunify360 / etc)
+# Email for let's encrypt and others (rkhunter / maldet / aide / imunify360 / etc)
 BS_EMAIL_ADMIN_FOR_NOTIFY=""
 
 # Install bash_aliases и liquidprompt
