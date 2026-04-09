@@ -2522,17 +2522,17 @@ function install_linux_malware_detect() {
 
   is_install_linux_malware_detect=$(which maldet);
   action="INSTALL"
-  maldet_enable_monitoring="false"
+  maldet_enable_monitoring="${BS_SETUP_MALDET_MONITORING_SERVICE:-N}"
   if [ -n "$is_install_linux_malware_detect" ]; then
       action="DELETE"
   fi
 
   if [ "${action}" = "INSTALL" ]; then
     while true; do
-      read -r -p "   Enable continuous monitoring for Maldet? (Y/N): " answer_monitoring
-      case $answer_monitoring in
-        [Yy]* ) maldet_enable_monitoring="true"; break;;
-        [Nn]* ) break;;
+      read_by_def "   Enable continuous monitoring for Maldet? (Y/N) [${maldet_enable_monitoring}]: " maldet_enable_monitoring "${maldet_enable_monitoring}"
+      case $maldet_enable_monitoring in
+        [Yy]* ) maldet_enable_monitoring="Y"; break;;
+        [Nn]* ) maldet_enable_monitoring="N"; break;;
         * ) echo "   Please enter Y or N.";;
       esac
     done

@@ -241,6 +241,8 @@ BS_SETUP_RKHUNTER=N
 
 # Setup maldet by default (Y/N)
 BS_SETUP_MALDET=N
+# Enable maldet monitoring service by default during installation (Y/N)
+BS_SETUP_MALDET_MONITORING_SERVICE=N
 
 # Setup swap (Y/N)
 BS_SETUP_SWAP=N

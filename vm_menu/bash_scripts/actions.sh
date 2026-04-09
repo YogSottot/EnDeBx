@@ -484,8 +484,9 @@ function action_install_or_delete_rkhunter() {
 function action_install_or_delete_maldet() {
   pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_MALDET}")
   local maldet_monitoring_vars=""
+  local maldet_monitoring_enabled="${maldet_enable_monitoring:-${BS_SETUP_MALDET_MONITORING_SERVICE:-N}}"
 
-  if [ "${action}" = "INSTALL" ] && [ "${maldet_enable_monitoring:-false}" = "true" ]; then
+  if [ "${action}" = "INSTALL" ] && [[ "${maldet_monitoring_enabled}" =~ ^[Yy]$ ]]; then
     maldet_monitoring_vars=" \
       maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths \
       maldet_service_enabled=true"
@@ -499,7 +500,7 @@ function action_install_or_delete_maldet() {
     if [ "${action}" = "INSTALL" ]; then
       echo -e "
       Maldet is installed and configured.\n      Config in /usr/local/maldetect/conf.maldet\n      YARA-X CLI is installed in /usr/local/bin/yr and updated weekly via /etc/cron.weekly/update-yara-x"
-      if [ "${maldet_enable_monitoring:-false}" = "true" ]; then
+      if [[ "${maldet_monitoring_enabled}" =~ ^[Yy]$ ]]; then
         echo "      Continuous monitoring is enabled via /usr/local/maldetect/monitor_paths"
       fi
     elif [ "${action}" = "DELETE" ]; then

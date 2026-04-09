@@ -43,7 +43,9 @@ Playbook получает:
 
 - email для уведомлений — используется значение переменной `BS_EMAIL_ADMIN_FOR_NOTIFY`;
 - корневой путь пользовательских каталогов.
-- при установке из меню можно отдельно включить постоянный inotify мониторинг; в этом случае playbook получает `maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths` и `maldet_service_enabled=true`.
+- при установке из меню можно отдельно включить постоянный inotify мониторинг; default для вопроса берется из `BS_SETUP_MALDET_MONITORING_SERVICE`;
+- при `Y` playbook получает `maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths` и `maldet_service_enabled=true`;
+- та же переменная `BS_SETUP_MALDET_MONITORING_SERVICE` используется и при первичной установке, если `BS_SETUP_MALDET=Y`.
 
 Во время установки вместе с `Maldet` автоматически устанавливается актуальный `YARA-X CLI` из релизов `VirusTotal/yara-x`:
 

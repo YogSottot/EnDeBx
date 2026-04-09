@@ -442,10 +442,17 @@ if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
 fi
 
 if [ "$BS_SETUP_MALDET" == Y  ]; then
+  MALDET_MONITORING_VARS=""
+  if [ "${BS_SETUP_MALDET_MONITORING_SERVICE}" == Y ]; then
+    MALDET_MONITORING_VARS=" \
+      maldet_default_monitor_mode=/usr/local/maldetect/monitor_paths \
+      maldet_service_enabled=true"
+  fi
+
   run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "maldet_action='INSTALL' \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
-      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
+      maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}${MALDET_MONITORING_VARS}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
