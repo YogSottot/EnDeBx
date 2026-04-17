@@ -1,4 +1,8 @@
 ---
 # Setup tasks.
 - name: Setup tasks
-  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks:
+    file: >-
+      {{ 'setup-Astra Linux.yml'
+         if ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+         else 'setup-' ~ ansible_os_family ~ '.yml' }}

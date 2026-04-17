@@ -8,6 +8,31 @@
     - name: Set facts for Astra Linux
       ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
       tags: always
+
+    - name: Setup repo for Astra Linux
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+      
+    - name: Fix aide config missing
+      ansible.builtin.file:
+        path: /etc/apt/apt.conf.d/99debian-repositories-for-astra-no-recommends
+        state: absent
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+      
   roles:
     - name: "AIDE {{ aide_action }}"
       role: endebx_aide
+
+  post_tasks:
+    - name: Setup repo for Astra Linux (cleanup)
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always

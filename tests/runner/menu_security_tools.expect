@@ -1,0 +1,120 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set feature ""
+if {[info exists env(TEST_MENU_SECURITY_TOOL)] && $env(TEST_MENU_SECURITY_TOOL) ne ""} {
+    set feature [string tolower $env(TEST_MENU_SECURITY_TOOL)]
+}
+
+set action "install"
+if {[info exists env(TEST_MENU_SECURITY_TOOL_ACTION)] && $env(TEST_MENU_SECURITY_TOOL_ACTION) ne ""} {
+    set action [string tolower $env(TEST_MENU_SECURITY_TOOL_ACTION)]
+}
+
+if {$feature eq ""} {
+    puts stderr "TEST_MENU_SECURITY_TOOL is required"
+    exit 1
+}
+
+set option ""
+set confirm_pattern ""
+
+switch -- $feature {
+    crowdsec {
+        set option "2"
+        set confirm_pattern {Do you really want to.*Crowdsec\? \(Y/N\): *}
+    }
+    rkhunter {
+        set option "3"
+        set confirm_pattern {Do you really want to.*Rkhunter\? \(Y/N\): *}
+    }
+    maldet {
+        set option "4"
+        set confirm_pattern {Do you really want to.*Maldet\? \(Y/N\): *}
+    }
+    aide {
+        set option "5"
+        set confirm_pattern {Do you really want to.*AIDE\? \(Y/N\): *}
+    }
+    default {
+        puts stderr "Unsupported TEST_MENU_SECURITY_TOOL: $feature"
+        exit 1
+    }
+}
+
+log_file -a "/tmp/endebx-menu-security-tools-${feature}-${action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc finish_action {} {
+    expect {
+        -re {To return to the menu, please press Enter *} { send_line "" }
+        -re {Press any key to return to the menu\.\.\. *} { send_line "" }
+        -re {Press any key to continue\.\.\. *} { send_line "" }
+        timeout { fail_timeout {menu return prompt} }
+        eof {
+            puts stderr "Unexpected EOF while waiting for menu return prompt"
+            exit 1
+        }
+    }
+
+    wait_for {Enter command: *}
+    send_line "0"
+    wait_for {Enter command: *}
+    send_line "0"
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+wait_for {Enter command: *}
+send_line "9"
+wait_for {Enter command: *}
+send_line $option
+
+if {$feature eq "crowdsec" && $action eq "install"} {
+    wait_for {Enable CrowdSec AppSec basic setup\? \(Y/N\) \[[^\]]+\]: *}
+    send_line $env(BS_INSTALL_CROWDSEC_APPSEC)
+}
+
+if {$feature eq "maldet" && $action eq "install"} {
+    wait_for {Enable continuous monitoring for Maldet\? \(Y/N\) \[[^\]]+\]: *}
+    send_line $env(BS_SETUP_MALDET_MONITORING_SERVICE)
+}
+
+wait_for $confirm_pattern
+send_line "Y"
+finish_action
+
+expect eof

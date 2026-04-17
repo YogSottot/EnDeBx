@@ -12,6 +12,14 @@
       notify:
         - Restart services
 
+    - name: Update /etc/timezone
+      ansible.builtin.copy:
+        dest: /etc/timezone
+        content: "{{ server_timezone }}\n"
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Find PHP ini files
       ansible.builtin.find:
         paths: /etc/php

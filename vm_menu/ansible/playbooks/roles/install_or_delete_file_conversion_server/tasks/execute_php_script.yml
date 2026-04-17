@@ -9,7 +9,9 @@
 
 - name: Get the current timestamp
   set_fact:
-    current_time: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}"
+    current_time: >-
+      {{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}
+      {{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}
 
 - name: Generate a random string
   set_fact:
@@ -38,9 +40,25 @@
 - name: Run php-script
   command: php -f "{{ bx_transformer_cache_directory }}/{{ domain }}-{{ bx_unique_id }}/{{ php_script }}"
   become: true
-  become_method: su
+  become_method: ansible.builtin.su
   become_user: "{{ bx_transformer_bx_ansible_executer }}"
   changed_when: false
+
+- name: Read managed cache directory metadata
+  ansible.builtin.stat:
+    path: "{{ full_path_site }}/bitrix/managed_cache"
+  register: bx_transformer_managed_cache_dir
+
+- name: Restore managed cache ownership
+  ansible.builtin.file:
+    path: "{{ full_path_site }}/bitrix/managed_cache"
+    state: directory
+    recurse: true
+    owner: "{{ bx_transformer_bx_ansible_owner }}"
+    group: "{{ bx_transformer_bx_ansible_group }}"
+  when:
+    - bx_transformer_managed_cache_dir.stat.exists
+    - bx_transformer_managed_cache_dir.stat.isdir
 
 - name: Delete temporary directory
   file:

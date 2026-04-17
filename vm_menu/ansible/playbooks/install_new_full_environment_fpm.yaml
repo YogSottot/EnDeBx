@@ -63,31 +63,49 @@
         state: absent
       loop: "{{ dell_files }}"
 
-    - name: Creating array with urls
-      ansible.builtin.set_fact:
-        urls: "{{ download_bitrix_install_files_new_site.split(',') }}"
+    - name: Validate Bitrix setup download mode
+      ansible.builtin.assert:
+        that:
+          - download_bitrixsetup in ['Y', 'N']
+        fail_msg: "download_bitrixsetup must be Y or N"
 
-    - name: Downloading Bitrix scripts
-      ansible.builtin.get_url:
-        url: "{{ item }}"
-        dest: "{{ document_root }}"
-        owner: "{{ user_server_sites }}"
-        group: "{{ group_user_server_sites }}"
-        mode: "{{ permissions_sites_files }}"
-        timeout: "{{ timeout_download_bitrix_install_files_new_site }}"
-      with_items: "{{ urls }}"
+    - name: Download Bitrix setup scripts for default full site
+      when: download_bitrixsetup == 'Y'
+      block:
+        - name: Creating array with urls
+          ansible.builtin.set_fact:
+            urls: "{{ download_bitrix_install_files_new_site.split(',') }}"
 
-    - name: Creating of downloaded file names array
-      ansible.builtin.set_fact:
-        file_names_download: "{{ urls | map('basename') | list }}"
+        - name: Downloading Bitrix scripts
+          ansible.builtin.get_url:
+            url: "{{ item }}"
+            dest: "{{ document_root }}"
+            owner: "{{ user_server_sites }}"
+            group: "{{ group_user_server_sites }}"
+            mode: "{{ permissions_sites_files }}"
+            timeout: "{{ timeout_download_bitrix_install_files_new_site }}"
+          with_items: "{{ urls }}"
 
-    - name: Generating index.html using links of downloaded files
+        - name: Creating of downloaded file names array
+          ansible.builtin.set_fact:
+            file_names_download: "{{ urls | map('basename') | list }}"
+
+        - name: Generating index.html using links of downloaded files
+          ansible.builtin.template:
+            dest: "{{ document_root }}/index.php"
+            src: "roles/create_site/templates/site_full_tpl/index.j2"
+            owner: "{{ user_server_sites }}"
+            group: "{{ group_user_server_sites }}"
+            mode: "{{ permissions_sites_files }}"
+
+    - name: Generating default index.php without Bitrix setup scripts
       ansible.builtin.template:
         dest: "{{ document_root }}/index.php"
-        src: "roles/create_site/templates/site_full_tpl/index.j2"
+        src: "roles/create_site/templates/site_full_tpl/index.php.j2"
         owner: "{{ user_server_sites }}"
         group: "{{ group_user_server_sites }}"
         mode: "{{ permissions_sites_files }}"
+      when: download_bitrixsetup == 'N'
 
     - name: Creating directory bitrix/php_interface
       ansible.builtin.file:

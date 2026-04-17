@@ -57,6 +57,7 @@ action_create_site(){
   default_full_path_site=${BS_PATH_SITES}/${BS_DEFAULT_SITE_NAME} \
 
   site_links_resources=$(IFS=,; echo "${BS_SITE_LINKS_RESOURCES[*]}") \
+  download_bitrixsetup=${BX_DOWNLOAD_BITRIXSETUP} \
   download_bitrix_install_files_new_site=$(IFS=,; echo "${BS_DOWNLOAD_BITRIX_INSTALL_FILES_NEW_SITE[*]}") \
   timeout_download_bitrix_install_files_new_site=${BS_TIMEOUT_DOWNLOAD_BITRIX_INSTALL_FILES_NEW_SITE} \
 

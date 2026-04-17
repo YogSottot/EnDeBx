@@ -5,4 +5,12 @@
 /.history/
 /.vscode/
 /.opencode/
-
+/.env.test
+/tests/output/
+/tests/opentofu/.terraform/
+/tests/opentofu/*.tfstate
+/tests/opentofu/*.tfstate.*
+/tests/opentofu/*.tfvars
+/tests/opentofu/crash.log
+/tests/opentofu/plan.out
+__pycache__/

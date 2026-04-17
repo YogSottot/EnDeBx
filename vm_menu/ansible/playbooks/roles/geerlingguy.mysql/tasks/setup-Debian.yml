@@ -4,16 +4,66 @@
     path: "{{ mysql_config_file }}"
   register: mysql_installed
 
+- name: Setup Percona repo on Astra Linux
+  when:
+    - ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra' and mysql_flavor == 'percona'
+    - not mysql_installed.stat.exists
+  block:
+    - name: Backup Astra /etc/os-release
+      ansible.builtin.copy:
+        src: /etc/os-release
+        dest: /etc/os-release.astra
+        remote_src: true
+        mode: preserve
+
+    - name: Write temporary Debian /etc/os-release
+      ansible.builtin.copy:
+        dest: /etc/os-release
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+          NAME="Debian GNU/Linux"
+          VERSION_ID="12"
+          VERSION="12 (bookworm)"
+          VERSION_CODENAME=bookworm
+          ID=debian
+          HOME_URL="https://www.debian.org/"
+          SUPPORT_URL="https://www.debian.org/support"
+          BUG_REPORT_URL="https://bugs.debian.org/"
+
+    - name: Ensure MySQL repo is installed for Astra Linux
+      ansible.builtin.apt:
+        deb: "{{ mysql_percona_repo_baseurl }}/{{ mysql_percona_repo_release }}.{{ ansible_distribution_release }}_all.deb"
+        state: present
+
+    - name: Setup Percona release for Astra Linux
+      ansible.builtin.command: percona-release setup ps{{ mysql_percona_version | regex_replace('[.~]', '') }}
+      changed_when: false
+
+  always:
+    - name: Restore Astra /etc/os-release
+      ansible.builtin.copy:
+        src: /etc/os-release.astra
+        dest: /etc/os-release
+        remote_src: true
+        mode: preserve
+
 - name: Ensure MySQL repo is installed.
   ansible.builtin.apt:
     deb: "{{ mysql_percona_repo_baseurl }}/{{ mysql_percona_repo_release }}.{{ ansible_distribution_release }}_all.deb"
     state: present
-  when: mysql_flavor == 'percona' and not mysql_installed.stat.exists
+  when:
+    - (ansible_facts_lsb_id is not defined or ansible_facts_lsb_id != 'Astra') and mysql_flavor == 'percona'
+    - not mysql_installed.stat.exists
 
 - name: Setup Percona release
   ansible.builtin.command: percona-release setup ps{{ mysql_percona_version | regex_replace('[.~]', '') }}
   changed_when: false
-  when: mysql_flavor == 'percona' and not mysql_installed.stat.exists
+  when:
+    - (ansible_facts_lsb_id is not defined or ansible_facts_lsb_id != 'Astra') and mysql_flavor == 'percona'
+    - not mysql_installed.stat.exists
 
 - name: Update apt cache if MySQL is not yet installed.
   ansible.builtin.apt:

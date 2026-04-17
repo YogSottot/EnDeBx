@@ -1,0 +1,32 @@
+{
+    "name": "maximaster/bitrix-cli-install",
+    "license": "MIT",
+    "type": "library",
+    "description": "Установка Битрикс из дистрибутива или резервную копию через консольную команду. Запуск веб-сервера не требуется",
+    "bin": [
+        "bin/bitrix-cli-install"
+    ],
+    "require": {
+        "php": "^8.3",
+        "ext-json": "*",
+        "ext-dom": "*",
+        "symfony/polyfill-php80": "@stable",
+        "symfony/console": "^7.0",
+        "symfony/yaml": "^7.0",
+        "patchranger/cartesian-iterator": "^0.07.0",
+        "maximaster/cli-ent": "^2.0",
+        "guzzlehttp/guzzle": "^7.2",
+        "myclabs/php-enum": "^1.7",
+        "symfony/event-dispatcher": "^7.0",
+        "symfony/dom-crawler": "^7.0",
+        "symfony/css-selector": "^7.0"
+    },
+    "suggest": {
+        "ext-zip": "Для установки ZIP-дистрибутивов"
+    },
+    "autoload": {
+        "psr-4": {
+            "Maximaster\\BitrixCliInstall\\": "src/"
+        }
+    }
+}

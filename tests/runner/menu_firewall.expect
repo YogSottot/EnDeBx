@@ -1,0 +1,95 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set action "add"
+if {[info exists env(TEST_MENU_FIREWALL_ACTION)] && $env(TEST_MENU_FIREWALL_ACTION) ne ""} {
+    set action [string tolower $env(TEST_MENU_FIREWALL_ACTION)]
+}
+
+log_file -a "/tmp/endebx-menu-firewall-${action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc finish_menu_action {} {
+    expect {
+        -re {To return to the menu, please press Enter *} { send_line "" }
+        -re {Press any key to return to the menu\.\.\. *} { send_line "" }
+        -re {Press any key to continue\.\.\. *} { send_line "" }
+        timeout { fail_timeout {menu action completion prompt} }
+        eof {
+            puts stderr "Unexpected EOF while waiting for menu action completion prompt"
+            exit 1
+        }
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+wait_for {Enter command: *}
+send_line "9"
+wait_for {Enter command: *}
+send_line "6"
+wait_for {Enter command: *}
+
+if {$action eq "add"} {
+    send_line "2"
+    wait_for {Enter type or value \(port/service, 80/tcp, http\) \[[^\]]+\]: *}
+    send_line $env(TEST_MENU_FIREWALL_PORT)
+    wait_for {Enter firewalld zone \[[^\]]+\]: *}
+    send_line $env(TEST_MENU_FIREWALL_ZONE)
+    wait_for {Do you really want to add this firewall port rule\? \(Y/N\): *}
+    send_line "Y"
+} elseif {$action eq "delete"} {
+    send_line "3"
+    wait_for {Enter type or value \(port/service, 80/tcp, http\) \[[^\]]+\]: *}
+    send_line $env(TEST_MENU_FIREWALL_PORT)
+    wait_for {Enter firewalld zone \[[^\]]+\]: *}
+    send_line $env(TEST_MENU_FIREWALL_ZONE)
+    wait_for {Do you really want to delete this firewall port rule\? \(Y/N\): *}
+    send_line "Y"
+} else {
+    puts stderr "Unsupported TEST_MENU_FIREWALL_ACTION: $action"
+    exit 1
+}
+
+finish_menu_action
+wait_for {Enter command: *}
+send_line "0"
+wait_for {Enter command: *}
+send_line "0"
+wait_for {Enter command: *}
+send_line "0"
+
+expect eof

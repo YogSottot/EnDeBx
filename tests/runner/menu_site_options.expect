@@ -1,0 +1,134 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set feature ""
+if {[info exists env(TEST_MENU_SITE_FEATURE)]} {
+    set feature [string tolower $env(TEST_MENU_SITE_FEATURE)]
+}
+
+set feature_action ""
+if {[info exists env(TEST_MENU_SITE_FEATURE_ACTION)]} {
+    set feature_action [string tolower $env(TEST_MENU_SITE_FEATURE_ACTION)]
+}
+
+if {$feature eq ""} {
+    puts stderr "TEST_MENU_SITE_FEATURE is required"
+    exit 1
+}
+
+log_file -a "/tmp/endebx-menu-site-options-${feature}-${feature_action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc finish_menu_action {} {
+    expect {
+        -re {To return to the menu, please press Enter *} {
+            send_line ""
+        }
+        -re {Press any key to return to the menu\.\.\.} {
+            send_line ""
+        }
+        -re {Press any key to continue\.\.\.} {
+            send_line ""
+        }
+        timeout { fail_timeout {menu action completion prompt} }
+        eof {
+            puts stderr "Unexpected EOF while waiting for menu action completion prompt"
+            exit 1
+        }
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+wait_for {Enter command: *}
+send_line "2"
+wait_for {Enter command: *}
+
+switch -- $feature {
+    redirect {
+        send_line "5"
+        wait_for {Enter path to site \(default: .*}
+        send_line $env(TEST_MENU_FULL_PATH)
+        wait_for {Do you really want to (enable|disable) redirect HTTP to HTTPS\? \(Y/N\): *}
+        send_line "Y"
+    }
+    ipblock {
+        send_line "6"
+        wait_for {Do you really want to (enable|disable) Blocking access\? \(Y/N\): *}
+        send_line "Y"
+    }
+    basicauth {
+        send_line "7"
+        wait_for {Do you want to Create or Delete Basic Auth\? \(C/D\) \[[^\]]+\]: *}
+        if {$feature_action eq "create"} {
+            send_line "C"
+            wait_for {Enter path to site directory \(default: .*}
+            send_line $env(TEST_MENU_FULL_PATH)
+            wait_for {Enter Basic Auth username \[[^\]]+\]: *}
+            send_line $env(BS_NGINX_BASIC_AUTH_LOGIN)
+            wait_for {Enter Basic Auth password \[[^\]]+\]: *}
+            send_line $env(BS_NGINX_BASIC_AUTH_PASSWORD)
+        } elseif {$feature_action eq "delete"} {
+            send_line "D"
+            wait_for {Enter path to site directory \(default: .*}
+            send_line $env(TEST_MENU_FULL_PATH)
+        } else {
+            puts stderr "TEST_MENU_SITE_FEATURE_ACTION must be create or delete for basicauth"
+            exit 1
+        }
+        wait_for {Do you really want to (create|delete) basic auth\? \(Y/N\): *}
+        send_line "Y"
+    }
+    botblock {
+        send_line "8"
+        wait_for {Enter path to site \(default: .*}
+        send_line $env(TEST_MENU_FULL_PATH)
+        wait_for {Do you really want to (enable|disable) Bad Bot\? \(Y/N\): *}
+        send_line "Y"
+    }
+    default {
+        puts stderr "Unsupported TEST_MENU_SITE_FEATURE: $feature"
+        exit 1
+    }
+}
+
+finish_menu_action
+wait_for {Enter command: *}
+send_line "0"
+wait_for {Enter command: *}
+send_line "0"
+
+expect eof

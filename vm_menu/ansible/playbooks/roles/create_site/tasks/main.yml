@@ -58,35 +58,52 @@
 - name: "Mode: full"
   block:
 
-    - name: Creating array of urls
-      ansible.builtin.set_fact:
-        urls: "{{ download_bitrix_install_files_new_site.split(',') }}"
-      no_log: true
+    - name: Validate Bitrix setup download mode
+      ansible.builtin.assert:
+        that:
+          - download_bitrixsetup in ['Y', 'N']
+        fail_msg: "download_bitrixsetup must be Y or N"
 
-    - name: Downloading Bitrix scripts
-      ansible.builtin.get_url:
-        url: "{{ item }}"
-        dest: "{{ path_sites }}/{{ domain }}"
-        owner: "{{ user_server_sites }}"
-        group: "{{ group_user_server_sites }}"
-        mode: "{{ permissions_sites_files }}"
-        timeout: "{{ timeout_download_bitrix_install_files_new_site }}"
-      # ignore_errors: true
-      with_items: "{{ urls }}"
+    - name: Download Bitrix setup scripts for new full site
+      when: download_bitrixsetup == 'Y'
+      block:
+        - name: Creating array of urls
+          ansible.builtin.set_fact:
+            urls: "{{ download_bitrix_install_files_new_site.split(',') }}"
+          no_log: true
 
-    - name: Creating of downloaded file names array
-      ansible.builtin.set_fact:
-        file_names_download: "{{ urls | map('basename') | list }}"
-      no_log: true
+        - name: Downloading Bitrix scripts
+          ansible.builtin.get_url:
+            url: "{{ item }}"
+            dest: "{{ path_sites }}/{{ domain }}"
+            owner: "{{ user_server_sites }}"
+            group: "{{ group_user_server_sites }}"
+            mode: "{{ permissions_sites_files }}"
+            timeout: "{{ timeout_download_bitrix_install_files_new_site }}"
+          with_items: "{{ urls }}"
 
-    - name: Generating index.html using links of downloaded files
+        - name: Creating of downloaded file names array
+          ansible.builtin.set_fact:
+            file_names_download: "{{ urls | map('basename') | list }}"
+          no_log: true
+
+        - name: Generating index.html using links of downloaded files
+          ansible.builtin.template:
+            dest: "{{ path_sites }}/{{ domain }}/index.php"
+            src: "site_full_tpl/index.j2"
+            owner: "{{ user_server_sites }}"
+            group: "{{ group_user_server_sites }}"
+            mode: "{{ permissions_sites_files }}"
+          no_log: true
+
+    - name: Generating default index.php without Bitrix setup scripts
       ansible.builtin.template:
         dest: "{{ path_sites }}/{{ domain }}/index.php"
-        src: "site_full_tpl/index.j2"
+        src: "site_full_tpl/index.php.j2"
         owner: "{{ user_server_sites }}"
         group: "{{ group_user_server_sites }}"
         mode: "{{ permissions_sites_files }}"
-      no_log: true
+      when: download_bitrixsetup == 'N'
 
     - name: Installing of python3-pymysql
       ansible.builtin.apt:

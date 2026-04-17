@@ -1,0 +1,174 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set action "create"
+if {[info exists env(TEST_MENU_NTLM_ACTION)] && $env(TEST_MENU_NTLM_ACTION) ne ""} {
+    set action [string tolower $env(TEST_MENU_NTLM_ACTION)]
+}
+
+log_file -a "/tmp/endebx-menu-ntlm-${action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+foreach required_env {
+    TEST_MENU_NTLM_SITE_PATH
+    TEST_MENU_NTLM_SSL_LETS_ENCRYPT
+    TEST_MENU_NTLM_HOST
+    TEST_MENU_NTLM_NAME
+    TEST_MENU_NTLM_FQDN
+    TEST_MENU_NTLM_DPS
+    TEST_MENU_NTLM_USER
+    TEST_MENU_NTLM_PASS
+} {
+    if {![info exists env($required_env)] || $env($required_env) eq ""} {
+        puts stderr "$required_env is not set"
+        exit 1
+    }
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc leave_menu_stack {} {
+    set max_steps 5
+    set step 0
+
+    while {$step < $max_steps} {
+        expect {
+            -re {Enter your choice: *} {
+                send_line "0"
+            }
+            -re {Enter command: *} {
+                send_line "0"
+            }
+            eof {
+                return
+            }
+            timeout {
+                puts stderr "Timeout while leaving menu stack"
+                exit 1
+            }
+        }
+        incr step
+    }
+
+    expect {
+        eof {}
+        timeout {
+            puts stderr "Timeout waiting for menu.sh to exit after leaving menu stack"
+            exit 1
+        }
+    }
+}
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+wait_for {Enter command: *}
+send_line "2"
+
+wait_for {Enter command: *}
+send_line "9"
+
+wait_for {Enter your choice: *}
+
+if {$action eq "create"} {
+    send_line "1"
+
+    expect {
+        -re {Do you want to change NTLM settings for the server\? \(N\|y\): *} {
+            send_line "y"
+            exp_continue
+        }
+        -re {NetBIOS Hostname \(default .*: *} {}
+        timeout { fail_timeout {NetBIOS Hostname \(default .*: *} }
+        eof {
+            puts stderr "Unexpected EOF while entering NTLM create flow"
+            exit 1
+        }
+    }
+
+    send_line $env(TEST_MENU_NTLM_HOST)
+    wait_for {NetBIOS Domain/Workgroup Name \(ex\. TEST\): *}
+    send_line $env(TEST_MENU_NTLM_NAME)
+    wait_for {Full Domain Name: \(ex\. TEST\.LOCAL\): *}
+    send_line $env(TEST_MENU_NTLM_FQDN)
+    wait_for {Domain password server \(ex\. TEST-DC-SP\.TEST\.LOCAL\): *}
+    send_line $env(TEST_MENU_NTLM_DPS)
+    wait_for {Domain admin user name \(default Administrator\): *}
+    send_line $env(TEST_MENU_NTLM_USER)
+    wait_for {Domain admin user password: *}
+    send_line $env(TEST_MENU_NTLM_PASS)
+    wait_for {Enter the path to site \(default: .*}
+    send_line $env(TEST_MENU_NTLM_SITE_PATH)
+    wait_for {Enter Y or N for setting SSL Let`s Encrypt site \(default: [YN]\): *}
+    send_line $env(TEST_MENU_NTLM_SSL_LETS_ENCRYPT)
+
+    expect {
+        -re {Do you want to change them\? \(N\|y\): *} {
+            send_line "y"
+            exp_continue
+        }
+        -re {Do you really want to configure NTLM auth\? \(Y/N\): *} {}
+        timeout { fail_timeout {Do you really want to configure NTLM auth\? \(Y/N\): *} }
+        eof {
+            puts stderr "Unexpected EOF before NTLM create confirmation"
+            exit 1
+        }
+    }
+
+    send_line "Y"
+    wait_for {Press any key to return to the menu\.\.\.}
+    send_line ""
+} elseif {$action eq "delete"} {
+    send_line "3"
+    wait_for {NetBIOS Hostname \(default .*: *}
+    send_line $env(TEST_MENU_NTLM_HOST)
+    wait_for {NetBIOS Domain/Workgroup Name \(ex\. TEST\): *}
+    send_line $env(TEST_MENU_NTLM_NAME)
+    wait_for {Full Domain Name: \(ex\. TEST\.LOCAL\): *}
+    send_line $env(TEST_MENU_NTLM_FQDN)
+    wait_for {Domain password server \(ex\. TEST-DC-SP\.TEST\.LOCAL\): *}
+    send_line $env(TEST_MENU_NTLM_DPS)
+    wait_for {Domain admin user name \(default Administrator\): *}
+    send_line $env(TEST_MENU_NTLM_USER)
+    wait_for {Domain admin user password: *}
+    send_line $env(TEST_MENU_NTLM_PASS)
+    wait_for {Do you really want to delete NTLM settings\? \(Y/N\): *}
+    send_line "Y"
+    wait_for {Press any key to return to the menu\.\.\.}
+    send_line ""
+} else {
+    puts stderr "Unsupported TEST_MENU_NTLM_ACTION: $action"
+    exit 1
+}
+
+leave_menu_stack

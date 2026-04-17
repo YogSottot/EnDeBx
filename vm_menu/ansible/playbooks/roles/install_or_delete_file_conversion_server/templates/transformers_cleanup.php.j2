@@ -23,10 +23,54 @@ if(!file_exists($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/prolog_b
 /** @noinspection PhpIncludeInspection */
 require_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/prolog_before.php');
 
-$result = [];
+function getDefaultTransformerControllerUrl(): string
+{
+	$domain = (new \Bitrix\Main\License\UrlProvider())->getTechDomain();
 
-\Bitrix\Main\Config\Option::set('transformer', 'portal_url', '');
-\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', '');
+	if (\Bitrix\Main\Application::getInstance()->getLicense()->isCis())
+	{
+		$domain = 'transformer-ru-boxes.' . $domain;
+	}
+	else
+	{
+		$domain = 'transformer-de.' . $domain;
+	}
+
+	return 'https://' . $domain . '/bitrix/tools/transformercontroller/add_queue.php';
+}
+
+function getCurrentSiteId(): string
+{
+	if (defined('SITE_ID') && SITE_ID !== '')
+	{
+		return (string)SITE_ID;
+	}
+
+	return (string)\Bitrix\Main\Application::getInstance()->getContext()->getSite();
+}
+
+function clearOptionCache(string $moduleId): void
+{
+	$managedCache = \Bitrix\Main\Application::getInstance()->getManagedCache();
+	$managedCache->clean('b_option:' . mb_strtolower($moduleId), 'b_option');
+	$managedCache->cleanDir('b_option');
+}
+
+$result = [];
+$backupOptionName = 'endebx_previous_transformer_controller_url';
+$savedTransformerControllerUrl = (string)\Bitrix\Main\Config\Option::get('transformercontroller', $backupOptionName, '');
+$siteId = getCurrentSiteId();
+
+if($savedTransformerControllerUrl === '')
+{
+	$savedTransformerControllerUrl = getDefaultTransformerControllerUrl();
+}
+
+if($savedTransformerControllerUrl !== '')
+{
+	\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', $savedTransformerControllerUrl, '');
+	\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', $savedTransformerControllerUrl, $siteId);
+}
 \Bitrix\Main\Config\Option::set('transformercontroller', 'login', '');
 \Bitrix\Main\Config\Option::set('transformercontroller', 'password', '');
 \Bitrix\Main\Config\Option::set('transformercontroller', 'host', '');
@@ -34,7 +78,11 @@ $result = [];
 \Bitrix\Main\Config\Option::set('transformercontroller', 'port', '');
 \Bitrix\Main\Config\Option::set('transformercontroller', 'libreoffice_path', '');
 \Bitrix\Main\Config\Option::set('transformercontroller', 'allowed_domains', '');
+\Bitrix\Main\Config\Option::set('transformercontroller', $backupOptionName, '');
+clearOptionCache('transformer');
+clearOptionCache('transformercontroller');
 
 $result['result'][] = 'Module transformercontroller deleted';
+$result['restoredTransformerControllerUrl'] = $savedTransformerControllerUrl;
 
 die(\Bitrix\Main\Web\Json::encode($result));

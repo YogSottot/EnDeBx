@@ -37,11 +37,21 @@
 
 - name: Set certificate domain variable
   ansible.builtin.set_fact:
-    letsencrypt_domain: "{{ ssl_lets_encrypt_domain | default(domain) }}"
+    letsencrypt_domain: "{{ ssl_lets_encrypt_domain | default(domain, true) | trim }}"
 
 - name: Getting SSL certificate
   ansible.builtin.shell: |
-        certbot certonly --webroot --webroot-path {{ webroot_path }} --non-interactive --agree-tos --expand --allow-subset-of-names --deploy-hook "systemctl reload nginx" --email {{ email }} -d {{ letsencrypt_domain }} {% if is_www == 'Y' %}-d www.{{ letsencrypt_domain }}{% endif %}
+        certbot certonly \
+          --webroot \
+          --webroot-path {{ webroot_path }} \
+          --non-interactive \
+          --agree-tos \
+          --expand \
+          --allow-subset-of-names \
+          --deploy-hook "systemctl reload nginx" \
+          --email {{ email }} \
+          -d {{ letsencrypt_domain }} \
+          {% if is_www == 'Y' %}-d www.{{ letsencrypt_domain }}{% endif %}
   args:
     creates: /etc/letsencrypt/live/{{ letsencrypt_domain }}/fullchain.pem
 
@@ -92,7 +102,10 @@
     - name: Remove old manual SSL blocks
       ansible.builtin.replace:
         path: "{{ path_nginx }}/site_settings/{{ nginx_config }}/ssl.conf"
-        regexp: '(?s)### START PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\..*?### END PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\. YOU CAN MAKE EDITS BETWEEN THESE COMMENTS ###'
+        regexp: >-
+          (?s)### START PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\..*?
+          ### END PLEASE DONT DELETE OR EDIT THIS COMMENT MANAGED SSL CERTS\.
+          YOU CAN MAKE EDITS BETWEEN THESE COMMENTS ###
         replace: ''
       when: old_ssl_block_found
 

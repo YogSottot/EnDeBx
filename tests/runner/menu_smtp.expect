@@ -1,0 +1,98 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+log_file -a "/tmp/endebx-menu-smtp.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+foreach required_env {
+    TEST_MENU_SMTP_ACCOUNT
+    TEST_MENU_SMTP_FROM
+    TEST_MENU_SMTP_HOST
+    TEST_MENU_SMTP_PORT
+    TEST_MENU_SMTP_AUTH
+    TEST_MENU_SMTP_LOGIN
+    TEST_MENU_SMTP_PASSWORD
+    TEST_MENU_SMTP_AUTH_METHOD
+    TEST_MENU_SMTP_TLS
+    TEST_MENU_SMTP_STARTTLS
+} {
+    if {![info exists env($required_env)] || $env($required_env) eq ""} {
+        puts stderr "$required_env is not set"
+        exit 1
+    }
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+wait_for {Enter command: *}
+send_line "5"
+
+wait_for {Enter site dir \(default: [^\)]+\): *}
+send_line $env(TEST_MENU_SMTP_ACCOUNT)
+wait_for {Enter From email address \(example: test@example\.com\): *}
+send_line $env(TEST_MENU_SMTP_FROM)
+wait_for {Enter SMTP server address .*: *}
+send_line $env(TEST_MENU_SMTP_HOST)
+wait_for {Enter Y or N to enable TLS for .* \(default: [YN]\): *}
+send_line $env(TEST_MENU_SMTP_TLS)
+
+if {[string equal -nocase $env(TEST_MENU_SMTP_TLS) "Y"]} {
+    wait_for {Enter Y or N to enable STARTTLS for .* \(default: [YN]\): *}
+    send_line $env(TEST_MENU_SMTP_STARTTLS)
+}
+
+wait_for {Enter SMTP server port \(default: [0-9]+\): *}
+send_line $env(TEST_MENU_SMTP_PORT)
+wait_for {Enter Y or N for to use SMTP authentication on .* \(default: [YN]\): *}
+send_line $env(TEST_MENU_SMTP_AUTH)
+
+if {[string equal -nocase $env(TEST_MENU_SMTP_AUTH) "Y"]} {
+    wait_for {Enter login \(default: .*\): *}
+    send_line $env(TEST_MENU_SMTP_LOGIN)
+    wait_for {Enter password: *}
+    send_line $env(TEST_MENU_SMTP_PASSWORD)
+    wait_for {Enter SMTP authentication method \(default: [^\)]+\): *}
+    send_line $env(TEST_MENU_SMTP_AUTH_METHOD)
+}
+
+wait_for {Do you really want to (create|update) a SMTP account\? \(Y/N\): *}
+send_line "Y"
+wait_for {To return to the menu, please press Enter *}
+send_line ""
+wait_for {Enter command: *}
+send_line "0"
+
+expect eof

@@ -4,6 +4,11 @@
   connection: local
   become: true
   gather_facts: true
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
   tasks:
     - name: Reconfigure mysql
       ansible.builtin.include_role:

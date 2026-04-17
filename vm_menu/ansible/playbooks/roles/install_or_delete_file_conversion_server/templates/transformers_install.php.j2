@@ -29,7 +29,55 @@ if(!file_exists($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/prolog_b
 /** @noinspection PhpIncludeInspection */
 require_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/prolog_before.php');
 
+function getDefaultTransformerControllerUrl(): string
+{
+	$domain = (new \Bitrix\Main\License\UrlProvider())->getTechDomain();
+
+	if (\Bitrix\Main\Application::getInstance()->getLicense()->isCis())
+	{
+		$domain = 'transformer-ru-boxes.' . $domain;
+	}
+	else
+	{
+		$domain = 'transformer-de.' . $domain;
+	}
+
+	return 'https://' . $domain . '/bitrix/tools/transformercontroller/add_queue.php';
+}
+
+function getCurrentSiteId(): string
+{
+	if (defined('SITE_ID') && SITE_ID !== '')
+	{
+		return (string)SITE_ID;
+	}
+
+	return (string)\Bitrix\Main\Application::getInstance()->getContext()->getSite();
+}
+
+function clearOptionCache(string $moduleId): void
+{
+	$managedCache = \Bitrix\Main\Application::getInstance()->getManagedCache();
+	$managedCache->clean('b_option:' . mb_strtolower($moduleId), 'b_option');
+	$managedCache->cleanDir('b_option');
+}
+
 $result = [];
+$backupOptionName = 'endebx_previous_transformer_controller_url';
+$siteId = getCurrentSiteId();
+$currentTransformerControllerUrl = (string)\Bitrix\Main\Config\Option::get('transformer', 'transformer_controller_url', '', $siteId);
+$savedTransformerControllerUrl = (string)\Bitrix\Main\Config\Option::get('transformercontroller', $backupOptionName, '');
+$newTransformerControllerUrl = 'http://'.$address.'/bitrix/tools/transformercontroller/add_queue.php';
+
+if($currentTransformerControllerUrl === '')
+{
+	$currentTransformerControllerUrl = (string)\Bitrix\Main\Config\Option::get('transformer', 'transformer_controller_url', '', '');
+
+	if($currentTransformerControllerUrl === '')
+	{
+		$currentTransformerControllerUrl = getDefaultTransformerControllerUrl();
+	}
+}
 
 if(!\Bitrix\Main\ModuleManager::isModuleInstalled('transformer'))
 {
@@ -54,8 +102,8 @@ else
 	$result['result'][] = 'Module transformer was installed before';
 }
 
-\Bitrix\Main\Config\Option::set('transformer', 'portal_url', 'http://'.$address);
-\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', 'http://'.$address.'/bitrix/tools/transformercontroller/add_queue.php');
+\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', $newTransformerControllerUrl, '');
+\Bitrix\Main\Config\Option::set('transformer', 'transformer_controller_url', $newTransformerControllerUrl, $siteId);
 
 if(!\Bitrix\Main\ModuleManager::isModuleInstalled('transformercontroller'))
 {
@@ -80,6 +128,18 @@ else
 {
 	$result['result'][] = 'Module transformercontroller was installed before';
 }
+
+if($currentTransformerControllerUrl !== '' && $currentTransformerControllerUrl !== $newTransformerControllerUrl)
+{
+	\Bitrix\Main\Config\Option::set('transformercontroller', $backupOptionName, $currentTransformerControllerUrl);
+}
+
+$savedTransformerControllerUrl = (string)\Bitrix\Main\Config\Option::get(
+	'transformercontroller',
+	$backupOptionName,
+	''
+);
+
 \Bitrix\Main\Config\Option::set('transformercontroller', 'login', $redis_user);
 \Bitrix\Main\Config\Option::set('transformercontroller', 'password', $redis_password);
 \Bitrix\Main\Config\Option::set('transformercontroller', 'host', $address);
@@ -87,6 +147,8 @@ else
 \Bitrix\Main\Config\Option::set('transformercontroller', 'vhost', '/');
 \Bitrix\Main\Config\Option::set('transformercontroller', 'libreoffice_path', $libre_path);
 \Bitrix\Main\Config\Option::set('transformercontroller', 'allowed_domains', $domains);
+clearOptionCache('transformer');
+clearOptionCache('transformercontroller');
 
 $result['result'][] = 'Module transformercontroller configured';
 
@@ -97,5 +159,10 @@ $result['rabbitMqCredentials'] = [
 	'port' => \Bitrix\Main\Config\Option::get('transformercontroller', 'port'),
 	'vhost' => \Bitrix\Main\Config\Option::get('transformercontroller', 'vhost'),
 ];
+$result['savedTransformerControllerUrl'] = (string)\Bitrix\Main\Config\Option::get(
+	'transformercontroller',
+	$backupOptionName,
+	''
+);
 
 die(\Bitrix\Main\Web\Json::encode($result));

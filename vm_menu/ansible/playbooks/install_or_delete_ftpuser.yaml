@@ -8,6 +8,15 @@
     - name: Set facts for Astra Linux
       ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
       tags: always
+
+    - name: Setup repo for Astra Linux
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+
   roles:
     - name: Open ftp port
       role: marcelnijenhof.firewalld
@@ -27,3 +36,12 @@
             gid: "{{ ftp_user_uid }}"
         pureftpd_virtual_deleted_users:
           - name: "{{ ftp_user_name }}"
+
+  post_tasks:
+    - name: Setup repo for Astra Linux (cleanup)
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always

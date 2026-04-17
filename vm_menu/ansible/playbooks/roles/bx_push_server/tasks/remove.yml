@@ -13,7 +13,6 @@
   loop:
     - /etc/systemd/system/push-server.service
     - /usr/local/bin/push-server-multi
-    - /etc/default/push-server-multi
     - /etc/tmpfiles.d/push-server.conf
     - /etc/logrotate.d/push-server
     - /etc/push-server
