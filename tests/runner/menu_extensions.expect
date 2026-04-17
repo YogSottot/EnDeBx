@@ -1,0 +1,128 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set feature ""
+if {[info exists env(TEST_MENU_EXTENSION)] && $env(TEST_MENU_EXTENSION) ne ""} {
+    set feature [string tolower $env(TEST_MENU_EXTENSION)]
+}
+
+set action "install"
+if {[info exists env(TEST_MENU_EXTENSION_ACTION)] && $env(TEST_MENU_EXTENSION_ACTION) ne ""} {
+    set action [string tolower $env(TEST_MENU_EXTENSION_ACTION)]
+}
+
+set push_remove_redis "Y"
+if {[info exists env(TEST_MENU_PUSH_REMOVE_REDIS)] && $env(TEST_MENU_PUSH_REMOVE_REDIS) ne ""} {
+    set push_remove_redis [string toupper $env(TEST_MENU_PUSH_REMOVE_REDIS)]
+}
+
+if {$feature eq ""} {
+    puts stderr "TEST_MENU_EXTENSION is required"
+    exit 1
+}
+
+set option ""
+set confirm_pattern ""
+
+switch -- $feature {
+    memcached {
+        set option "1"
+        set confirm_pattern {Do you really want to.*memcached\? \(Y/N\): *}
+    }
+    push {
+        set option "2"
+        set confirm_pattern {Do you really want to.*Push server\? \(Y/N\): *}
+    }
+    sphinx {
+        set option "3"
+        set confirm_pattern {Do you really want to.*Sphinx\? \(Y/N\): *}
+    }
+    netdata {
+        set option "5"
+        set confirm_pattern {Do you really want to.*Netdata\? \(Y/N\): *}
+    }
+    docker {
+        set option "6"
+        set confirm_pattern {Do you really want to.*docker\? \(Y/N\): *}
+    }
+    default {
+        puts stderr "Unsupported TEST_MENU_EXTENSION: $feature"
+        exit 1
+    }
+}
+
+log_file -a "/tmp/endebx-menu-extensions-${feature}-${action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc open_extensions_menu {option} {
+    wait_for {Enter command: *}
+    send_line "8"
+    wait_for {Enter command: *}
+    send_line $option
+}
+
+proc finish_action {} {
+    expect {
+        -re {To return to the menu, please press Enter *} { send_line "" }
+        -re {Press any key to return to the menu\.\.\. *} { send_line "" }
+        -re {Press any key to continue\.\.\. *} { send_line "" }
+        timeout { fail_timeout {menu return prompt} }
+        eof {
+            puts stderr "Unexpected EOF while waiting for menu return prompt"
+            exit 1
+        }
+    }
+
+    wait_for {Enter command: *}
+    send_line "0"
+    wait_for {Enter command: *}
+    send_line "0"
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+open_extensions_menu $option
+
+if {$feature eq "push" && $action eq "delete"} {
+    wait_for {Delete Redis too\? \(Y/N\) \[[YN]\]: *}
+    send_line $push_remove_redis
+}
+
+wait_for $confirm_pattern
+send_line "Y"
+finish_action
+
+expect eof

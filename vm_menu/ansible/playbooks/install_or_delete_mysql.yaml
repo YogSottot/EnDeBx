@@ -46,10 +46,12 @@
           - default-mysql-client
           - mariadb-server
           - mariadb-client
+          - mariadb-common
           - mysql-server
           - mysql-client
           - percona-release
           - percona-server-server
+          - percona-server-common
           - percona-server-server-5.7
         state: absent
         purge: true

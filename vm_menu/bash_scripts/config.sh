@@ -4,7 +4,7 @@
 export ANSIBLE_CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/ansible.cfg"
 
 # General configs
-BS_VERSION_MENU="1.3.12"
+BS_VERSION_MENU="1.4.0"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
@@ -19,6 +19,7 @@ BS_PERMISSIONS_SITES_FILES="0664"
 BS_EXCLUDED_DIRS_SITES=(".bx_temp" "temp" "tmp" "test" ".ssh" "bitrixenv_error")
 BS_SITE_LINKS_RESOURCES=("local" "bitrix" "upload" "images")
 BS_SERVER_TIMEZONE="Europe/Moscow"
+BX_DOWNLOAD_BITRIXSETUP="N"
 BS_DOWNLOAD_BITRIX_INSTALL_FILES_NEW_SITE=(
   "https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php"
   "https://www.1c-bitrix.ru/download/scripts/restore.php"

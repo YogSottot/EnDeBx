@@ -121,14 +121,14 @@ setup_ansible() {
             echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
             pipx uninstall ansible
             pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-            pipx inject ansible jmespath passlib python-debian
+            pipx inject ansible jmespath passlib python-debian psycopg2-binary ipaddress
         else
             echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
         fi
     else
         echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib python-debian
+        pipx inject ansible jmespath passlib python-debian psycopg2-binary ipaddress
     fi
 }
 

@@ -1210,37 +1210,60 @@ ntlm_get_site_db_info() {
     fi
 }
 
+ntlm_get_site_system_user() {
+    local site_path=$1
+    local parent_dir
+
+    parent_dir=$(dirname "$site_path")
+
+    if [ "$parent_dir" = "$BS_PATH_SITES" ]; then
+        printf '%s\n' "$BS_DEFAULT_USER_SERVER_SITES"
+    else
+        basename "$parent_dir"
+    fi
+}
+
 ntlm_get_site_status() {
     local site_path=$1
     local output
+    local site_user
+    local php_script
 
-    output=$(php -r '
-    $root = $argv[1];
-    $_SERVER["DOCUMENT_ROOT"] = $root;
-    $DOCUMENT_ROOT = $root;
-    define("NO_KEEP_STATISTIC", true);
-    define("NOT_CHECK_PERMISSIONS", true);
-    define("BX_NO_ACCELERATOR_RESET", true);
-    $prolog = $root . "/bitrix/modules/main/include/prolog_before.php";
-    if (!is_file($prolog)) {
-        echo "N:N:N";
-        exit(0);
-    }
-    require $prolog;
-    $ldapInstalled = \Bitrix\Main\Loader::includeModule("ldap");
-    $ldapMod = $ldapInstalled ? "Y" : "N";
-    $useNtlm = "N";
-    $ldapAuth = "N";
-    if ($ldapInstalled) {
-        $useNtlm = \Bitrix\Main\Config\Option::get("ldap", "use_ntlm", "N");
-        $ldapAuth = COption::GetOptionString("ldap", "bitrixvm_auth_support", "N");
-    }
-    $normalize = static function ($value) {
-        $value = strtoupper(trim((string)$value));
-        return in_array($value, ["Y", "1", "YES", "TRUE"], true) ? "Y" : "N";
-    };
-    echo $normalize($ldapMod) . ":" . $normalize($useNtlm) . ":" . $normalize($ldapAuth);
-    ' "$site_path" 2>/dev/null)
+    site_user=$(ntlm_get_site_system_user "$site_path")
+    php_script=$(mktemp /tmp/endebx-ntlm-status.XXXXXX.php)
+
+    cat > "$php_script" <<'PHP'
+<?php
+$root = $argv[1];
+$_SERVER["DOCUMENT_ROOT"] = $root;
+$DOCUMENT_ROOT = $root;
+define("NO_KEEP_STATISTIC", true);
+define("NOT_CHECK_PERMISSIONS", true);
+define("BX_NO_ACCELERATOR_RESET", true);
+$prolog = $root . "/bitrix/modules/main/include/prolog_before.php";
+if (!is_file($prolog)) {
+    echo "N:N:N";
+    exit(0);
+}
+require $prolog;
+$ldapInstalled = \Bitrix\Main\Loader::includeModule("ldap");
+$ldapMod = $ldapInstalled ? "Y" : "N";
+$useNtlm = "N";
+$ldapAuth = "N";
+if ($ldapInstalled) {
+    $useNtlm = \Bitrix\Main\Config\Option::get("ldap", "use_ntlm", "N");
+    $ldapAuth = COption::GetOptionString("ldap", "bitrixvm_auth_support", "N");
+}
+$normalize = static function ($value) {
+    $value = strtoupper(trim((string)$value));
+    return in_array($value, ["Y", "1", "YES", "TRUE"], true) ? "Y" : "N";
+};
+echo $normalize($ldapMod) . ":" . $normalize($useNtlm) . ":" . $normalize($ldapAuth);
+PHP
+
+    chmod 0644 "$php_script"
+    output=$(su -s /bin/bash "$site_user" -c "php \"$php_script\" \"$site_path\"" 2>/dev/null || true)
+    rm -f "$php_script"
 
     if [ -z "$output" ]; then
         echo "N:N:N"
@@ -2123,7 +2146,10 @@ block_access_by_ip() {
       fi
       read -n 1 -s -r -p "Press any key to continue..."
       else
-        if rm -f "${BS_PATH_NGINX_SITES_ENABLED}/bx_ext_ip.conf"; then
+        if rm -f "${BS_PATH_NGINX_SITES_ENABLED}/bx_ext_ip.conf" \
+          "${BS_PATH_NGINX_SITES_CONF}/bx_ext_ip.conf" && \
+          "${BS_SERVICE_NGINX_NAME}" -t && \
+          systemctl reload "${BS_SERVICE_NGINX_NAME}"; then
           echo "Unblock completed successfully."
         else
           echo "Unblock failed to complete."

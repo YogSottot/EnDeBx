@@ -4,5 +4,27 @@
   connection: local
   become: true
   gather_facts: true
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
+    - name: Setup repo for Astra Linux
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'INSTALL'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always
+
   roles:
     - role: get_lets_encrypt_certificate
+
+  post_tasks:
+    - name: Setup repo for Astra Linux (cleanup)
+      ansible.builtin.include_role:
+        name: setup_tmp_debian_repositories_for_astra
+      vars:
+        setup_debian_repositories_for_astra_action: 'DELETE'
+      when: ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      tags: always

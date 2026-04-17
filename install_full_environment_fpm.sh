@@ -18,7 +18,7 @@ generate_password() {
     local all_chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789${specials}"
 
     local password=""
-    for i in $(seq 1 $length); do
+    for _ in $(seq 1 "$length"); do
         local char=${all_chars:RANDOM % ${#all_chars}:1}
         password+=$char
     done
@@ -76,8 +76,20 @@ get_ubuntu_major_version() {
     fi
 }
 
+is_astra_linux() {
+    local os_id
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        [ "${os_id}" = "astra" ]
+    else
+        return 1
+    fi
+}
+
 BRANCH="main"
 REPO_URL="https://github.com/YogSottot/EnDeBx"
+INSTALLER_DOWNLOAD_VM_MENU="${INSTALLER_DOWNLOAD_VM_MENU:-Y}"
 
 DB_NAME="bitrix"
 DB_USER="bitrix"
@@ -87,43 +99,61 @@ DIR_NAME_MENU="vm_menu"
 DEST_DIR_MENU="/root"
 
 FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
+PIPX_BOOTSTRAP_VENV="$HOME/.local/share/endebx-pipx-venv"
 
 apt update -y
 apt upgrade -y --enable-upgrade
-apt install -y pipx git locales-all python3-debian
 
-if [ -f /etc/debian_version ]; then
-    ver=$(cut -d. -f1 /etc/debian_version)
-    if [ "$ver" -ge 13 ]; then
-        systemctl mask tmp.mount
-    fi
+if is_astra_linux; then
+    apt install -y git locales-all python3-debian python3-pip python3-venv
+    python3 -m venv "$PIPX_BOOTSTRAP_VENV"
+    "$PIPX_BOOTSTRAP_VENV/bin/python" -m pip install --upgrade pipx
+    mkdir -p "$HOME/.local/bin"
+    ln -fs "$PIPX_BOOTSTRAP_VENV/bin/pipx" "$HOME/.local/bin/pipx"
+    "$PIPX_BOOTSTRAP_VENV/bin/pipx" ensurepath
+else
+    apt install -y pipx git locales-all python3-debian
 fi
 
 site_user_password=$(generate_password 24)
 
-# Clone directory vm_menu with repositories
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
-cd "$DEST_DIR_MENU/EnDeBx"
-git sparse-checkout set $DIR_NAME_MENU
+case "${INSTALLER_DOWNLOAD_VM_MENU}" in
+  Y)
+    # Clone directory vm_menu with repositories
+    git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
+    cd "$DEST_DIR_MENU/EnDeBx"
+    git sparse-checkout set $DIR_NAME_MENU
 
-# Move vm_menu in /root and clean
-rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
-mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
+    # Move vm_menu in /root and clean
+    rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
+    mv -f "$DIR_NAME_MENU" "$DEST_DIR_MENU"
+    rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
+    ;;
+  N)
+    if [ ! -d "$DEST_DIR_MENU/$DIR_NAME_MENU" ]; then
+      echo "Directory $DEST_DIR_MENU/$DIR_NAME_MENU not found. Upload it first or set INSTALLER_DOWNLOAD_VM_MENU=Y."
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Unsupported INSTALLER_DOWNLOAD_VM_MENU value: ${INSTALLER_DOWNLOAD_VM_MENU}. Use Y or N."
+    exit 1
+    ;;
+esac
 
-cd $DEST_DIR_MENU
+cd "$DEST_DIR_MENU"
 
-chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
+chmod -R +x "$DEST_DIR_MENU/$DIR_NAME_MENU"
 
-ln -fs $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
+ln -fs "$FULL_PATH_MENU_FILE" "$DEST_DIR_MENU/menu.sh"
 
 # Final actions
 # shellcheck source=/dev/null
-source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
+source "$DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh"
 
 # shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-  source $DEST_DIR_MENU/.env.menu
+if [ -e "$DEST_DIR_MENU/.env.menu" ]; then
+  source "$DEST_DIR_MENU/.env.menu"
 fi
 
 # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html
@@ -145,7 +175,7 @@ if pipx list | grep -q "package ansible "; then
         echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
         pipx uninstall ansible
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib python-debian
+        pipx inject ansible jmespath passlib python-debian psycopg2-binary ipaddress
     else
         echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
     fi
@@ -173,6 +203,11 @@ esac
 
 DEBIAN_MAJOR_VERSION=$(get_debian_major_version)
 UBUNTU_MAJOR_VERSION=$(get_ubuntu_major_version)
+
+if [ -n "${DEBIAN_MAJOR_VERSION}" ] && [ "${DEBIAN_MAJOR_VERSION}" -ge 13 ]; then
+      systemctl mask tmp.mount
+fi
+
 if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
    [ "${BS_DB_FLAVOR}" = "percona" ] &&
    [ -n "${DEBIAN_MAJOR_VERSION}" ] &&
@@ -386,6 +421,7 @@ run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIB
 
   delete_files=$(IFS=,; echo "${DELETE_FILES[*]}") \
 
+  download_bitrixsetup=${BX_DOWNLOAD_BITRIXSETUP} \
   download_bitrix_install_files_new_site=$(IFS=,; echo "${BS_DOWNLOAD_BITRIX_INSTALL_FILES_NEW_SITE[*]}") \
   timeout_download_bitrix_install_files_new_site=${BS_TIMEOUT_DOWNLOAD_BITRIX_INSTALL_FILES_NEW_SITE} \
 

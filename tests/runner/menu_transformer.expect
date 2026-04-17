@@ -1,0 +1,83 @@
+#!/usr/bin/expect -f
+
+set timeout 3600
+match_max 100000
+log_user 1
+
+set action "install"
+if {[info exists env(TEST_MENU_TRANSFORMER_ACTION)] && $env(TEST_MENU_TRANSFORMER_ACTION) ne ""} {
+    set action [string tolower $env(TEST_MENU_TRANSFORMER_ACTION)]
+}
+
+log_file -a "/tmp/endebx-menu-transformer-${action}.trace"
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc open_transformer_menu {} {
+    wait_for {Enter command: *}
+    send_line "8"
+    wait_for {Enter command: *}
+    send_line "4"
+}
+
+proc finish_action {} {
+    wait_for {Do you really want to.*File Conversion Server \(transformer\)\? \(Y/N\): *}
+    send_line "Y"
+    wait_for {To return to the menu, please press Enter}
+    send_line ""
+    wait_for {Enter command: *}
+    send_line "0"
+    wait_for {Enter command: *}
+    send_line "0"
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+open_transformer_menu
+
+if {$action eq "install"} {
+    wait_for {Enter site domain \(example: example\.com\): *}
+    send_line $env(TEST_MENU_DEFAULT_DOMAIN)
+    wait_for {Enter full path to site \(default: .*}
+    if {[info exists env(TEST_BITRIX_TARGET_DIR)] && $env(TEST_BITRIX_TARGET_DIR) ne ""} {
+        send_line $env(TEST_BITRIX_TARGET_DIR)
+    } else {
+        send_line ""
+    }
+} elseif {$action ne "delete"} {
+    puts stderr "Unsupported TEST_MENU_TRANSFORMER_ACTION: $action"
+    exit 1
+}
+
+finish_action
+
+expect eof

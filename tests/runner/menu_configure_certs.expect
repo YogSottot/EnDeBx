@@ -1,0 +1,92 @@
+#!/usr/bin/expect -f
+
+set timeout 1800
+match_max 100000
+log_user 1
+log_file -a /tmp/endebx-menu-certs.trace
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc getenv_or_default {name default_value} {
+    global env
+
+    if {[info exists env($name)]} {
+        return $env($name)
+    }
+
+    return $default_value
+}
+
+proc configure_site_certificate {domain path} {
+    set www_answer [getenv_or_default "TEST_MENU_LETS_ENCRYPT_WWW" "N"]
+    set redirect_answer [getenv_or_default "TEST_MENU_REDIRECT_TO_HTTPS" "N"]
+    set le_email [getenv_or_default "TEST_MENU_LETS_ENCRYPT_EMAIL" ""]
+
+    wait_for {Enter command: *}
+    send_line "4"
+    wait_for {Enter site domain \(example: example\.com\): *}
+    send_line $domain
+    wait_for {Enter full path to site \(default: .*}
+    send_line $path
+    wait_for {Enter Y or N to get a certificate for WWW \(default: [^\)]*\): *}
+    send_line $www_answer
+    wait_for {Enter email \(default: .*}
+    send_line $le_email
+    wait_for {Enter Y or N for redirecting HTTP to HTTPS \(default: [^\)]*\): *}
+    send_line $redirect_answer
+    wait_for {Do you really want to create a SSL Let`s Encrypt certificate\? \(Y/N\): *}
+    send_line "Y"
+    wait_for {To return to the menu, please press Enter}
+    send_line ""
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+set default_path $env(BS_PATH_DEFAULT_SITE)
+set link_default_path [file join $env(BS_PATH_SITES) $env(TEST_MENU_LINK_DEFAULT_DOMAIN)]
+set full_path $env(TEST_MENU_FULL_PATH)
+set link_full_path [file join $env(BS_PATH_USER_HOME_PREFIX) $env(TEST_MENU_FULL_USER) $env(TEST_MENU_LINK_FULL_DOMAIN)]
+
+wait_for {Enter command: *}
+send_line "2"
+
+configure_site_certificate $env(TEST_MENU_DEFAULT_DOMAIN) $default_path
+configure_site_certificate $env(TEST_MENU_LINK_DEFAULT_DOMAIN) $link_default_path
+configure_site_certificate $env(TEST_MENU_FULL_DOMAIN) $full_path
+configure_site_certificate $env(TEST_MENU_LINK_FULL_DOMAIN) $link_full_path
+
+wait_for {Enter command: *}
+send_line "0"
+wait_for {Enter command: *}
+send_line "0"
+
+expect eof

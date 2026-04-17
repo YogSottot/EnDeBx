@@ -30,8 +30,20 @@
     state: present
   register: php_ondrej_debian_repo
 
+- name: Prefer Sury PHP packages over Astra packages.
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/100-sury-php.pref
+    mode: "0644"
+    owner: root
+    group: root
+    content: |
+      Package: php*
+      Pin: origin "mirror.yandex.ru"
+      Pin-Priority: 1000
+  register: php_ondrej_astra_pin
+
 - name: Update apt caches after repo is added (Astra Linux).
   ansible.builtin.apt: update_cache=true
   when:
-    - php_ondrej_debian_repo.changed
+    - php_ondrej_debian_repo.changed or php_ondrej_astra_pin.changed
   tags: ['skip_ansible_lint']

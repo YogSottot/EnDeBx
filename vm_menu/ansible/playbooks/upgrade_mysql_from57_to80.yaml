@@ -6,6 +6,11 @@
   gather_facts: true
   vars:
     mysql_socket: /run/mysqld/mysqld.sock
+  pre_tasks:
+    - name: Set facts for Astra Linux
+      ansible.builtin.include_tasks: "tasks/set_facts_for_astra.yaml"
+      tags: always
+
   tasks:
     - name: Ensure MySQL is running before upgrade
       ansible.builtin.systemd:
@@ -48,9 +53,51 @@
         path: /etc/mysql/percona-server.conf.d
         state: absent
 
+    - name: Enable Percona 8.0 repository on Astra Linux
+      when:
+        - ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra'
+      block:
+        - name: Backup Astra /etc/os-release
+          ansible.builtin.copy:
+            src: /etc/os-release
+            dest: /etc/os-release.astra
+            remote_src: true
+            mode: preserve
+
+        - name: Write temporary Debian /etc/os-release
+          ansible.builtin.copy:
+            dest: /etc/os-release
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+              NAME="Debian GNU/Linux"
+              VERSION_ID="12"
+              VERSION="12 (bookworm)"
+              VERSION_CODENAME=bookworm
+              ID=debian
+              HOME_URL="https://www.debian.org/"
+              SUPPORT_URL="https://www.debian.org/support"
+              BUG_REPORT_URL="https://bugs.debian.org/"
+
+        - name: Enable Percona 8.0 repository for Astra Linux
+          ansible.builtin.command: percona-release setup ps80
+          changed_when: false
+
+      always:
+        - name: Restore Astra /etc/os-release
+          ansible.builtin.copy:
+            src: /etc/os-release.astra
+            dest: /etc/os-release
+            remote_src: true
+            mode: preserve
+
     - name: Enable Percona 8.0 repository
       ansible.builtin.command: percona-release setup ps80
       changed_when: false
+      when:
+        - ansible_facts_lsb_id is not defined or ansible_facts_lsb_id != 'Astra'
 
     - name: Install percona-server 8.0
       ansible.builtin.apt:

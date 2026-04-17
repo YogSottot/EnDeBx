@@ -117,14 +117,36 @@
   loop: "{{ ntlm_sites_info }}"
 
 - name: Remove NTLM settings from Bitrix sites
-  ansible.builtin.command: php -f ntlm_settings_remove.php
-  args:
-    chdir: "/tmp/debianlikebitrixvm-ntlm-delete/{{ item.site_name }}"
-  become: true
-  become_user: "{{ item.site_system_user }}"
+  ansible.builtin.command:
+    argv:
+      - su
+      - -s
+      - /bin/bash
+      - "{{ item.site_system_user }}"
+      - -c
+      - "php -f /tmp/debianlikebitrixvm-ntlm-delete/{{ item.site_name }}/ntlm_settings_remove.php"
   loop: "{{ ntlm_sites_info }}"
   changed_when: false
   #no_log: true
+
+- name: Read managed cache directory metadata for NTLM delete sites
+  ansible.builtin.stat:
+    path: "{{ item.document_root }}/bitrix/managed_cache"
+  loop: "{{ ntlm_sites_info }}"
+  register: ntlm_delete_managed_cache_dirs
+  changed_when: false
+
+- name: Restore managed cache ownership for NTLM delete sites
+  ansible.builtin.file:
+    path: "{{ item.item.document_root }}/bitrix/managed_cache"
+    state: directory
+    recurse: true
+    owner: "{{ item.item.site_system_user }}"
+    group: "{{ item.item.site_system_user }}"
+  loop: "{{ ntlm_delete_managed_cache_dirs.results }}"
+  when:
+    - item.stat.exists
+    - item.stat.isdir
 
 - name: Remove temporary NTLM delete directory
   ansible.builtin.file:

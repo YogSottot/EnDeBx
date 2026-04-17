@@ -12,6 +12,12 @@
 
 - name: Delete repo
   ansible.builtin.file:
-    path: /etc/apt/sources.list.d/packagecloud_io_crowdsec_crowdsec_debian.list
+    path: /etc/apt/sources.list.d/packagecloud_io_crowdsec_crowdsec_any.list
+    state: absent
+  when: ansible_os_family | lower == "debian"
+
+- name: Delete CrowdSec apt keyring
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/crowdsec.asc
     state: absent
   when: ansible_os_family | lower == "debian"

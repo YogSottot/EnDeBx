@@ -1,0 +1,218 @@
+#!/usr/bin/expect -f
+
+set timeout 1800
+match_max 100000
+log_user 1
+log_file -a /tmp/endebx-menu-create-sites.trace
+
+if {[info exists env(EXPECT_DEBUG)] && $env(EXPECT_DEBUG) eq "1"} {
+    exp_internal 1
+}
+
+proc fail_timeout {pattern} {
+    puts stderr "Timeout waiting for: $pattern"
+    exit 1
+}
+
+proc wait_for {pattern} {
+    expect {
+        -re $pattern {}
+        timeout { fail_timeout $pattern }
+        eof {
+            puts stderr "Unexpected EOF while waiting for: $pattern"
+            exit 1
+        }
+    }
+}
+
+proc send_line {value} {
+    send -- "$value\r"
+}
+
+proc open_add_site_menu {} {
+    wait_for {Enter command: *}
+    send_line "2"
+    wait_for {Enter command: *}
+    send_line "1"
+}
+
+proc open_lets_encrypt_menu {} {
+    wait_for {Enter command: *}
+    send_line "2"
+    wait_for {Enter command: *}
+    send_line "4"
+}
+
+proc finish_creation {} {
+    wait_for {Do you really want to create a website\? \(Y/N\): *}
+    send_line "Y"
+    wait_for {To return to the menu, please press Enter}
+    send_line ""
+}
+
+proc finish_lets_encrypt_configuration {} {
+    wait_for {Do you really want to create a SSL Let`s Encrypt certificate\? \(Y/N\): *}
+    send_line "Y"
+    wait_for {To return to the menu, please press Enter}
+    send_line ""
+}
+
+proc handle_ssl_prompts {} {
+    global env
+
+    set enable_le "N"
+    set www_answer "N"
+    set redirect_answer "N"
+    set le_email ""
+
+    if {[info exists env(TEST_MENU_ENABLE_LETS_ENCRYPT)]} {
+        set enable_le $env(TEST_MENU_ENABLE_LETS_ENCRYPT)
+    }
+    if {[info exists env(TEST_MENU_LETS_ENCRYPT_WWW)]} {
+        set www_answer $env(TEST_MENU_LETS_ENCRYPT_WWW)
+    }
+    if {[info exists env(TEST_MENU_REDIRECT_TO_HTTPS)]} {
+        set redirect_answer $env(TEST_MENU_REDIRECT_TO_HTTPS)
+    }
+    if {[info exists env(TEST_MENU_LETS_ENCRYPT_EMAIL)]} {
+        set le_email $env(TEST_MENU_LETS_ENCRYPT_EMAIL)
+    }
+
+    wait_for {Enter Y or N for setting SSL Let`s Encrypt site \(default: [^\)]*\): *}
+    send_line $enable_le
+
+    if {$enable_le eq "Y"} {
+        wait_for {Enter Y or N to get a certificate for WWW \(default: [^\)]*\): *}
+        send_line $www_answer
+        wait_for {Enter email for SSL Let`s Encrypt \(default: .*}
+        send_line $le_email
+        wait_for {Enter Y or N for redirect HTTP to HTTPS \(default: [^\)]*\): *}
+        send_line $redirect_answer
+    }
+}
+
+proc configure_default_site_certificate {} {
+    global env
+
+    if {![info exists env(TEST_MENU_ENABLE_LETS_ENCRYPT)] || $env(TEST_MENU_ENABLE_LETS_ENCRYPT) ne "Y"} {
+        return 0
+    }
+
+    set www_answer "N"
+    set redirect_answer "N"
+    set le_email ""
+
+    if {[info exists env(TEST_MENU_LETS_ENCRYPT_WWW)]} {
+        set www_answer $env(TEST_MENU_LETS_ENCRYPT_WWW)
+    }
+    if {[info exists env(TEST_MENU_REDIRECT_TO_HTTPS)]} {
+        set redirect_answer $env(TEST_MENU_REDIRECT_TO_HTTPS)
+    }
+    if {[info exists env(TEST_MENU_LETS_ENCRYPT_EMAIL)]} {
+        set le_email $env(TEST_MENU_LETS_ENCRYPT_EMAIL)
+    }
+
+    open_lets_encrypt_menu
+    wait_for {Enter site domain \(example: example\.com\): *}
+    send_line $env(TEST_MENU_DEFAULT_DOMAIN)
+    wait_for {Enter full path to site \(default: .*}
+    send_line ""
+    wait_for {Enter Y or N to get a certificate for WWW \(default: [^\)]*\): *}
+    send_line $www_answer
+    wait_for {Enter email \(default: .*}
+    send_line $le_email
+    wait_for {Enter Y or N for redirecting HTTP to HTTPS \(default: [^\)]*\): *}
+    send_line $redirect_answer
+    finish_lets_encrypt_configuration
+    return 1
+}
+
+proc wait_for_full_site_user_prompt {} {
+    expect {
+        -re {Do you want to add local push-server config to /bitrix/\.setting\.php\? \(Y/N\) \[[^\]]+\]: *} {
+            send_line "N"
+            exp_continue
+        }
+        -re {Enter username for the site user \(default: .*} {}
+        timeout { fail_timeout {Enter username for the site user \(default: .*} }
+        eof {
+            puts stderr "Unexpected EOF while waiting for full-site username prompt"
+            exit 1
+        }
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect_before {
+    -re {Action failed \(rc=([0-9]+)\)\. Check ansible output above\.} {
+        puts stderr "Detected menu action failure with rc=$expect_out(1,string)"
+        exit 1
+    }
+}
+
+set default_certificate_configured [configure_default_site_certificate]
+
+if {$default_certificate_configured} {
+    wait_for {Enter command: *}
+    send_line "1"
+} else {
+    open_add_site_menu
+}
+wait_for {Enter site domain \(example: example\.com\): *}
+send_line $env(TEST_MENU_LINK_DEFAULT_DOMAIN)
+wait_for {Enter site mode link or full: *}
+send_line "link"
+wait_for {Enter path to links site \(default: .*}
+send_line ""
+wait_for {Do you want to use xdebug\? \(Y/N\) \[[^\]]+\]: *}
+send_line "N"
+wait_for {Do you want htaccess support\? \(Y/N\) \[default: [^\]]+\]: *}
+send_line "Y"
+handle_ssl_prompts
+finish_creation
+
+wait_for {Enter command: *}
+send_line "1"
+wait_for {Enter site domain \(example: example\.com\): *}
+send_line $env(TEST_MENU_FULL_DOMAIN)
+wait_for {Enter site mode link or full: *}
+send_line "full"
+wait_for {Enter PHP version for site from installed \(default: .*}
+send_line ""
+wait_for {Do you want to use xdebug\? \(Y/N\) \[[^\]]+\]: *}
+send_line "N"
+wait_for_full_site_user_prompt
+send_line $env(TEST_MENU_FULL_USER)
+wait_for {Enter database name: \(default: .*}
+send_line ""
+wait_for {Enter database user: \(default: .*}
+send_line ""
+wait_for {Enter database password: \(default: .*}
+send_line ""
+wait_for {Do you want htaccess support\? \(Y/N\) \[default: [^\]]+\]: *}
+send_line "Y"
+handle_ssl_prompts
+finish_creation
+
+wait_for {Enter command: *}
+send_line "1"
+wait_for {Enter site domain \(example: example\.com\): *}
+send_line $env(TEST_MENU_LINK_FULL_DOMAIN)
+wait_for {Enter site mode link or full: *}
+send_line "link"
+wait_for {Enter path to links site \(default: .*}
+send_line $env(TEST_MENU_FULL_PATH)
+wait_for {Do you want to use xdebug\? \(Y/N\) \[[^\]]+\]: *}
+send_line "N"
+wait_for {Do you want htaccess support\? \(Y/N\) \[default: [^\]]+\]: *}
+send_line "Y"
+handle_ssl_prompts
+finish_creation
+
+wait_for {Enter command: *}
+send_line "0"
+wait_for {Enter command: *}
+send_line "0"
+
+expect eof

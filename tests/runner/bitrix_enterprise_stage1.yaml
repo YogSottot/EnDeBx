@@ -1,0 +1,142 @@
+steps:
+    -   CurrentStepID: agreement
+        __wiz_agree_license: Y
+        StepNext: Y
+
+    -   CurrentStepID: check_license_key
+        __wiz_dbType: '%BITRIX_DB_TYPE%'
+        __wiz_lic_key_variant: Y
+        __wiz_user_name: '%BITRIX_LICENSE_CONTACT_FIRST_NAME%'
+        __wiz_user_surname: '%BITRIX_LICENSE_CONTACT_LAST_NAME%'
+        __wiz_email: '%BITRIX_LICENSE_CONTACT_EMAIL%'
+        StepNext: Y
+
+    -   CurrentStepID: create_modules
+        ~cartesian_product:
+            __wiz_nextStep:
+                - main
+                - abtest
+                - advertising
+                - ai
+                - b24connector
+                - baas
+                - biconnector
+                - bitrix.eshop
+                - bitrix.sitecorporate
+                - bitrixcloud
+                - bizproc
+                - bizprocdesigner
+                - bizprocmobile
+                - blog
+                - booking
+                - calendar
+                - calendarmobile
+                - call
+                - callmobile
+                - catalog
+                - catalogmobile
+                - cluster
+                - clouds
+                - controller
+                - conversion
+                - crm
+                - crmmobile
+                - currency
+                - dav
+                - disk
+                - diskmobile
+                - documentgenerator
+                - extranet
+                - fileman
+                - form
+                - forum
+                - highloadblock
+                - humanresources
+                - iblock
+                - idea
+                - im
+                - imbot
+                - imconnector
+                - imconnectormobile
+                - immobile
+                - imopenlines
+                - intranet
+                - intranetmobile
+                - landing
+                - ldap
+                - learning
+                - lists
+                - listsmobile
+                - location
+                - mail
+                - mailmobile
+                - market
+                - meeting
+                - messageservice
+                - mobile
+                - mobileapp
+                - perfmon
+                - photogallery
+                - pull
+                - recyclebin
+                - report
+                - rest
+                - rpa
+                - sale
+                - salescenter
+                - search
+                - security
+                - sender
+                - seo
+                - sign
+                - signmobile
+                - socialnetwork
+                - socialservices
+                - stafftrack
+                - stafftrackmobile
+                - statistic
+                - storeassist
+                - subscribe
+                - support
+                - tasks
+                - tasksmobile
+                - timeman
+                - transformer
+                - transformercontroller
+                - translate
+                - ui
+                - vote
+                - voximplant
+                - webservice
+                - wiki
+                - workflow
+                - xdimport
+            __wiz_nextStepStage:
+                - database
+                - files
+
+    -   CurrentStepID: create_modules
+        ~cartesian_product:
+            __wiz_nextStep:
+                - remove_mysql
+                - remove_mssql
+                - remove_oracle
+                - remove_misc
+                - __finish
+            __wiz_nextStepStage:
+                - single
+
+    -   CurrentStepID: update_modules
+        __wiz_nextStep: check
+        __wiz_nextStepStage:
+        __wiz_updateSteps: check
+        __wiz_updatesCount: 0
+        __wiz_installedUpdatesCount: 0
+
+    -   CurrentStepID: create_admin
+        __wiz_login: '%BITRIX_ADMIN_LOGIN%'
+        __wiz_admin_password: '%BITRIX_ADMIN_PASSWORD%'
+        __wiz_admin_password_confirm: '%BITRIX_ADMIN_PASSWORD%'
+        __wiz_email: '%BITRIX_ADMIN_EMAIL%'
+        __wiz_user_name: '%BITRIX_ADMIN_FIRST_NAME%'
+        __wiz_user_surname: '%BITRIX_ADMIN_LAST_NAME%'

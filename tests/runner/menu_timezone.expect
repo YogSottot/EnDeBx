@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+log_user 1
+
+if {![info exists env(TEST_MENU_TARGET_TIMEZONE)] || $env(TEST_MENU_TARGET_TIMEZONE) eq ""} {
+    puts stderr "TEST_MENU_TARGET_TIMEZONE is not set"
+    exit 1
+}
+
+expect_before {
+    -re {Action failed \(rc=[0-9]+\)} {
+        puts stderr "Menu action reported failure"
+        exit 1
+    }
+    timeout {
+        puts stderr "Timeout while waiting for menu prompt"
+        exit 1
+    }
+}
+
+spawn env TERM=dumb /root/menu.sh
+
+expect -re {Enter command:}
+send "10\r"
+
+expect -re {Enter new timezone: \(current TZ: .* \):}
+send -- "$env(TEST_MENU_TARGET_TIMEZONE)\r"
+
+expect -re {Do you really want to change_timezone\? \(Y/N\):}
+send "Y\r"
+
+expect -re {To return to the menu, please press Enter}
+send "\r"
+
+expect -re {Enter command:}
+send "0\r"
+
+expect eof

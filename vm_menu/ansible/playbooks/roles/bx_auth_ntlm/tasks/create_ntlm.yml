@@ -187,7 +187,12 @@
   ansible.builtin.apt:
     name: "{{ ntlm_packages }}"
     state: present
-    update_cache: true
+    update_cache: false
+    # cache_valid_time: 3600
+    # lock_timeout: 300
+    dpkg_options: force-confdef,force-confold
+  environment:
+    DEBIAN_FRONTEND: noninteractive
 
 - name: Check winbind privileged group
   ansible.builtin.command: getent group winbindd_priv
@@ -251,6 +256,9 @@
         - path: /var/lib/samba/private
           group: root
           mode: "0700"
+        - path: /etc/samba
+          group: root
+          mode: "0755"
 
     - name: Remove Samba cache files before join
       ansible.builtin.file:
@@ -394,14 +402,36 @@
   no_log: true
 
 - name: Apply NTLM settings in Bitrix sites
-  ansible.builtin.command: php -f ntlm_settings.php
-  args:
-    chdir: "/tmp/debianlikebitrixvm-ntlm/{{ item.site_name }}"
-  become: true
-  become_user: "{{ item.site_system_user }}"
+  ansible.builtin.command:
+    argv:
+      - su
+      - -s
+      - /bin/bash
+      - "{{ item.site_system_user }}"
+      - -c
+      - "php -f /tmp/debianlikebitrixvm-ntlm/{{ item.site_name }}/ntlm_settings.php"
   loop: "{{ ntlm_sites_info }}"
   changed_when: false
-  no_log: true
+  no_log: false
+
+- name: Read managed cache directory metadata for NTLM sites
+  ansible.builtin.stat:
+    path: "{{ item.document_root }}/bitrix/managed_cache"
+  loop: "{{ ntlm_sites_info }}"
+  register: ntlm_managed_cache_dirs
+  changed_when: false
+
+- name: Restore managed cache ownership for NTLM sites
+  ansible.builtin.file:
+    path: "{{ item.item.document_root }}/bitrix/managed_cache"
+    state: directory
+    recurse: true
+    owner: "{{ item.item.site_system_user }}"
+    group: "{{ item.item.site_system_user }}"
+  loop: "{{ ntlm_managed_cache_dirs.results }}"
+  when:
+    - item.stat.exists
+    - item.stat.isdir
 
 - name: Render Apache NTLM vhosts for related sites
   ansible.builtin.template:

@@ -4,8 +4,53 @@
 - name: Install netdata
   when: netdata_action == 'INSTALL'
   block:
-    - name: Installing Netdata
-      ansible.builtin.shell: wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh && sh /tmp/netdata-kickstart.sh --non-interactive --stable-channel
+    - name: Ensure /etc/apt/keyrings exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Download temporary Netdata repository key
+      ansible.builtin.get_url:
+        url: https://repository.netdata.cloud/netdatabot.gpg.key
+        dest: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add temporary Netdata repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/netdata-temp.sources
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          Types: deb
+          URIs: http://repository.netdata.cloud/repos/stable/{{ ansible_distribution | lower }}/
+          Suites: {{ ansible_distribution_release }}/
+          By-Hash: Yes
+          Enabled: Yes
+          Signed-By: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+
+    - name: Install Netdata packages
+      ansible.builtin.apt:
+        name:
+          - netdata-repo
+          - netdata
+        state: present
+        update_cache: true
+
+    - name: Remove temporary Netdata repository
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/netdata-temp.sources
+        state: absent
+
+    - name: Remove temporary Netdata repository key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+        state: absent
 
     - name: Copying {{ service_nginx_name }} directory to /etc/{{ service_nginx_name }}
       ansible.builtin.copy:
@@ -25,11 +70,12 @@
       ansible.builtin.find:
         paths: "{{ role_path }}/files/{{ service_nginx_name }}"
         file_type: file
+        recurse: true
       register: found_files
 
     - name: Deleting files in /etc/{{ service_nginx_name }}
       ansible.builtin.file:
-        path: "/etc/nginx/{{ item.path | regex_replace('^' + role_path + '/files/'+ service_nginx_name +'/', '') }}"
+        path: "/etc/nginx/{{ item.path | regex_replace('^' + role_path + '/files/' + service_nginx_name + '/', '') }}"
         state: absent
       loop: "{{ found_files.files }}"
 
@@ -45,7 +91,9 @@
 
     - name: Deleting Netdata package
       ansible.builtin.apt:
-        name: netdata
+        name:
+          - netdata-repo
+          - netdata
         state: absent
         purge: true
 
@@ -64,10 +112,29 @@
         path: /var/log/netdata
         state: absent
 
-    - name: Deleting Netdata user
-      ansible.builtin.user:
-        name: netdata
+    - name: Deleting Netdata apt repository files
+      ansible.builtin.file:
+        path: "{{ item }}"
         state: absent
+      loop:
+        - /etc/apt/sources.list.d/netdata.sources
+        - /etc/apt/sources.list.d/netdata.list
+
+    - name: Deleting temporary Netdata apt repository file
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/netdata-temp.sources
+        state: absent
+
+    - name: Deleting temporary Netdata repository key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+        state: absent
+
+    - name: Deleting Netdata user package
+      ansible.builtin.apt:
+        name: netdata-user
+        state: absent
+        purge: true
 
     - name: Restarting Nginx
       ansible.builtin.systemd:

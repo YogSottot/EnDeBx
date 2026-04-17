@@ -17,9 +17,26 @@
     mode: '0644'
   when: setup_debian_repositories_for_astra_action == 'INSTALL'
 
+- name: Disable installation of recommended and suggested packages
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/99debian-repositories-for-astra-no-recommends
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      APT::Install-Recommends "false";
+      APT::Install-Suggests "false";
+  when: setup_debian_repositories_for_astra_action == 'INSTALL'
+
 - name: Remove repositories
   ansible.builtin.file:
     path: /etc/apt/sources.list.d/debian_repositories_for_astra.list
+    state: absent
+  when: setup_debian_repositories_for_astra_action == 'DELETE'
+
+- name: Remove no recommends rule
+  ansible.builtin.file:
+    path: /etc/apt/apt.conf.d/99debian-repositories-for-astra-no-recommends
     state: absent
   when: setup_debian_repositories_for_astra_action == 'DELETE'
 

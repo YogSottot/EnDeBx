@@ -1,0 +1,12 @@
+pm_email    = "admin@example.com"
+pm_password = "change-me"
+pm_api_url  = "https://vmmanager.example.com"
+
+cloudflare_zone_id = "your-cloudflare-zone-id"
+public_bridge        = "vmbr0"
+ipv4_pool_id         = 2
+private_ipv4_pool_id = 1
+private_bridge       = "vmbr1"
+
+# Prefer exporting CLOUDFLARE_API_TOKEN locally.
+# cloudflare_api_token = "cfut_..."
