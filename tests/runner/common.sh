@@ -74,6 +74,44 @@ remote_scp_from() {
   scp "${SSH_OPTS[@]}" "${target}:${source_path}" "$target_path"
 }
 
+replace_remote_ubuntu_sources_if_needed() {
+  remote_ssh bash -s <<'REMOTE'
+set -euo pipefail
+
+if [ ! -r /etc/os-release ]; then
+  exit 0
+fi
+
+# shellcheck disable=SC1091
+. /etc/os-release
+
+if [ "${ID:-}" != "ubuntu" ]; then
+  exit 0
+fi
+
+FILE=/etc/apt/sources.list.d/ubuntu.sources
+
+if [ ! -f "$FILE" ]; then
+  exit 0
+fi
+
+suite=$(awk '/^Suites:/ {print $2; exit}' "$FILE")
+
+if [ -z "$suite" ]; then
+  echo "Unable to detect Ubuntu suite in $FILE" >&2
+  exit 1
+fi
+
+cat > "$FILE" <<EOF
+Types: deb
+URIs: http://ru.archive.ubuntu.com/ubuntu/
+Suites: ${suite} ${suite}-updates ${suite}-security
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+REMOTE
+}
+
 rsync_ssh_command() {
   local arg
 

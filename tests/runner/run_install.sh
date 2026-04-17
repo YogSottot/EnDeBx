@@ -10,6 +10,9 @@ generated_env_menu=$("$SCRIPT_DIR/render_env.sh")
 echo "Uploading generated /root/.env.menu"
 remote_scp_to "$generated_env_menu" "/root/.env.menu"
 
+echo "Adjusting Ubuntu APT sources if needed"
+replace_remote_ubuntu_sources_if_needed
+
 echo "Running install_full_environment_fpm.sh with uploaded /root/vm_menu"
 remote_ssh bash -s <<'REMOTE'
 set -euo pipefail

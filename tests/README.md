@@ -5,6 +5,8 @@ This directory contains a local `OpenTofu + SSH` scaffold for EnDeBx test stands
 Most test targets automatically call `make upload-repo` first so the remote
 host uses the current local repository contents. The full `make e2e` flow does
 one upload once and skips repeated rsync calls for subsequent steps.
+For Ubuntu stands, the runner also rewrites `/etc/apt/sources.list.d/ubuntu.sources`
+to `ru.archive.ubuntu.com` before bootstrap and environment installation.
 
 Cloudflare records created by the scaffold:
 
