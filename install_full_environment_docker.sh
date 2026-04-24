@@ -141,6 +141,9 @@ if [ "$BS_SETUP_REPOS" == 'Y'  ]; then
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
+# setup nginx modules repo
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_NGINX_MOD_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+
 # install deps
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
@@ -167,35 +170,11 @@ if [ "$BS_OPTIMIZE_SYSCTL" == Y  ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SYSCTL}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
-# setup postfix
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_POSTFIX}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
-
 # install docker
 ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_DOCKER}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "docker_action=INSTALL \
       docker_packages_state=present \
       docker_user_list=${BS_DEFAULT_USER_SERVER_SITES}"
-
-# setup firewall
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_FIREWALL}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
-  -e '{"marcelnijenhof_firewalld_allow_services":[{"service":"https","immediate":false},{"service":"http","immediate":false}]}'
-
-if [ "$BS_INSTALL_CROWDSEC" == Y  ]; then
-  CROWDSEC_INSTALL_APPSEC=false
-  if [[ "${BS_INSTALL_CROWDSEC_APPSEC:-N}" =~ ^[Yy]$ ]]; then
-    CROWDSEC_INSTALL_APPSEC=true
-  fi
-
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CROWDSEC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
-  -e 'crowdsec_action="'"INSTALL"'" \
-      crowdsec_install_appsec="'"${CROWDSEC_INSTALL_APPSEC}"'" \
-      cs_parsers_mywhitelists_ip="'"$(echo "${BS_CROWDESC_WHITELIST_IP}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
-      cs_parsers_mywhitelists_cidr="'"$(echo "${BS_CROWDESC_WHITELIST_CIDR}" | sed 's/,/"\n- "/g; s/^/- "/; s/$/"/;')"'" \
-      cs_collections_list="'"$(echo "${BS_CROWDSEC_COLLECTION_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
-      cs_scenarios_list="'"$(echo "${BS_CROWDSEC_SCENARIOS_INSTALL}" | sed 's/,/\n  /g; s/^/  /;')"'" \
-      crowdsec_enroll_key="'"${BS_CROWDSEC_ENROLL_KEY}"'"'
-
-fi
 
 if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
   ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \

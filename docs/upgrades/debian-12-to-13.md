@@ -79,6 +79,21 @@ apt modernize-sources
 apt install -y eza
 ```
 
+### Переустановить Ansible под новый Python
+
+```bash
+export BS_ANSIBLE_REQUIRED_VERSION=$(grep '^BS_ANSIBLE_REQUIRED_VERSION=' /root/vm_menu/bash_scripts/config.sh | awk -F'"' '{print $2}')
+pipx reinstall-all
+```
+
+Если `pipx reinstall-all` не сработал, можно установить `ansible` заново вручную:
+
+```bash
+rm -f ~/.local/bin/ansible* && rm -rf ~/.local/pipx/
+pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+pipx inject ansible jmespath passlib python-debian
+```
+
 ### Почистить устаревшие MySQL-параметры
 
 Вместо этого можно [перегенерировать конфиг](../menu/6-mysql.md#re-generate-mysql-config) через меню
@@ -115,21 +130,6 @@ systemctl restart mysql
 ```php
 $charset = 'utf8mb4';
 $collate = 'utf8mb4_unicode_ci';
-```
-
-### Переустановить Ansible под новый Python
-
-```bash
-export BS_ANSIBLE_REQUIRED_VERSION=$(grep '^BS_ANSIBLE_REQUIRED_VERSION=' /root/vm_menu/bash_scripts/config.sh | awk -F'"' '{print $2}')
-pipx reinstall-all
-```
-
-Если `pipx reinstall-all` не сработал, можно установить `ansible` заново вручную:
-
-```bash
-rm -f ~/.local/bin/ansible* && rm -rf ~/.local/pipx/
-pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-pipx inject ansible jmespath passlib python-debian
 ```
 
 ### Отключить новое tmpfs-поведение для `/tmp`

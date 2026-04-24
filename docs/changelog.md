@@ -4,6 +4,14 @@
 
 ## unreleased
 
+### Добавлено
+
+- Документация для обновления [ubuntu 24.04 до 26.04](https://yogsottot.github.io/EnDeBx/upgrades/ubuntu-24-to-26/)
+
+### Исправлено
+
+- В роли `geerlingguy.security` перед `sshd -T -f %s` теперь гарантированно создаётся `/run/sshd`, чтобы настройка SSH на Ubuntu не падала с ошибкой `Missing privilege separation directory: /run/sshd`.
+
 ## 1.4.0 - 17.04.2026 - Вышла новая версия меню
 
 ### Добавлено

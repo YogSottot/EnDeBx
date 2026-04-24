@@ -32,11 +32,3 @@
         state: present
       when:
         - ansible_os_family == "Debian"
-
-    - name: Install packages after repo is added (Debian).
-      ansible.builtin.apt:
-        update_cache: true
-        name:
-          - libnginx-mod-http-zip
-      when:
-        - ansible_os_family == "Debian"
