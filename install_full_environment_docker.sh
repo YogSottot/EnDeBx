@@ -52,10 +52,7 @@ else
     apt install -y pipx git locales-all python3-debian
 fi
 
-get_debian_major_version() {
-    local os_id version_id major_version
-
-    if [ -r /site_user_password=$(generate_password 24)
+site_user_password=$(generate_password 24)
 
 case "${INSTALLER_DOWNLOAD_VM_MENU}" in
   Y)
@@ -102,9 +99,9 @@ export PATH="$BIN_DIR:$PATH"
 
 run_ansible_playbook() {
     if [ "${BS_ANSIBLE_DEBUG_MODE^^}" = "Y" ]; then
-        command run_ansible_playbook -v "$@"
+        command ansible-playbook -v "$@"
     else
-        command run_ansible_playbook "$@"
+        command ansible-playbook "$@"
     fi
 }
 
