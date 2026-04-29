@@ -26,6 +26,51 @@ generate_password() {
     echo "$password"
 }
 
+get_debian_major_version() {
+    local os_id version_id major_version
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "debian" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+            return 0
+        fi
+    fi
+
+    if [ -r /etc/debian_version ]; then
+        major_version=$(cut -d. -f1 /etc/debian_version)
+        if [[ "${major_version}" =~ ^[0-9]+$ ]]; then
+            printf '%s\n' "${major_version}"
+        fi
+    fi
+}
+
+get_ubuntu_major_version() {
+    local os_id version_id
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+
+        if [ "${os_id}" = "ubuntu" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            printf '%s\n' "${version_id%%.*}"
+        fi
+    fi
+}
+
+is_astra_linux() {
+    local os_id
+
+    if [ -r /etc/os-release ]; then
+        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
+        [ "${os_id}" = "astra" ]
+    else
+        return 1
+    fi
+}
+
 BRANCH="main"
 REPO_URL="https://github.com/YogSottot/EnDeBx"
 
