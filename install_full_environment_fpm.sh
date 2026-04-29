@@ -117,6 +117,9 @@ fi
 
 site_user_password=$(generate_password 24)
 
+# default = Y если не задана или пустая
+INSTALLER_DOWNLOAD_VM_MENU="${INSTALLER_DOWNLOAD_VM_MENU:-Y}"
+
 case "${INSTALLER_DOWNLOAD_VM_MENU}" in
   Y)
     # Clone directory vm_menu with repositories
