@@ -40,59 +40,73 @@ FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
 
 apt update -y
 apt upgrade -y --enable-upgrade
-apt install -y pipx git locales-all python3-debian
+
+if is_astra_linux; then
+    apt install -y git locales-all python3-debian python3-pip python3-venv
+    python3 -m venv "$PIPX_BOOTSTRAP_VENV"
+    "$PIPX_BOOTSTRAP_VENV/bin/python" -m pip install --upgrade pipx
+    mkdir -p "$HOME/.local/bin"
+    ln -fs "$PIPX_BOOTSTRAP_VENV/bin/pipx" "$HOME/.local/bin/pipx"
+    "$PIPX_BOOTSTRAP_VENV/bin/pipx" ensurepath
+else
+    apt install -y pipx git locales-all python3-debian
+fi
 
 get_debian_major_version() {
     local os_id version_id major_version
 
-    if [ -r /etc/os-release ]; then
-        os_id=$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')
-        version_id=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')
+    if [ -r /site_user_password=$(generate_password 24)
 
-        if [ "${os_id}" = "debian" ] && [[ "${version_id}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-            printf '%s\n' "${version_id%%.*}"
-            return 0
-        fi
+case "${INSTALLER_DOWNLOAD_VM_MENU}" in
+  Y)
+    # Clone directory vm_menu with repositories
+    git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
+    cd "$DEST_DIR_MENU/EnDeBx"
+    git sparse-checkout set $DIR_NAME_MENU
+
+    # Move vm_menu in /root and clean
+    rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
+    mv -f "$DIR_NAME_MENU" "$DEST_DIR_MENU"
+    rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
+    ;;
+  N)
+    if [ ! -d "$DEST_DIR_MENU/$DIR_NAME_MENU" ]; then
+      echo "Directory $DEST_DIR_MENU/$DIR_NAME_MENU not found. Upload it first or set INSTALLER_DOWNLOAD_VM_MENU=Y."
+      exit 1
     fi
+    ;;
+  *)
+    echo "Unsupported INSTALLER_DOWNLOAD_VM_MENU value: ${INSTALLER_DOWNLOAD_VM_MENU}. Use Y or N."
+    exit 1
+    ;;
+esac
 
-    if [ -r /etc/debian_version ]; then
-        major_version=$(cut -d. -f1 /etc/debian_version)
-        if [[ "${major_version}" =~ ^[0-9]+$ ]]; then
-            printf '%s\n' "${major_version}"
-        fi
-    fi
-}
+cd "$DEST_DIR_MENU"
 
-site_user_password=$(generate_password 24)
+chmod -R +x "$DEST_DIR_MENU/$DIR_NAME_MENU"
 
-# Clone directory vm_menu with repositories
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
-cd "$DEST_DIR_MENU/EnDeBx"
-git sparse-checkout set $DIR_NAME_MENU
-
-# Move vm_menu in /root and clean
-rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
-mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
-
-cd $DEST_DIR_MENU
-
-chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
-
-ln -fs $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
+ln -fs "$FULL_PATH_MENU_FILE" "$DEST_DIR_MENU/menu.sh"
 
 # Final actions
 # shellcheck source=/dev/null
-source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
+source "$DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh"
 
 # shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-  source $DEST_DIR_MENU/.env.menu
+if [ -e "$DEST_DIR_MENU/.env.menu" ]; then
+  source "$DEST_DIR_MENU/.env.menu"
 fi
 
 # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html
 BIN_DIR="$HOME/.local/bin"
 export PATH="$BIN_DIR:$PATH"
+
+run_ansible_playbook() {
+    if [ "${BS_ANSIBLE_DEBUG_MODE^^}" = "Y" ]; then
+        command run_ansible_playbook -v "$@"
+    else
+        command run_ansible_playbook "$@"
+    fi
+}
 
 # check ansible installation
 if pipx list | grep -q "package ansible "; then
@@ -101,7 +115,7 @@ if pipx list | grep -q "package ansible "; then
         echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
         pipx uninstall ansible
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib python-debian
+        pipx inject ansible jmespath passlib python-debian psycopg2-binary ipaddress
     else
         echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
     fi
@@ -109,6 +123,13 @@ else
     echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
     pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
     pipx inject ansible jmespath passlib python-debian
+fi
+
+DEBIAN_MAJOR_VERSION=$(get_debian_major_version)
+UBUNTU_MAJOR_VERSION=$(get_ubuntu_major_version)
+
+if [ -n "${DEBIAN_MAJOR_VERSION}" ] && [ "${DEBIAN_MAJOR_VERSION}" -ge 13 ]; then
+      systemctl mask tmp.mount
 fi
 
 if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
@@ -124,28 +145,29 @@ INSTALL_MENU
     fi
 fi
 
+
 # set timezone
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" -e "server_timezone=${BS_SERVER_TIMEZONE}"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_CHANGE_TIMEZONE}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" -e "server_timezone=${BS_SERVER_TIMEZONE}"
 
 DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
 
 # setup swap
 if [ "$BS_SETUP_SWAP" == 'Y'  ]; then
-    ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+    run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PS_SWAP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "swap_file_state='present' \
     swap_file_size_mb=${BS_SWAP_SIZE}"
 fi
 
 if [ "$BS_SETUP_REPOS" == 'Y'  ]; then
 # setup repos
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_REPOS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
 # setup nginx modules repo
 run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_NGINX_MOD_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 # install deps
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_DEPS}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 
 if [ "$BS_USER_SERVER_SITES" != 'www-data' ]; then
     if ! id "$BS_PATH_USER_HOME" &>/dev/null; then
@@ -158,7 +180,7 @@ fi
 
 if [ "$BS_INSTALL_BASH_ALIASES" == Y  ]; then
   # setup bashrc
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETUP_BASHRC}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
     -e "user_server_sites=${BS_USER_SERVER_SITES} \
     group_user_server_sites=${BS_GROUP_USER_SERVER_SITES} \
     default_user_server_sites=${BS_DEFAULT_USER_SERVER_SITES} \
@@ -167,31 +189,31 @@ fi
 
 if [ "$BS_OPTIMIZE_SYSCTL" == Y  ]; then
   # setup sysctl
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SYSCTL}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SYSCTL}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
 fi
 
 # install docker
-ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_DOCKER}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_DOCKER}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "docker_action=INSTALL \
       docker_packages_state=present \
       docker_user_list=${BS_DEFAULT_USER_SERVER_SITES}"
 
 if [ "$BS_SETUP_RKHUNTER" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_RKHUNTER}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "rkhunter_action='INSTALL' \
       rkhunter_notification_email=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       rkhunter_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN}"
 fi
 
 if [ "$BS_SETUP_MALDET" == Y  ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MALDET}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "maldet_action='INSTALL' \
       maldet_email_addr=${BS_EMAIL_ADMIN_FOR_NOTIFY} \
       maldet_home_prefix=${BS_PATH_USER_HOME_PREFIX}"
 fi
 
 if [ "$BS_SETUP_SECURITY" == "Y" ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SECURITY}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "security_ssh_port=${BS_SSH_PORT} \
       security_ssh_password_authentication=${BS_SSH_PASSWORD_AUTHENTICATION} \
       security_ssh_permit_root_login=${BS_SSH_PERMIT_ROOT_LOGIN} \
@@ -208,7 +230,7 @@ if [ "$BS_SETUP_SECURITY" == "Y" ]; then
 fi
 
 if [ "$BS_DELETE_SNAPD" == "Y" ]; then
-  ansible-playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
+  run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD}" "${BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS}" \
   -e "snapd_action=DELETE"
 fi
 
