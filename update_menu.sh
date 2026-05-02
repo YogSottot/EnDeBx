@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+
 readonly BRANCH="main"
 readonly REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
@@ -96,24 +99,32 @@ update_nginx() {
 
 remove_zstd() {
     rm -f "/etc/${BS_SERVICE_NGINX_NAME}/custom_conf.d/section_http/zstd.conf"
-    apt purge -y libnginx-mod-http-zstd || true
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" purge libnginx-mod-http-zstd || true
 }
 
 setup_ansible() {
+    export DEBIAN_FRONTEND=noninteractive
+    export APT_LISTCHANGES_FRONTEND=none
     # check ansible installation
     # --- remove ansible if installed via apt ---
     if dpkg -s ansible >/dev/null 2>&1; then
         echo "Purging system ansible package..."
-        apt purge -y ansible
-        apt autoremove -y
+        apt-get -y \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            purge ansible
+        apt-get -y autoremove
     else
         echo "No apt ansible package installed."
     fi
 
     # Make sure pipx itself exists
+    export PATH="$PATH:/root/.local/bin"
     if ! command -v pipx >/dev/null 2>&1; then
-        apt update && apt install -y pipx
-        python3 -m pipx ensurepath
+        apt-get update && apt-get -y -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" install pipx
+        pipx ensurepath >/dev/null 2>&1 || true
     fi
     if pipx list | grep -q "package ansible "; then
         ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
