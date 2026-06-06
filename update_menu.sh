@@ -253,9 +253,12 @@ main() {
     clone_repo
     deploy_menu
     load_config
+    if [ -d ${BS_PATH_NGINX} ] ; then
     update_nginx
+    fi
     remove_zstd
     setup_ansible
+    if [ -d ${BS_PATH_NGINX} ] ; then
     disable_xdebug_for_installed_php_versions
     run_a2dismod
     apache_fix_site
@@ -263,6 +266,7 @@ main() {
     apache_restart
     nginx_fix_site
     nginx_reload
+    fi
     logrotate_fix_owner
     fix_push_logrotate
 
