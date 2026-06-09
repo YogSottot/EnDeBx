@@ -11,6 +11,7 @@
 ### Исправлено
 
 - В роли `geerlingguy.security` перед `sshd -T -f %s` теперь гарантированно создаётся `/run/sshd`, чтобы настройка SSH на Ubuntu не падала с ошибкой `Missing privilege separation directory: /run/sshd`.
+- В роли `geerlingguy.php` добавлено исправление [ошибки](https://codeberg.org/oerdnj/deb.sury.org/issues/114) из-за которой не создавался `php-fpm.sock`.
 
 ## 1.4.0 - 17.04.2026 - Вышла новая версия меню
 

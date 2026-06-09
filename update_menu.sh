@@ -197,7 +197,9 @@ run_a2dismod() {
 }
 
 apache_fix_site() {
-    APACHE_SITE="/etc/apache2/sites-available/${BS_DEFAULT_SITE_NAME}.conf"
+    local APACHE_SITE="/etc/apache2/sites-available/${BS_DEFAULT_SITE_NAME}.conf"
+
+    [ -f "$APACHE_SITE" ] || return 0
     # Удалить ServerName * и ServerAlias *
     sed -i -E '/^[[:space:]]*Server(Name|Alias)[[:space:]]+\*/d' "$APACHE_SITE"
 
@@ -206,7 +208,8 @@ apache_fix_site() {
 }
 
 apache_fix_ports() {
-    APACHE_PORTS="/etc/apache2/ports.conf"
+    local APACHE_PORTS="/etc/apache2/ports.conf"
+    [ -f "$APACHE_PORTS" ] || return 0
     # Удалить Listen 127.0.0.1:*
     sed -i -E '/^[[:space:]]*Listen[[:space:]]+127\.0\.0\.1:.*/d' "$APACHE_PORTS"
 
@@ -225,7 +228,8 @@ apache_restart() {
 }
 
 nginx_fix_site() {
-    NGINX_SITE="${BS_PATH_NGINX_SITES_CONF}/${BS_DEFAULT_SITE_NAME}.conf"
+    local NGINX_SITE="${BS_PATH_NGINX_SITES_CONF}/${BS_DEFAULT_SITE_NAME}.conf"
+    [ -f "$NGINX_SITE" ] || return 0
     # Заменить 127.0.0.1:8090 на 127.0.0.1:8091
     sed -i 's|127\.0\.0\.1:8090|127.0.0.1:8091|g' "$NGINX_SITE"
 }
@@ -247,6 +251,33 @@ fix_push_logrotate() {
     sed -i '/systemctl/s/\brestart\b/try-restart/' "$file"
 }
 
+fix_php_fpm_override() {
+    local changed=0
+    local file
+
+    shopt -s nullglob
+
+    for file in \
+        /etc/systemd/system/php*-fpm/z_override.conf \
+        /etc/systemd/system/php*-fpm-xdebug/z_override.conf
+    do
+        [ -f "$file" ] || continue
+
+        if ! grep -Fxq 'ReadWritePaths=/etc/alternatives' "$file"; then
+            echo 'ReadWritePaths=/etc/alternatives' >> "$file"
+            echo "Updated: $file"
+            changed=1
+        fi
+    done
+
+    shopt -u nullglob
+
+    if [ "$changed" -eq 1 ]; then
+        systemctl daemon-reload
+        echo "systemctl daemon-reload executed"
+    fi
+}
+
 main() {
     require_root
     backup_menu
@@ -266,6 +297,7 @@ main() {
     apache_restart
     nginx_fix_site
     nginx_reload
+    fix_php_fpm_override
     fi
     logrotate_fix_owner
     fix_push_logrotate

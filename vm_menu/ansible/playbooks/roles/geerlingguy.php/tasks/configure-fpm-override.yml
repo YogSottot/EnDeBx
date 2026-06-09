@@ -20,3 +20,8 @@
 - name: Daemon_reload
   ansible.builtin.systemd:
     daemon_reload: true
+
+- name: Restart php{{ php_default_version_debian }}-fpm (temp, fix https://codeberg.org/oerdnj/deb.sury.org/issues/114)
+  ansible.builtin.systemd:
+    name: php{{ php_default_version_debian }}-fpm
+    state: restarted

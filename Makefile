@@ -136,10 +136,10 @@ menu-snapd menu-security-settings menu-security-tools menu-firewall \
 menu-security menu-timezone: ensure-upload-repo
 
 e2e:
-	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
-	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
-	$(MAKE) wait-ssh
-	$(MAKE) bootstrap-host
+#	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+#	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+#	$(MAKE) wait-ssh
+#	$(MAKE) bootstrap-host
 	$(MAKE) upload-repo
 	$(MAKE) install-env SKIP_UPLOAD_REPO=1
 	$(MAKE) smoke SKIP_UPLOAD_REPO=1
@@ -147,10 +147,10 @@ e2e:
 	$(MAKE) prepare-bitrix SKIP_UPLOAD_REPO=1
 	$(MAKE) bitrix-install SKIP_UPLOAD_REPO=1
 	$(MAKE) menu-transformer SKIP_UPLOAD_REPO=1
-#	$(MAKE) menu-site-options SKIP_UPLOAD_REPO=1
-#	$(MAKE) menu-ftp SKIP_UPLOAD_REPO=1
-#	$(MAKE) menu-extensions SKIP_UPLOAD_REPO=1
-#	$(MAKE) menu-security SKIP_UPLOAD_REPO=1
-#	$(MAKE) menu-timezone SKIP_UPLOAD_REPO=1
+	$(MAKE) menu-site-options SKIP_UPLOAD_REPO=1
+	$(MAKE) menu-ftp SKIP_UPLOAD_REPO=1
+	$(MAKE) menu-extensions SKIP_UPLOAD_REPO=1
+	$(MAKE) menu-security SKIP_UPLOAD_REPO=1
+	$(MAKE) menu-timezone SKIP_UPLOAD_REPO=1
 #	$(MAKE) menu-smtp SKIP_UPLOAD_REPO=1
-#	$(MAKE) collect-logs
+	$(MAKE) collect-logs
