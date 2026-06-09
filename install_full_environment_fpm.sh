@@ -172,20 +172,42 @@ run_ansible_playbook() {
 }
 
 # check ansible installation
+REQUIRED_INJECTS=(
+    jmespath
+    passlib
+    python-debian
+    psycopg2-binary
+    ipaddress
+)
+
 if pipx list | grep -q "package ansible "; then
     ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
+
     if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
         echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
         pipx uninstall ansible
         pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib python-debian psycopg2-binary ipaddress
+        pipx inject ansible "${REQUIRED_INJECTS[@]}"
     else
-        echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
+        MISSING_PACKAGES=()
+
+        for pkg in "${REQUIRED_INJECTS[@]}"; do
+            if ! pipx runpip ansible show "$pkg" >/dev/null 2>&1; then
+                MISSING_PACKAGES+=("$pkg")
+            fi
+        done
+
+        if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "Injecting missing packages: ${MISSING_PACKAGES[*]}"
+            pipx inject ansible "${MISSING_PACKAGES[@]}"
+        else
+            echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed with all required packages."
+        fi
     fi
 else
     echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
     pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib python-debian
+    pipx inject ansible "${REQUIRED_INJECTS[@]}"
 fi
 
 case "${BS_INSTALL_DATABASE}" in
