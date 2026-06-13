@@ -281,8 +281,8 @@ fix_php_fpm_override() {
     shopt -s nullglob
 
     for file in \
-        /etc/systemd/system/php*-fpm/z_override.conf \
-        /etc/systemd/system/php*-fpm-xdebug/z_override.conf
+        /etc/systemd/system/php*-fpm.service.d/z_override.conf \
+        /etc/systemd/system/php*-fpm-xdebug.service.d/z_override.conf
     do
         [ -f "$file" ] || continue
 
