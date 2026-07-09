@@ -26,6 +26,12 @@
     group: root
 
 - name: Crowdsec Add Repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/crowdsec.asc] https://packagecloud.io/crowdsec/crowdsec/any/ any main"
+  ansible.builtin.deb822_repository:
+    name: crowdsec
+    types: deb
+    uris: https://packagecloud.io/crowdsec/crowdsec/any/
+    suites: any
+    components: main
+    architectures: amd64
+    signed_by: /etc/apt/keyrings/crowdsec.asc
     state: present

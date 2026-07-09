@@ -133,7 +133,7 @@ case "$feature" in
       ! package_installed crowdsec
       ! command -v crowdsec >/dev/null 2>&1
       ! command -v cscli >/dev/null 2>&1
-      test ! -e /etc/apt/sources.list.d/packagecloud_io_crowdsec_crowdsec_debian.list
+      test ! -e /etc/apt/sources.list.d/packagecloud_io_crowdsec_crowdsec_debian.list || test ! -e /etc/apt/sources.list.d/crowdsec.sources
       test ! -e /etc/apt/keyrings/crowdsec.asc
       test ! -e /etc/nginx/bx/maps/crowdsec_nginx.conf
     fi

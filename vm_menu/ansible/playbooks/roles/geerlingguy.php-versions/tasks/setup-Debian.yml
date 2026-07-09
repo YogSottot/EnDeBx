@@ -57,7 +57,7 @@
 
 - name: Add Ondrej Sury's repo (Debian/Ubuntu 26.04+).
   ansible.builtin.deb822_repository:
-    name: deb.sury.org
+    name: packages-sury-org-php
     types: deb
     uris: https://mirror.yandex.ru/mirrors/packages.sury.org/php
     suites: '{{ ansible_distribution_release }}'

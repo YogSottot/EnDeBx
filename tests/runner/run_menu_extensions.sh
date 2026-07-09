@@ -230,7 +230,7 @@ case "$feature" in
       command -v docker >/dev/null 2>&1
       package_installed docker-ce
       package_installed docker-ce-cli
-      test -f /etc/apt/sources.list.d/docker.list
+      test -f /etc/apt/sources.list.d/docker.list || test -f /etc/apt/sources.list.d/docker.sources
       systemctl is-active --quiet docker
       service_is_enabled docker
       getent group docker >/dev/null

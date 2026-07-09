@@ -16,6 +16,12 @@
     state: absent
   when: ansible_os_family | lower == "debian"
 
+- name: Delete repo
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/crowdsec.sources
+    state: absent
+  when: ansible_os_family | lower == "debian"
+
 - name: Delete CrowdSec apt keyring
   ansible.builtin.file:
     path: /etc/apt/keyrings/crowdsec.asc

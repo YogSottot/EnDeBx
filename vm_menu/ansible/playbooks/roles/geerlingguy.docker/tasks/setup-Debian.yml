@@ -5,7 +5,7 @@
     state: absent
 
 - name: Ensure the repo referencing the previous trusted.gpg.d key is not present
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/trusted.gpg.d/docker.asc] {{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
     state: absent
     filename: "{{ docker_apt_filename }}"
@@ -14,12 +14,12 @@
 
 - # See https://docs.docker.com/engine/install/debian/#uninstall-old-versions
   name: Ensure old versions of Docker are not installed.
-  package:
+  ansible.builtin.package:
     name: "{{ docker_obsolete_packages }}"
     state: absent
 
 - name: Ensure dependencies are installed.
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -27,7 +27,7 @@
   when: docker_add_repo | bool
 
 - name: Ensure directory exists for /etc/apt/keyrings
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
@@ -44,18 +44,35 @@
   when: docker_add_repo | bool
 
 - name: Ensure curl is present (on older systems without SNI).
-  package: name=curl state=present
+  ansible.builtin.package: name=curl state=present
   when: add_repository_key is failed and docker_add_repo | bool
 
 - name: Add Docker apt key (alternative for older systems without SNI).
-  shell: >
+  ansible.builtin.shell: >
     curl -sSL {{ docker_apt_gpg_key }} | apt-key add -
   when: add_repository_key is failed and docker_add_repo | bool
 
-- name: Add Docker repository.
-  apt_repository:
+- name: Remove Docker repository.
+  ansible.builtin.apt_repository:
     repo: "{{ docker_apt_repository }}"
-    state: "{{ docker_packages_state }}"
+    state: "absent"
     filename: "{{ docker_apt_filename }}"
+    update_cache: true
+  when: docker_add_repo | bool
+
+- name: Add Docker repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: "{{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }}"
+    suites: '{{ ansible_distribution_release }}'
+    components: "{{ docker_apt_release_channel }}"
+    architectures: "{{ docker_apt_arch }}"
+    signed_by: "/etc/apt/keyrings/docker.asc"
+    state: "{{ docker_packages_state }}"
+  when: docker_add_repo | bool
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
     update_cache: true
   when: docker_add_repo | bool

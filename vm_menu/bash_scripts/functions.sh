@@ -2634,7 +2634,7 @@ function install_memcached() {
 function install_deadsnakes_ppa() {
   clear
 
-  is_install_deadsnakes_ppa=$(grep -R "deadsnakes/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/);
+  is_install_deadsnakes_ppa=$(grep -sR "deadsnakes/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/);
   action="INSTALL"
   if [ -n "$is_install_deadsnakes_ppa" ]; then
       action="DELETE"
