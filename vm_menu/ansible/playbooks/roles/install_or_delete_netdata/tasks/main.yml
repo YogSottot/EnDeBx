@@ -20,9 +20,9 @@
         group: root
         mode: '0644'
 
-    - name: Add temporary Netdata repository
+    - name: Add Netdata repository
       ansible.builtin.copy:
-        dest: /etc/apt/sources.list.d/netdata-temp.sources
+        dest: /etc/apt/sources.list.d/netdata.sources
         owner: root
         group: root
         mode: '0644'
@@ -37,20 +37,9 @@
     - name: Install Netdata packages
       ansible.builtin.apt:
         name:
-          - netdata-repo
           - netdata
         state: present
         update_cache: true
-
-    - name: Remove temporary Netdata repository
-      ansible.builtin.file:
-        path: /etc/apt/sources.list.d/netdata-temp.sources
-        state: absent
-
-    - name: Remove temporary Netdata repository key
-      ansible.builtin.file:
-        path: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
-        state: absent
 
     - name: Copying {{ service_nginx_name }} directory to /etc/{{ service_nginx_name }}
       ansible.builtin.copy:
@@ -92,7 +81,6 @@
     - name: Deleting Netdata package
       ansible.builtin.apt:
         name:
-          - netdata-repo
           - netdata
         state: absent
         purge: true
@@ -119,11 +107,6 @@
       loop:
         - /etc/apt/sources.list.d/netdata.sources
         - /etc/apt/sources.list.d/netdata.list
-
-    - name: Deleting temporary Netdata apt repository file
-      ansible.builtin.file:
-        path: /etc/apt/sources.list.d/netdata-temp.sources
-        state: absent
 
     - name: Deleting temporary Netdata repository key
       ansible.builtin.file:

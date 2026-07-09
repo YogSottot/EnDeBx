@@ -9,7 +9,7 @@
 
 - name: Get maldet installer archive
   ansible.builtin.get_url:
-    url: https://github.com/rfxn/linux-malware-detect/archive/refs/tags/{{ maldet_version }}.tar.gz
+    url: https://github.com/rfxn/linux-malware-detect/archive/refs/tags/v{{ maldet_version }}.tar.gz
     dest: /tmp
     owner: root
     group: root

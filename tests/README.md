@@ -49,7 +49,7 @@ installs File Conversion Server (`transformer`) on the default Bitrix site and
 leaves it in place for manual verification. Run `make menu-transformer` a
 second time to delete it and validate cleanup.
 Use `make menu-extensions` to test menu-driven install and delete of
-Memcached, Push server, Sphinx, Netdata and Docker.
+Memcached, Push server, Sphinx, Netdata, Docker and mydumper.
 Use `make menu-snapd` to test menu-driven install and delete of Snapd.
 Use `make menu-security-settings` to apply and validate `Security settings ->
 SSH/Updates`.

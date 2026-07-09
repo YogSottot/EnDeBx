@@ -1,5 +1,5 @@
 ---
-- name: Setup mydumper repo
+- name: "Mydumper {{ mydumper_action }}"
   hosts: localhost
   connection: local
   become: true
@@ -10,33 +10,74 @@
       tags: always
 
   tasks:
-    - name: Add mydumper repo key
-      ansible.builtin.get_url:
-        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x1D357EA7D10C9320371BDD0279EA15C0E82E34BA&exact=on
-        dest: /etc/apt/keyrings/mydumper.asc
-        mode: "0644"
-        owner: root
-        group: root
-      when:
-        - ansible_os_family == "Debian"
+    - name: Install mydumper
+      when: mydumper_action == "INSTALL"
+      block:
+        - name: Add mydumper repo key
+          ansible.builtin.get_url:
+            url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x1D357EA7D10C9320371BDD0279EA15C0E82E34BA&exact=on
+            dest: /etc/apt/keyrings/mydumper.asc
+            mode: "0644"
+            owner: root
+            group: root
+          when:
+            - ansible_os_family == "Debian"
 
-    - name: Add mydumper repo.
-      ansible.builtin.deb822_repository:
-        name: mydumper_github_io_mydumper_repo_apt_{{ ansible_distribution | lower }}
-        types: deb
-        uris: https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }}
-        suites: '{{ ansible_distribution_release }}'
-        components: main
-        architectures: amd64
-        signed_by: /etc/apt/keyrings/mydumper.asc
-        state: present
-      when:
-        - ansible_os_family == "Debian"
+        - name: Add mydumper repo.
+          ansible.builtin.deb822_repository:
+            name: mydumper_github_io_mydumper_repo_apt_{{ ansible_distribution | lower }}
+            types: deb
+            uris: https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }}
+            suites: '{{ ansible_distribution_release }}'
+            components: main
+            architectures: amd64
+            signed_by: /etc/apt/keyrings/mydumper.asc
+            state: present
+          when:
+            - ansible_os_family == "Debian"
 
-    - name: Update apt caches after repo is added (Debian).
-      ansible.builtin.apt:
-        update_cache: true
-        name:
-          - mydumper
-      when:
-        - ansible_os_family == "Debian"
+        - name: Install mydumper package
+          ansible.builtin.apt:
+            update_cache: true
+            name:
+              - mydumper
+            state: present
+          when:
+            - ansible_os_family == "Debian"
+
+    - name: Delete mydumper
+      when: mydumper_action == "DELETE"
+      block:
+        - name: Remove mydumper package
+          ansible.builtin.apt:
+            name:
+              - mydumper
+            state: absent
+          when:
+            - ansible_os_family == "Debian"
+
+        - name: Remove mydumper repo.
+          ansible.builtin.deb822_repository:
+            name: mydumper_github_io_mydumper_repo_apt_{{ ansible_distribution | lower }}
+            types: deb
+            uris: https://mydumper.github.io/mydumper/repo/apt/{{ ansible_distribution | lower }}
+            suites: '{{ ansible_distribution_release }}'
+            components: main
+            architectures: amd64
+            signed_by: /etc/apt/keyrings/mydumper.asc
+            state: absent
+          when:
+            - ansible_os_family == "Debian"
+
+        - name: Remove mydumper repo key
+          ansible.builtin.file:
+            path: /etc/apt/keyrings/mydumper.asc
+            state: absent
+          when:
+            - ansible_os_family == "Debian"
+
+        - name: Update apt caches after repo is deleted (Debian).
+          ansible.builtin.apt:
+            update_cache: true
+          when:
+            - ansible_os_family == "Debian"

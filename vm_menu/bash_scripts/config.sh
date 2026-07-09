@@ -4,7 +4,7 @@
 export ANSIBLE_CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/ansible.cfg"
 
 # General configs
-BS_VERSION_MENU="1.4.0"
+BS_VERSION_MENU="1.4.1"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"

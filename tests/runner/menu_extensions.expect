@@ -48,6 +48,10 @@ switch -- $feature {
         set option "6"
         set confirm_pattern {Do you really want to.*docker\? \(Y/N\): *}
     }
+    mydumper {
+        set option "8"
+        set confirm_pattern {Do you really want to.*mydumper\? \(Y/N\): *}
+    }
     default {
         puts stderr "Unsupported TEST_MENU_EXTENSION: $feature"
         exit 1

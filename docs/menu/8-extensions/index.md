@@ -12,6 +12,7 @@
 - `File Conversion Server`
 - `Netdata`
 - `Docker`
+- `mydumper`
 - `Snapd`
 - `Deadsnakes PPA` только для Ubuntu
 - `Debian repo on Astra Linux` только для Astra Linux

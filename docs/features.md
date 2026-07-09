@@ -51,6 +51,7 @@
 - [File Conversion Server](menu/8-extensions/services.md) - install/delete локального transformer-сервера для Bitrix.
 - [Netdata](menu/8-extensions/services.md) - install/delete мониторинга с генерацией учетных данных.
 - [Docker](menu/8-extensions/services.md) - install/delete Docker и добавление default-пользователя сайтов в группу Docker.
+- [mydumper](menu/8-extensions/services.md) - install/delete утилиты для дампов MySQL.
 - [Snapd](menu/8-extensions/system-tools.md) - install/delete.
 - [Deadsnakes PPA](menu/8-extensions/system-tools.md) - install/delete только на Ubuntu.
 - [Debian repo on Astra Linux](menu/8-extensions/system-tools.md) - подключение стандартного Debian-репозитория только на Astra Linux.

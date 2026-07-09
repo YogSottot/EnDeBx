@@ -2,7 +2,8 @@ locals {
   distro_short = {
     debian12   = "d12"
     debian13   = "d13"
-    ubuntu2404 = "u2404"
+    ubuntu24 = "u24"
+    ubuntu26 = "u26"
     astra18    = "astra18"
   }
 

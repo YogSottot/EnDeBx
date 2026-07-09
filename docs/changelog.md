@@ -4,9 +4,13 @@
 
 ## unreleased
 
+## 1.4.1 - 9.07.2026 - Вышла новая версия меню
+
 ### Добавлено
 
 - Документация для обновления [ubuntu 24.04 до 26.04](https://yogsottot.github.io/EnDeBx/upgrades/ubuntu-24-to-26/)
+- В `Installing Extensions` добавлен пункт `8) Install/Delete mydumper`; OS-specific пункты `Deadsnakes PPA` и `Debian repo on Astra Linux` перенесены на пункт `9`.
+- В `maldet.conf` внесены изменения из [релиза 2.0.1](https://github.com/rfxn/linux-malware-detect/releases/tag/v2.0.1)
 
 ### Исправлено
 

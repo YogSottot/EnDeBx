@@ -1,7 +1,7 @@
 ---
 
 # Maldet version that wants to be installed
-maldet_version: '1.6.5'
+maldet_version: '2.0.1'
 
 # Enable maldet monitoring service
 # maldet_default_monitor_mode required to be set
@@ -121,7 +121,7 @@ maldet_ignore_inotify:
 # ----------
 
 maldet_yara_x_release_api_url: 'https://api.github.com/repos/VirusTotal/yara-x/releases/latest'
-maldet_yara_x_asset_name_pattern: '^yara-x-v.*-x86_64-unknown-linux-gnu\.gz$'
+maldet_yara_x_asset_name_pattern: '^yara-x-v.*-x86_64-unknown-linux-gnu\.tar\.gz$'
 maldet_yara_x_binary_path: '/usr/local/bin/yr'
 maldet_yara_x_update_script_path: '/usr/local/sbin/update-yara-x'
 maldet_yara_x_weekly_script_path: '/etc/cron.weekly/update-yara-x'

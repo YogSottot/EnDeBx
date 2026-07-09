@@ -43,8 +43,8 @@ variable "distro" {
   default = "debian12"
 
   validation {
-    condition     = contains(["debian12", "debian13", "ubuntu2404", "astra18"], var.distro)
-    error_message = "distro must be one of: debian12, debian13, ubuntu2404, astra18."
+    condition     = contains(["debian12", "debian13", "ubuntu24", "ubuntu26", "astra18"], var.distro)
+    error_message = "distro must be one of: debian12, debian13, ubuntu24, ubuntu26, astra18."
   }
 }
 
@@ -109,7 +109,8 @@ variable "os_template_ids" {
   default = {
     debian12   = 42
     debian13   = 104
-    ubuntu2404 = 27
+    ubuntu24 = 27
+    ubuntu26 = 111
     astra18    = 88
   }
 }

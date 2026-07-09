@@ -43,7 +43,7 @@
 
 -   :material-puzzle: **Подключает расширения**
 
-    Через меню можно установить или удалить `Memcached`, `Push Server`, `Sphinx`, `File Conversion Server`, `Netdata`, `Docker`, `Snapd` и OS-specific репозитории для Ubuntu и Astra Linux.
+    Через меню можно установить или удалить `Memcached`, `Push Server`, `Sphinx`, `File Conversion Server`, `Netdata`, `Docker`, `mydumper`, `Snapd` и OS-specific репозитории для Ubuntu и Astra Linux.
 
 -   :material-shield-check: **Защищает и обслуживает сервер**
 

@@ -407,9 +407,6 @@ else
   run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_INITIAL_SETUP}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" -e "${extra_vars}"
 fi
 
-# setup mydumper repo
-run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_MYDUMPER_REPO}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS"
-
 # SMTP
 run_ansible_playbook "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/${BS_ANSIBLE_PB_SETTINGS_SMTP_SITES}" "$BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS" \
   -e "is_new_install_env=Y \

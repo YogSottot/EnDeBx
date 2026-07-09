@@ -100,11 +100,12 @@ menu_install_extensions(){
     echo "          5) Install/Delete Netdata";
     echo "          6) Install/Delete Docker";
     echo "          7) Install/Delete Snapd";
+    echo "          8) Install/Delete mydumper";
 if [ "$OS_DISTRO" == ubuntu ] ; then
-    echo "          8) Install/Delete Deadsnakes PPA";
+    echo "          9) Install/Delete Deadsnakes PPA";
 fi
 if [ "$OS_DISTRO" == astra ] ; then
-    echo "          8) Install/Delete Debian repo on Astra Linux";
+    echo "          9) Install/Delete Debian repo on Astra Linux";
 fi
     echo "          0) Return to main menu";
     echo -e "\n\n";
@@ -120,7 +121,8 @@ fi
     "5") install_netdata ;;
     "6") install_docker ;;
     "7") purge_snapd ;;
-    "8")
+    "8") install_mydumper ;;
+    "9")
       if [ "$OS_DISTRO" == astra ] ; then
         install_debian_repo_on_astra_linux
       elif [ "$OS_DISTRO" == ubuntu ] ; then
@@ -1929,7 +1931,7 @@ add_remove_ftp_user(){
 
     pureftp_action='C'
     ftp_user_name=''
-    ftp_password=$(generate_password $BS_CHAR_DB_PASSWORD)
+    ftp_password=$(generate_ftp_password $BS_CHAR_DB_PASSWORD)
     path_site_from_links=$BS_PATH_DEFAULT_SITE
 
 
@@ -1968,15 +1970,12 @@ add_remove_ftp_user(){
             read -p "   User already exists. Enter a different username: " ftp_user_name
         done
 
-        # Generate a random password
-        auto_generated_password=$(openssl rand -base64 12)
-
-        # Prompt the user with the auto-generated password as default
-        read -r -s -p "   Enter FTP user password [${auto_generated_password}]: " ftp_user_password
+        # Prompt the user with the generated password as default
+        read -r -s -p "   Enter FTP user password [${ftp_password}]: " ftp_user_password
         echo
 
-        # If the user didn't enter anything, use the auto-generated password
-        ftp_user_password=${ftp_user_password:-$auto_generated_password}
+        # If the user didn't enter anything, use the generated password
+        ftp_user_password=${ftp_user_password:-$ftp_password}
 
       ;;
       delete )
@@ -2653,6 +2652,26 @@ function install_deadsnakes_ppa() {
   done
 }
 
+function install_mydumper() {
+  clear
+
+  is_install_mydumper=$(which mydumper);
+  action="INSTALL"
+  if [ -n "$is_install_mydumper" ]; then
+      action="DELETE"
+  fi
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")mydumper? (Y/N): " answer
+    case $answer in
+      [Yy]* ) action_install_or_delete_mydumper; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
 
 function install_docker() {
   clear

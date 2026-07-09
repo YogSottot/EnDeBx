@@ -73,7 +73,7 @@ case "$feature" in
     fi
     ;;
   netdata)
-    if command -v netdata >/dev/null 2>&1 || [ -x /usr/sbin/netdata ] || [ -d /etc/netdata ]; then
+    if command -v netdata >/dev/null 2>&1 || [ -x /usr/sbin/netdata ] || [ -d /etc/netdata ] || package_installed netdata; then
       echo installed
     else
       echo absent
@@ -81,6 +81,13 @@ case "$feature" in
     ;;
   docker)
     if command -v docker >/dev/null 2>&1 || package_installed docker-ce; then
+      echo installed
+    else
+      echo absent
+    fi
+    ;;
+  mydumper)
+    if command -v mydumper >/dev/null 2>&1 || package_installed mydumper; then
       echo installed
     else
       echo absent
@@ -123,6 +130,13 @@ service_is_active_any() {
   done
 
   return 1
+}
+
+mydumper_repo_exists() {
+  local repo_file
+
+  repo_file="$(find /etc/apt/sources.list.d -maxdepth 1 -type f -name '*mydumper*.sources' -print -quit)"
+  [ -n "$repo_file" ] && grep -q "mydumper.github.io/mydumper/repo/apt" "$repo_file"
 }
 
 case "$feature" in
@@ -185,11 +199,11 @@ case "$feature" in
   netdata)
     if [ "$expected_state" = installed ]; then
       command -v netdata >/dev/null 2>&1 || test -x /usr/sbin/netdata
-      package_installed netdata-repo
+      package_installed netdata
       test -d /etc/netdata
       test -f /etc/apt/sources.list.d/netdata.list || test -f /etc/apt/sources.list.d/netdata.sources
       test ! -e /etc/apt/sources.list.d/netdata-temp.sources
-      test ! -e /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+      test -f /etc/apt/keyrings/netdata-archive-keyring.gpg.key
       test -f /etc/nginx/custom_conf.d/section_http/upstream_netdata.conf
       test -f /etc/nginx/custom_conf.d/section_listen_http_and_https/netdata.conf
       test -s /etc/nginx/netdata_passwds
@@ -199,7 +213,7 @@ case "$feature" in
       service_is_enabled netdata
     else
       ! command -v netdata >/dev/null 2>&1
-      ! package_installed netdata-repo
+      ! package_installed netdata
       test ! -e /usr/sbin/netdata
       test ! -e /etc/netdata
       test ! -e /etc/apt/sources.list.d/netdata.list
@@ -225,6 +239,19 @@ case "$feature" in
       ! package_installed docker-ce
       ! package_installed docker-ce-cli
       ! systemctl is-active --quiet docker
+    fi
+    ;;
+  mydumper)
+    if [ "$expected_state" = installed ]; then
+      command -v mydumper >/dev/null 2>&1
+      package_installed mydumper
+      test -f /etc/apt/keyrings/mydumper.asc
+      mydumper_repo_exists
+    else
+      ! command -v mydumper >/dev/null 2>&1
+      ! package_installed mydumper
+      test ! -e /etc/apt/keyrings/mydumper.asc
+      ! mydumper_repo_exists
     fi
     ;;
   *)
@@ -287,3 +314,6 @@ test_extension_install_delete netdata
 
 echo "Testing Docker install/delete"
 test_extension_install_delete docker
+
+echo "Testing mydumper install/delete"
+test_extension_install_delete mydumper

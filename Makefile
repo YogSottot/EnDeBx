@@ -32,7 +32,7 @@ help:
 	'  prepare-bitrix  - download Bitrix Enterprise files to the default site' \
 	'  bitrix-install  - run Bitrix24 Enterprise install plus post-install nginx accel option' \
 	'  menu-transformer - first run installs transformer, second run deletes it' \
-	'  menu-extensions - install and delete Memcached, Push server, Sphinx, Netdata and Docker through menu.sh' \
+	'  menu-extensions - install and delete Memcached, Push server, Sphinx, Netdata, Docker and mydumper through menu.sh' \
 	'  menu-snapd      - install and delete Snapd through menu.sh' \
 	'  menu-security-settings - apply SSH/Updates security settings through menu.sh and validate them' \
 	'  menu-security-tools - install and delete Crowdsec, Rkhunter, Maldet and AIDE through menu.sh' \

@@ -16,6 +16,19 @@ generate_password() {
     echo $password
 }
 
+generate_ftp_password() {
+    local length=$1
+    local all_chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+    local password=""
+    for i in $(seq 1 $length); do
+        local char=${all_chars:RANDOM % ${#all_chars}:1}
+        password+=$char
+    done
+
+    echo $password
+}
+
 list_sites(){
   ARR_ALL_USERS_DIR_SITES_DATA=()
   ARR_ALL_USERS_DIR_SITES=()
