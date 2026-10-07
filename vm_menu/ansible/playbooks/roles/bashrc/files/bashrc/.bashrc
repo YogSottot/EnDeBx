@@ -163,7 +163,7 @@ fi
 
 # Set up fzf key bindings and fuzzy completion
 # shellcheck source=/dev/null
-source /usr/share/doc/fzf/examples/key-bindings.bash
+[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && source /usr/share/doc/fzf/examples/key-bindings.bash
 
 # User specific environment and startup programs
 PATH=$PATH:$HOME/.local/bin:$HOME/bin

@@ -83,8 +83,14 @@ DEST_DIR_MENU="/root"
 
 FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
 
-apt update -y
-apt upgrade -y --enable-upgrade
+# shellcheck source=/dev/null
+if [ -e "$DEST_DIR_MENU/.env.menu" ]; then
+  source "$DEST_DIR_MENU/.env.menu"
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 if is_astra_linux; then
     apt install -y git locales-all python3-debian python3-pip python3-venv
@@ -94,7 +100,7 @@ if is_astra_linux; then
     ln -fs "$PIPX_BOOTSTRAP_VENV/bin/pipx" "$HOME/.local/bin/pipx"
     "$PIPX_BOOTSTRAP_VENV/bin/pipx" ensurepath
 else
-    apt install -y pipx git locales-all python3-debian
+    apt-get install -y pipx git locales-all python3-debian
 fi
 
 site_user_password=$(generate_password 24)
@@ -283,7 +289,9 @@ fi
 # fix services
 systemctl try-restart postfix.service
 systemctl try-restart postfix@-.service
-firewall-cmd --reload
+if command -v firewall-cmd >/dev/null 2>&1; then
+    firewall-cmd --reload
+fi
 
 # fix journald sizes
 mkdir -p /etc/systemd/journald.conf.d
@@ -295,12 +303,12 @@ EOF
 systemctl restart systemd-journald
 
 # remove compilers
-apt remove build-essential gcc gcc-12 -y
-apt autoremove -y
+apt-get remove build-essential gcc gcc-12 -y
+apt-get autoremove -y
 
 if [ -n "${BX_ADDITIONAL_PACKAGES}" ]; then
   for package in ${BX_ADDITIONAL_PACKAGES}; do
-    apt -y install "$package"
+    apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y install "$package"
   done
 fi
 

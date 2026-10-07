@@ -428,12 +428,17 @@ session_serialization true
 //   - false (default)
 // 
 serialize_pane_viewport true
- 
+
+// If enabled along with session_serialization, the pane viewport (the visible part of the terminal excluding the scrollback) will be serialized and resurrectable as well. Read more about session resurrection. Options:
+//  - true
+//  - false (default)
+pane_viewport_serialization true
+
 // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
 // defaults to the scrollback size. If this number is higher than the scrollback size, it will
 // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
 // 
-// scrollback_lines_to_serialize 10000
+scrollback_lines_to_serialize 10000
  
 // Enable or disable the rendering of styled and colored underlines (undercurl).
 // May need to be disabled for certain unsupported terminals

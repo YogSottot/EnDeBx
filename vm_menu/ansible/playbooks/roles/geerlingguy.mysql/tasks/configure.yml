@@ -109,9 +109,18 @@
     creates: "{{ mysql_slow_query_log_file }}"
   when: mysql_slow_query_log_enabled
 
-- name: Remove MariaDB datadir before bootstrap
+- name: Remove MySQL datadir before bootstrap
   ansible.builtin.file:
     path: "{{ mysql_datadir }}"
+    state: absent
+  when:
+    - mysql_flavor == 'mariadb'
+    - mysql_install_packages | bool
+    - ansible_os_family in ['Debian', 'Astra Linux']
+
+- name: Remove MariaDB datadir before bootstrap
+  ansible.builtin.file:
+    path: "/var/lib/mariadb/"
     state: absent
   when:
     - mysql_flavor == 'mariadb'
@@ -126,6 +135,20 @@
     group: mysql
     mode: "0755"
     setype: mysqld_db_t
+
+- name: Ensure apparmor-utils is installed
+  ansible.builtin.apt:
+    name: apparmor-utils
+    state: present
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('26.04', '>=')
+
+- name: Temporarily set AppArmor to complain mode for MariaDB (Ubuntu 26.04+)
+  ansible.builtin.command: aa-complain /usr/sbin/mariadbd
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('26.04', '>=')
 
 - name: Bootstrap MariaDB system tables
   ansible.builtin.command:
@@ -144,6 +167,12 @@
     - mysql_flavor == 'mariadb'
     - mysql_install_packages | bool
     - ansible_os_family in ['Debian', 'Astra Linux']
+
+- name: Restore AppArmor to enforce mode for MariaDB (Ubuntu 26.04+)
+  ansible.builtin.command: aa-enforce /usr/sbin/mariadbd
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('26.04', '>=')
 
 - name: Set ownership on slow query log file (if configured).
   ansible.builtin.file:
