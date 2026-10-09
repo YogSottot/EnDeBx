@@ -1,0 +1,40 @@
+---
+- name: Check OpenSearch Dashboards package status
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f=${Status} opensearch-dashboards
+  register: opensearch_dashboards_package_status
+  changed_when: false
+  failed_when: false
+
+- name: Stop OpenSearch Dashboards service
+  ansible.builtin.systemd:
+    name: opensearch-dashboards
+    state: stopped
+    enabled: false
+  when: "'ok installed' in opensearch_dashboards_package_status.stdout"
+
+- name: Remove OpenSearch Dashboards package
+  ansible.builtin.apt:
+    name: opensearch-dashboards
+    state: absent
+    purge: true
+
+- name: Remove nginx proxy for OpenSearch Dashboards
+  ansible.builtin.file:
+    path: "{{ opensearch_dashboards_nginx_config }}"
+    state: absent
+  notify: Reload OpenSearch Dashboards nginx proxy
+
+- name: Apply nginx configuration after OpenSearch Dashboards removal
+  ansible.builtin.meta: flush_handlers
+
+- name: Remove OpenSearch Dashboards files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ opensearch_dashboards_repo_file }}"
+    - /etc/opensearch-dashboards
+    - /var/lib/opensearch-dashboards
+    - /var/log/opensearch-dashboards
+    - /usr/share/opensearch-dashboards

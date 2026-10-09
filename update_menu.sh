@@ -274,6 +274,16 @@ fix_push_logrotate() {
     sed -i '/systemctl/s/\brestart\b/try-restart/' "$file"
 }
 
+fix_fzf_key_bindings() {
+    local file
+
+    for file in /root/.bashrc /etc/skel/.bashrc "${BS_PATH_USER_HOME_PREFIX}"/*/.bashrc; do
+        [ -f "$file" ] || continue
+
+        sed -i 's|^\([[:space:]]*\)source /usr/share/doc/fzf/examples/key-bindings\.bash[[:space:]]*$|\1[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] \&\& source /usr/share/doc/fzf/examples/key-bindings.bash|' "$file"
+    done
+}
+
 fix_php_fpm_override() {
     local changed=0
     local file
@@ -307,6 +317,7 @@ main() {
     clone_repo
     deploy_menu
     load_config
+    fix_fzf_key_bindings
     if [ -d ${BS_PATH_NGINX} ] ; then
     update_nginx
     fi

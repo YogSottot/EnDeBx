@@ -78,6 +78,7 @@ BS_ANSIBLE_PB_INSTALL_NEW_FULL_ENVIRONMENT="install_new_full_environment_fpm.yam
 BS_ANSIBLE_PB_SETTINGS_SMTP_SITES="settings_smtp_sites.yaml"
 BS_ANSIBLE_PB_INSTALL_OR_DELETE_NETDATA="install_or_delete_netdata.yaml"
 BS_ANSIBLE_PB_INSTALL_OR_DELETE_SPHINX="install_or_delete_sphinx.yaml"
+BS_ANSIBLE_PB_INSTALL_OR_DELETE_OPENSEARCH="install_or_delete_opensearch.yaml"
 BS_ANSIBLE_PB_INSTALL_OR_DELETE_FILE_CONVERSION_SERVER="install_or_delete_file_conversion_server.yaml"
 BS_ANSIBLE_PB_DELETE_SITE="delete_site.yaml"
 BS_ANSIBLE_PB_ADD_PHP_VERSIONS="add_php_version.yaml"
@@ -116,6 +117,13 @@ BS_ANSIBLE_PB_INSTALL_OR_DELETE_SNAPD="install_or_delete_snapd.yaml"
 BS_ANSIBLE_PB_CHANGE_TIMEZONE="change_timezone.yaml"
 BS_ANSIBLE_PB_FIREWALL="firewall.yaml"
 BS_ANSIBLE_PB_NTLM_AUTH="configure_ntlm_auth.yaml"
+
+# OpenSearch configs
+BS_OPENSEARCH_VERSION=""
+BS_OPENSEARCH_CONNECTION="https://127.0.0.1:9200"
+BS_OPENSEARCH_BITRIX_USER="bitrix_search"
+BS_OPENSEARCH_INDEX="bitrix"
+BS_INSTALL_OPENSEARCH_DASHBOARDS=N
 
 # Data Base
 BS_MAX_CHAR_DB_NAME=20

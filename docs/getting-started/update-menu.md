@@ -23,6 +23,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/update_
 - проверяет, что запуск идет от `root`;
 - делает бэкап текущего меню в `/root/backup_vm_menu/YYYY-MM-DD_HH-MM-SS`;
 - заново выгружает каталог `vm_menu` из GitHub;
+- добавляет проверку наличия файла перед подключением `fzf` key bindings в `/root/.bashrc`, `/etc/skel/.bashrc` и `BS_PATH_USER_HOME_PREFIX/*/.bashrc`;
 - перезаписывает часть файлов Nginx-конфига из репозитория;
 - при необходимости переустанавливает `ansible` нужной версии через `pipx`;
 - отключает найденные `xdebug`-конфиги в установленных PHP-версиях;

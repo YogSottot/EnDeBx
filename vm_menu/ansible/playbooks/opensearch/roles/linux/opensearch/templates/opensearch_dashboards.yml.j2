@@ -1,0 +1,16 @@
+server.host: "127.0.0.1"
+server.port: {{ opensearch_dashboards_port }}
+server.basePath: "/opensearch"
+server.rewriteBasePath: true
+server.ssl.enabled: false
+opensearch.hosts: {{ [opensearch_connection] | to_json }}
+opensearch.ssl.verificationMode: none
+opensearch.username: {{ opensearch_dashboards_user | to_json }}
+opensearch.password: {{ opensearch_dashboards_password | to_json }}
+opensearchDashboards.index: {{ opensearch_dashboards_security_config.json.config.dynamic.kibana.index | default('.kibana') | to_json }}
+opensearch.requestHeadersAllowlist: ["securitytenant", "Authorization"]
+opensearch_security.multitenancy.enabled: true
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+opensearch_security.cookie.name: "endebx_opensearch"
+opensearch_security.cookie.password: {{ opensearch_dashboards_password | to_json }}
+opensearch_security.cookie.secure: false

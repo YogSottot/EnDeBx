@@ -19,6 +19,11 @@ if {[info exists env(TEST_MENU_PUSH_REMOVE_REDIS)] && $env(TEST_MENU_PUSH_REMOVE
     set push_remove_redis [string toupper $env(TEST_MENU_PUSH_REMOVE_REDIS)]
 }
 
+set opensearch_dashboards "Y"
+if {[info exists env(TEST_MENU_OPENSEARCH_DASHBOARDS)] && $env(TEST_MENU_OPENSEARCH_DASHBOARDS) ne ""} {
+    set opensearch_dashboards [string toupper $env(TEST_MENU_OPENSEARCH_DASHBOARDS)]
+}
+
 if {$feature eq ""} {
     puts stderr "TEST_MENU_EXTENSION is required"
     exit 1
@@ -40,16 +45,20 @@ switch -- $feature {
         set option "3"
         set confirm_pattern {Do you really want to.*Sphinx\? \(Y/N\): *}
     }
+    opensearch {
+        set option "4"
+        set confirm_pattern {Do you really want to.*OpenSearch\? \(Y/N\): *}
+    }
     netdata {
-        set option "5"
+        set option "6"
         set confirm_pattern {Do you really want to.*Netdata\? \(Y/N\): *}
     }
     docker {
-        set option "6"
+        set option "7"
         set confirm_pattern {Do you really want to.*docker\? \(Y/N\): *}
     }
     mydumper {
-        set option "8"
+        set option "9"
         set confirm_pattern {Do you really want to.*mydumper\? \(Y/N\): *}
     }
     default {
@@ -125,8 +134,17 @@ if {$feature eq "push" && $action eq "delete"} {
     send_line $push_remove_redis
 }
 
+if {$feature eq "opensearch"} {
+    wait_for {Enter full path to Bitrix site .*: *}
+    send_line ""
+}
+
 wait_for $confirm_pattern
 send_line "Y"
+if {$feature eq "opensearch" && $action eq "install"} {
+    wait_for {Install OpenSearch Dashboards\? \(Y/N\) \[[YN]\]: *}
+    send_line $opensearch_dashboards
+}
 finish_action
 
 expect eof

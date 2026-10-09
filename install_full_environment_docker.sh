@@ -88,9 +88,11 @@ if [ -e "$DEST_DIR_MENU/.env.menu" ]; then
   source "$DEST_DIR_MENU/.env.menu"
 fi
 
+systemctl stop unattended-upgrades.service || true
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+systemctl stop unattended-upgrades.service || true
 
 if is_astra_linux; then
     apt install -y git locales-all python3-debian python3-pip python3-venv
@@ -289,6 +291,7 @@ fi
 # fix services
 systemctl try-restart postfix.service
 systemctl try-restart postfix@-.service
+systemctl try-restart unattended-upgrades.service
 if command -v firewall-cmd >/dev/null 2>&1; then
     firewall-cmd --reload
 fi

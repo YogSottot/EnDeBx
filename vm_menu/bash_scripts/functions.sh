@@ -96,16 +96,17 @@ menu_install_extensions(){
     echo "          1) Install/Delete Memcached";
     echo "          2) Install/Delete Push server";
     echo "          3) Install/Delete Sphinx";
-    echo "          4) Install/Delete File Conversion Server (transformer)";
-    echo "          5) Install/Delete Netdata";
-    echo "          6) Install/Delete Docker";
-    echo "          7) Install/Delete Snapd";
-    echo "          8) Install/Delete mydumper";
+    echo "          4) Install/Delete OpenSearch";
+    echo "          5) Install/Delete File Conversion Server (transformer)";
+    echo "          6) Install/Delete Netdata";
+    echo "          7) Install/Delete Docker";
+    echo "          8) Install/Delete Snapd";
+    echo "          9) Install/Delete mydumper";
 if [ "$OS_DISTRO" == ubuntu ] ; then
-    echo "          9) Install/Delete Deadsnakes PPA";
+    echo "          10) Install/Delete Deadsnakes PPA";
 fi
 if [ "$OS_DISTRO" == astra ] ; then
-    echo "          9) Install/Delete Debian repo on Astra Linux";
+    echo "          10) Install/Delete Debian repo on Astra Linux";
 fi
     echo "          0) Return to main menu";
     echo -e "\n\n";
@@ -117,12 +118,13 @@ fi
     "1") install_memcached ;;
     "2") install_push_server ;;
     "3") install_sphinx ;;
-    "4") install_file_conversion_server ;;
-    "5") install_netdata ;;
-    "6") install_docker ;;
-    "7") purge_snapd ;;
-    "8") install_mydumper ;;
-    "9")
+    "4") install_opensearch ;;
+    "5") install_file_conversion_server ;;
+    "6") install_netdata ;;
+    "7") install_docker ;;
+    "8") purge_snapd ;;
+    "9") install_mydumper ;;
+    "10")
       if [ "$OS_DISTRO" == astra ] ; then
         install_debian_repo_on_astra_linux
       elif [ "$OS_DISTRO" == ubuntu ] ; then
@@ -2456,6 +2458,54 @@ function install_sphinx() {
     read -r -p "   Do you really want to$(echo -e "${action_color}")Sphinx? (Y/N): " answer
     case $answer in
       [Yy]* ) action_install_or_delete_sphinx; break;;
+      [Nn]* ) break;;
+      * ) echo "   Please enter Y or N.";;
+    esac
+  done
+}
+
+function install_opensearch() {
+  local opensearch_install_dashboards=N
+  local opensearch_dashboards_default="${BS_INSTALL_OPENSEARCH_DASHBOARDS:-N}"
+  clear
+  full_path_site="${BS_PATH_DEFAULT_SITE}";
+  action="INSTALL"
+  if dpkg-query -W -f='${Status}' opensearch 2>/dev/null | grep -q "ok installed"; then
+      action="DELETE"
+  fi
+
+  list_sites;
+  echo -e "\n";
+
+  read_by_def "   Enter full path to Bitrix site (default: $full_path_site): " full_path_site "$full_path_site";
+  while [[ -z "$full_path_site" ]]; do
+    read_by_def "   Enter full path to Bitrix site (default: $full_path_site): " full_path_site "$full_path_site";
+    if [ -z "$full_path_site" ]; then
+      echo "   Incorrect site path! Please enter another site path";
+    fi
+  done
+
+  echo -e "\n   Entered data:\n"
+  echo "   Full path site: $full_path_site";
+  echo -e "\n";
+
+  action_color="\e[33m ${action} \e[0m"
+
+  while true; do
+    read -r -p "   Do you really want to$(echo -e "${action_color}")OpenSearch? (Y/N): " answer
+    case $answer in
+      [Yy]* )
+        if [ "$action" = INSTALL ]; then
+          while true; do
+            read_by_def "   Install OpenSearch Dashboards? (Y/N) [${opensearch_dashboards_default}]: " opensearch_install_dashboards "$opensearch_dashboards_default"
+            case $opensearch_install_dashboards in
+              [Yy]* ) opensearch_install_dashboards=Y; break;;
+              [Nn]* ) opensearch_install_dashboards=N; break;;
+              * ) echo "   Please enter Y or N.";;
+            esac
+          done
+        fi
+        action_install_or_delete_opensearch; break;;
       [Nn]* ) break;;
       * ) echo "   Please enter Y or N.";;
     esac

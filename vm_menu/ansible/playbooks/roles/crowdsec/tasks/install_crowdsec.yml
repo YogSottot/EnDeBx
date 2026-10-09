@@ -17,7 +17,7 @@
 
 - name: Apt update and install Crowdsec
   ansible.builtin.package:
-    update_cache: false
+    update_cache: true
     name: crowdsec
     state: present
 
@@ -66,6 +66,9 @@
     cmd: "cscli collections install {{ item }}"
   with_items: "{{ cs_collections_list }}"
   register: collections_install_result
+  until: collections_install_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: "'overwrite' not in collections_install_result.stderr"
   when: cs_collections_list | length > 0
 
@@ -84,6 +87,9 @@
     cmd: "cscli scenarios install {{ item }}"
   with_items: "{{ cs_scenarios_list }}"
   register: scenarios_install_result
+  until: scenarios_install_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: "'overwrite' not in scenarios_install_result.stderr"
   when: cs_scenarios_list | length > 0
 
@@ -101,6 +107,9 @@
     cmd: "cscli parsers install {{ item }}"
   with_items: "{{ cs_parsers_list }}"
   register: parsers_install_result
+  until: parsers_install_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: "'overwrite' not in parsers_install_result.stderr"
   when: cs_parsers_list | length > 0
 
@@ -119,6 +128,9 @@
     cmd: "cscli postoverflows install {{ item }}"
   with_items: "{{ cs_postoverflows_list }}"
   register: postoverflows_install_result
+  until: postoverflows_install_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: "'overwrite' not in postoverflows_install_result.stderr"
   when: cs_postoverflows_list | length > 0
 

@@ -15,7 +15,7 @@
     - name: Download temporary Netdata repository key
       ansible.builtin.get_url:
         url: https://repository.netdata.cloud/netdatabot.gpg.key
-        dest: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+        dest: /etc/apt/keyrings/netdata-archive-keyring.asc
         owner: root
         group: root
         mode: '0644'
@@ -32,14 +32,64 @@
           Suites: {{ ansible_distribution_release }}/
           By-Hash: Yes
           Enabled: Yes
-          Signed-By: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+          Signed-By: /etc/apt/keyrings/netdata-archive-keyring.asc
+
+    - name: Update apt cache for Netdata version discovery
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Get available Netdata package versions
+      ansible.builtin.command:
+        argv:
+          - apt-cache
+          - madison
+          - "{{ item }}"
+      loop:
+        - netdata
+        - netdata-plugin-chartsd
+        - netdata-plugin-pythond
+      register: netdata_available_versions
+      changed_when: false
+      check_mode: false
+
+    - name: Find common Netdata package versions
+      ansible.builtin.set_fact:
+        netdata_common_versions: >-
+          {{ netdata_available_versions.results[0].stdout.splitlines()
+             | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1')
+             | intersect(netdata_available_versions.results[1].stdout.splitlines()
+                         | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1'))
+             | intersect(netdata_available_versions.results[2].stdout.splitlines()
+                         | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1')) }}
+
+    - name: Ensure a common Netdata package version is available
+      ansible.builtin.assert:
+        that:
+          - netdata_common_versions | length > 0
+        fail_msg: No common version is available for Netdata, chartsd and pythond packages.
+
+    - name: Select latest common Netdata package version
+      ansible.builtin.shell: |
+        latest=''
+        for version in $NETDATA_VERSIONS; do
+          if [ -z "$latest" ] || dpkg --compare-versions "$version" gt "$latest"; then
+            latest="$version"
+          fi
+        done
+        printf '%s\n' "$latest"
+      environment:
+        NETDATA_VERSIONS: "{{ netdata_common_versions | join(' ') }}"
+      register: netdata_selected_version
+      changed_when: false
+      check_mode: false
 
     - name: Install Netdata packages
       ansible.builtin.apt:
         name:
-          - netdata
+          - "netdata={{ netdata_selected_version.stdout }}"
+          - "netdata-plugin-chartsd={{ netdata_selected_version.stdout }}"
+          - "netdata-plugin-pythond={{ netdata_selected_version.stdout }}"
         state: present
-        update_cache: true
 
     - name: Copying {{ service_nginx_name }} directory to /etc/{{ service_nginx_name }}
       ansible.builtin.copy:
@@ -110,7 +160,7 @@
 
     - name: Deleting temporary Netdata repository key
       ansible.builtin.file:
-        path: /etc/apt/keyrings/netdata-archive-keyring.gpg.key
+        path: /etc/apt/keyrings/netdata-archive-keyring.asc
         state: absent
 
     - name: Deleting Netdata user package

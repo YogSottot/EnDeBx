@@ -1,0 +1,185 @@
+---
+- name: Read OpenSearch version for Dashboards
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/"
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+    status_code: 200
+  register: opensearch_dashboards_cluster_info
+
+- name: Add OpenSearch Dashboards apt repository
+  ansible.builtin.copy:
+    dest: "{{ opensearch_dashboards_repo_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ opensearch_dashboards_repo_url }}
+      Suites: stable
+      Components: main
+      Architectures: amd64
+      Signed-By: {{ opensearch_keyring_path }}
+
+- name: Install matching OpenSearch Dashboards package
+  ansible.builtin.apt:
+    name: "opensearch-dashboards={{ opensearch_dashboards_cluster_info.json.version.number }}"
+    state: present
+    update_cache: true
+
+- name: Read built-in OpenSearch Dashboards role permissions
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/roles/kibana_server"
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+    status_code: 200
+  register: opensearch_dashboards_builtin_role
+
+- name: Create non-reserved OpenSearch Dashboards service role
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/roles/{{ opensearch_dashboards_user }}"
+    method: PUT
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code: [200, 201]
+    body:
+      cluster_permissions: "{{ opensearch_dashboards_builtin_role.json.kibana_server.cluster_permissions }}"
+      index_permissions: "{{ opensearch_dashboards_builtin_role.json.kibana_server.index_permissions }}"
+      tenant_permissions: "{{ opensearch_dashboards_builtin_role.json.kibana_server.tenant_permissions }}"
+      description: EnDeBx OpenSearch Dashboards service role
+
+- name: Create OpenSearch Dashboards service user
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/internalusers/{{ opensearch_dashboards_user }}"
+    method: PUT
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code: [200, 201]
+    body:
+      password: "{{ opensearch_dashboards_password }}"
+      opendistro_security_roles:
+        - "{{ opensearch_dashboards_user }}"
+      attributes: {}
+      description: EnDeBx OpenSearch Dashboards service user
+
+- name: Read OpenSearch Dashboards security settings
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/securityconfig"
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+    status_code: 200
+  register: opensearch_dashboards_security_config
+
+- name: Set OpenSearch Dashboards service username
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/securityconfig"
+    method: PATCH
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code: 200
+    body:
+      - op: add
+        path: /config/dynamic/kibana
+        value: "{{ opensearch_dashboards_security_config.json.config.dynamic.kibana | default({}) | combine({'server_username': opensearch_dashboards_user}) }}"
+
+- name: Configure OpenSearch Dashboards
+  ansible.builtin.template:
+    src: opensearch_dashboards.yml.j2
+    dest: /etc/opensearch-dashboards/opensearch_dashboards.yml
+    owner: root
+    group: opensearch-dashboards
+    mode: "0640"
+
+- name: Check OpenSearch index creation before starting Dashboards
+  ansible.builtin.import_tasks: check_index_creation.yml
+
+- name: Start OpenSearch Dashboards
+  ansible.builtin.systemd:
+    name: opensearch-dashboards
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: Check OpenSearch Dashboards readiness
+  block:
+    - name: Wait for OpenSearch Dashboards API
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ opensearch_dashboards_port }}/opensearch/api/status"
+        user: "{{ opensearch_admin_user }}"
+        password: "{{ opensearch_admin_password }}"
+        force_basic_auth: true
+        follow_redirects: none
+        status_code: 200
+      register: opensearch_dashboards_health
+      retries: 60
+      delay: 5
+      until: opensearch_dashboards_health.status == 200
+  rescue:
+    - name: Check OpenSearch index creation after Dashboards startup failure
+      ansible.builtin.import_tasks: check_index_creation.yml
+
+    - name: Read OpenSearch Dashboards startup log
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --unit=opensearch-dashboards
+          - --no-pager
+          - --lines=40
+      changed_when: false
+      register: opensearch_dashboards_startup_log
+
+    - name: Report OpenSearch Dashboards startup failure
+      ansible.builtin.fail:
+        msg: >-
+          OpenSearch Dashboards API did not become ready.
+          Last HTTP status: {{ opensearch_dashboards_health.status | default('unavailable') }}.
+          Error: {{ opensearch_dashboards_health.msg | default('unknown') }}.
+          Journal: {{ opensearch_dashboards_startup_log.stdout }}
+
+- name: Ensure nginx custom configuration directory exists
+  ansible.builtin.file:
+    path: "{{ opensearch_dashboards_nginx_config | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure nginx proxy for OpenSearch Dashboards
+  ansible.builtin.template:
+    src: nginx_opensearch.conf.j2
+    dest: "{{ opensearch_dashboards_nginx_config }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload OpenSearch Dashboards nginx proxy
+
+- name: Apply nginx configuration for OpenSearch Dashboards
+  ansible.builtin.meta: flush_handlers
+
+- name: Show OpenSearch Dashboards credentials
+  ansible.builtin.debug:
+    msg:
+      - "OpenSearch Dashboards URL: http(s)://site.tld/opensearch/"
+      - "OpenSearch Dashboards login: {{ opensearch_admin_user }}"
+      - "OpenSearch Dashboards login password: {{ opensearch_admin_password }}"
+      - "OpenSearch Dashboards service user: {{ opensearch_dashboards_user }}"
+      - "OpenSearch Dashboards service password: {{ opensearch_dashboards_password }}"
+      - "Credentials file: {{ opensearch_credentials_file }}"

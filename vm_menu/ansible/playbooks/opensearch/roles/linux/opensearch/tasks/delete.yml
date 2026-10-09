@@ -1,0 +1,47 @@
+---
+- name: Cleanup Bitrix OpenSearch options
+  ansible.builtin.import_tasks: configure_bitrix.yml
+
+- name: Delete OpenSearch Dashboards
+  ansible.builtin.import_tasks: delete_dashboards.yml
+
+- name: Check OpenSearch package status
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f=${Status} opensearch
+  register: opensearch_package_status
+  changed_when: false
+  failed_when: false
+
+- name: Stop OpenSearch service
+  ansible.builtin.systemd:
+    name: opensearch
+    state: stopped
+    enabled: false
+  when: "'ok installed' in opensearch_package_status.stdout"
+
+- name: Remove OpenSearch package
+  ansible.builtin.apt:
+    name: opensearch
+    state: absent
+    purge: true
+
+- name: Remove OpenSearch files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ opensearch_repo_file }}"
+    - "{{ opensearch_keyring_path }}"
+    - "{{ opensearch_keyring_source_path }}"
+    - "{{ opensearch_credentials_file }}"
+    - /etc/opensearch
+    - /var/lib/opensearch
+    - /var/log/opensearch
+
+- name: Update apt cache after OpenSearch repository removal
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Show OpenSearch deletion result
+  ansible.builtin.debug:
+    msg: "OpenSearch is deleted. Bitrix search module was switched to the built-in bitrix engine when the site path was available."

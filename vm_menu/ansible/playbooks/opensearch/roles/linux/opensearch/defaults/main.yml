@@ -1,0 +1,53 @@
+---
+
+os_nodes: |-
+        {% for item in groups['os-cluster'] -%}
+          {{ item }}{% if not loop.last %}","{% endif %}
+        {%- endfor %}
+
+os_master_nodes: |-
+        {% for item in groups['master'] -%}
+          {{ item }}{% if not loop.last %}","{% endif %}
+        {%- endfor %}
+
+populate_inventory_to_hosts_file: true
+
+os_home: /usr/share/opensearch
+os_conf_dir: /etc/opensearch
+os_plugin_bin_path: /usr/share/opensearch/bin/opensearch-plugin
+os_sec_plugin_conf_path: /etc/opensearch/opensearch-security
+os_sec_plugin_tools_path: /usr/share/opensearch/plugins/opensearch-security/tools
+os_api_port: 9200
+
+systemctl_path: /etc/systemd/system
+
+# Auth type: 'internal' or 'oidc' (OpenID). Default: internal
+auth_type: internal
+
+opensearch_action: INSTALL
+os_cluster_name: bitrix-opensearch
+opensearch_major_version: "3.x"
+opensearch_version: ""
+opensearch_repo_key_url: https://artifacts.opensearch.org/publickeys/opensearch-release.pgp
+opensearch_repo_url: "https://artifacts.opensearch.org/releases/bundle/opensearch/{{ opensearch_major_version }}/apt"
+opensearch_keyring_path: /etc/apt/keyrings/opensearch.gpg
+opensearch_keyring_source_path: /etc/apt/keyrings/opensearch-release.pgp
+opensearch_repo_file: /etc/apt/sources.list.d/opensearch.sources
+opensearch_credentials_file: /root/opensearch.txt
+opensearch_bind_host: 127.0.0.1
+opensearch_connection: "https://127.0.0.1:{{ os_api_port }}"
+opensearch_admin_user: admin
+opensearch_bitrix_user: bitrix_search
+opensearch_bitrix_role: bitrix_search
+opensearch_bitrix_index: bitrix
+opensearch_bitrix_site_path: ""
+opensearch_bitrix_php_user: bitrix
+opensearch_install_dashboards: false
+opensearch_dashboards_user: endebx_dashboards
+opensearch_dashboards_port: 5601
+opensearch_dashboards_repo_url: "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/{{ opensearch_major_version }}/apt"
+opensearch_dashboards_repo_file: /etc/apt/sources.list.d/opensearch-dashboards.sources
+service_nginx_name: nginx
+opensearch_dashboards_nginx_config: "/etc/{{ service_nginx_name }}/custom_conf.d/section_listen_http_and_https/opensearch.conf"
+xms_value: 1
+xmx_value: 1

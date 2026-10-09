@@ -1,0 +1,47 @@
+---
+- name: Read OpenSearch index creation settings
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_cluster/settings?include_defaults=true&flat_settings=true"
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+    status_code: 200
+  register: opensearch_index_creation_settings
+
+- name: Resolve effective OpenSearch index creation settings
+  ansible.builtin.set_fact:
+    opensearch_effective_cluster_settings: >-
+      {{ opensearch_index_creation_settings.json.defaults | default({})
+         | combine(opensearch_index_creation_settings.json.persistent | default({}))
+         | combine(opensearch_index_creation_settings.json.transient | default({})) }}
+
+- name: Diagnose OpenSearch index creation block
+  when: opensearch_effective_cluster_settings['cluster.blocks.create_index'] | default(false) | bool
+  block:
+    - name: Read OpenSearch data filesystem usage
+      ansible.builtin.uri:
+        url: "{{ opensearch_connection }}/_nodes/stats/fs?filter_path=_nodes,nodes.*.name,nodes.*.fs.total,nodes.*.fs.data"
+        user: "{{ opensearch_admin_user }}"
+        password: "{{ opensearch_admin_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: 200
+      register: opensearch_data_filesystem_usage
+
+    - name: Stop Dashboards installation when index creation is blocked
+      ansible.builtin.fail:
+        msg: >-
+          OpenSearch blocks index creation (cluster.blocks.create_index=true).
+          Dashboards cannot create its saved-object migration indexes.
+          This is a cluster block, not a service-user permission error.
+          Check disk usage on the OpenSearch data filesystem (normally /var/lib/opensearch)
+          and free space below cluster.routing.allocation.disk.watermark.high
+          ({{ opensearch_effective_cluster_settings['cluster.routing.allocation.disk.watermark.high'] | default('90%') }}).
+          With cluster.blocks.create_index.auto_release=true, OpenSearch normally releases the block after disk usage recovers.
+          If the block remains, inspect persistent/transient settings and reset cluster.blocks.create_index only after verifying free space.
+          Do not disable disk thresholds or delete .kibana indexes to bypass this error.
+          Cluster settings: {{ opensearch_index_creation_settings.json | to_json }}.
+          Data filesystem usage: {{ opensearch_data_filesystem_usage.json | to_json }}.

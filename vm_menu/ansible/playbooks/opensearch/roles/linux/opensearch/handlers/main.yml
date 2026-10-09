@@ -1,0 +1,27 @@
+---
+# handlers file for opensearch
+- name: Reload systemd configuration
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+  listen: reload systemd configuration
+
+# Restart service and ensure it is enabled
+
+- name: Restart OpenSearch
+  ansible.builtin.systemd:
+    name: opensearch
+    state: restarted
+    enabled: true
+  listen: restart opensearch
+
+- name: Validate OpenSearch Dashboards nginx configuration
+  ansible.builtin.command: "{{ service_nginx_name }} -t"
+  changed_when: false
+  listen: Reload OpenSearch Dashboards nginx proxy
+
+- name: Reload OpenSearch Dashboards nginx configuration
+  ansible.builtin.systemd:
+    name: "{{ service_nginx_name }}"
+    state: reloaded
+  listen: Reload OpenSearch Dashboards nginx proxy

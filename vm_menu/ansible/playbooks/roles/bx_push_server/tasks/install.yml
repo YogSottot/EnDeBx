@@ -30,10 +30,7 @@
     group: "{{ bx_push_server_group }}"
     mode: "0644"
   register: download_result
-  failed_when:
-    - download_result.status_code is defined
-    - download_result.status_code != 200
-    - "'Connection timed out' in download_result.msg"
+  ignore_errors: true
   when: not bx_push_server_installed.stat.exists or bx_push_server_force_upgrade
 
 - name: Use local archive if download failed
@@ -43,14 +40,16 @@
     owner: "{{ bx_push_server_user }}"
     group: "{{ bx_push_server_group }}"
     mode: "0644"
-  when: download_result is failed or bx_push_server_force_upgrade
+  when: download_result is failed
 
 - name: Verify local archive checksum
   ansible.builtin.stat:
     path: "/opt/{{ bx_push_server_archive_name }}"
     checksum_algorithm: sha256
   register: local_archive
-  failed_when: local_archive.stat.checksum != bx_push_server_archive_sha256
+  failed_when: >-
+    not local_archive.stat.exists or
+    local_archive.stat.checksum | default('') != bx_push_server_archive_sha256
   when: not bx_push_server_installed.stat.exists or bx_push_server_force_upgrade
 
 - name: Ensure npm is installed

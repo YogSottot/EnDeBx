@@ -436,6 +436,29 @@ function action_install_or_delete_sphinx() {
     press_any_key_to_return_menu;
 }
 
+function action_install_or_delete_opensearch() {
+    local opensearch_site_path="${full_path_site:-}"
+    local opensearch_dashboards_enabled=false
+    if [ "${opensearch_install_dashboards:-N}" = Y ]; then
+      opensearch_dashboards_enabled=true
+    fi
+
+    pb=$(realpath "$dir/${BS_PATH_ANSIBLE_PLAYBOOKS}/${BS_ANSIBLE_PB_INSTALL_OR_DELETE_OPENSEARCH}")
+    # shellcheck disable=SC2086
+    run_ansible_playbook "${pb}" $BS_ANSIBLE_RUN_PLAYBOOKS_PARAMS \
+      -e "opensearch_action=${action} \
+      opensearch_bitrix_site_path=${opensearch_site_path} \
+      opensearch_connection=${BS_OPENSEARCH_CONNECTION} \
+      opensearch_bitrix_user=${BS_OPENSEARCH_BITRIX_USER} \
+      opensearch_bitrix_index=${BS_OPENSEARCH_INDEX} \
+      opensearch_version=${BS_OPENSEARCH_VERSION} \
+      opensearch_install_dashboards=${opensearch_dashboards_enabled} \
+      service_nginx_name=${BS_SERVICE_NGINX_NAME} \
+      opensearch_bitrix_php_user=${BS_DEFAULT_USER_SERVER_SITES}"
+
+    press_any_key_to_return_menu;
+}
+
 function action_install_or_delete_file_conversion_server() {
 
     #if [ $action = "INSTALL" ]; then

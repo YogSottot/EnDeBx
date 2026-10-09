@@ -39,7 +39,7 @@ proc open_transformer_menu {} {
     wait_for {Enter command: *}
     send_line "8"
     wait_for {Enter command: *}
-    send_line "4"
+    send_line "5"
 }
 
 proc finish_action {} {

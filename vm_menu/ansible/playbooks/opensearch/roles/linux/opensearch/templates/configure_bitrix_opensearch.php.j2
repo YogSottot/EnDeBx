@@ -1,0 +1,267 @@
+<?php
+
+if (PHP_SAPI !== 'cli')
+{
+	die(json_encode(['error' => 'for console only']));
+}
+
+$action = '{{ opensearch_action }}';
+$docroot = '{{ opensearch_bitrix_site_path }}';
+$connection = '{{ opensearch_connection }}';
+$user = '{{ opensearch_bitrix_user }}';
+$password = '{{ opensearch_bitrix_password | default("") }}';
+$index = '{{ opensearch_bitrix_index }}';
+
+define('NO_KEEP_STATISTIC', 'Y');
+define('NO_AGENT_STATISTIC', 'Y');
+define('NOT_CHECK_PERMISSIONS', true);
+define('DisableEventsCheck', true);
+define('NO_AGENT_CHECK', true);
+
+$_SERVER['DOCUMENT_ROOT'] = $docroot;
+$_SERVER['SERVER_NAME'] = 'localhost';
+
+if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php'))
+{
+	fwrite(STDERR, "Bitrix core not found\n");
+	exit(2);
+}
+
+require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
+
+$passwordStoragePath = $_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/classes/general/backup.php';
+if (!class_exists('CPasswordStorage') && file_exists($passwordStoragePath))
+{
+	require_once($passwordStoragePath);
+}
+
+if (!\Bitrix\Main\Loader::includeModule('search'))
+{
+	fwrite(STDERR, "Bitrix search module is not installed\n");
+	exit(3);
+}
+
+function endebxOpenSearchSiteAnalyzerMap(): array
+{
+	$siteAnalyzerMap = [];
+
+	if (!class_exists('CSearchOpenSearch'))
+	{
+		return $siteAnalyzerMap;
+	}
+
+	$languageAnalyzers = CSearchOpenSearch::getLanguageAnalyzers();
+	$by = 'sort';
+	$order = 'asc';
+	$sites = CSite::GetList($by, $order, []);
+
+	while ($site = $sites->Fetch())
+	{
+		$analyzer = array_search($site['LANGUAGE_ID'], $languageAnalyzers, true);
+		if ($analyzer === false)
+		{
+			$analyzer = 'english';
+		}
+
+		$siteAnalyzerMap[$site['ID']] = $analyzer;
+	}
+
+	return $siteAnalyzerMap;
+}
+
+function endebxClearOptionCache(string $moduleId): void
+{
+	$managedCache = \Bitrix\Main\Application::getInstance()->getManagedCache();
+	$managedCache->clean('b_option:' . mb_strtolower($moduleId), 'b_option');
+	$managedCache->cleanDir('b_option');
+}
+
+function endebxOpenSearchRequest(string $connection, string $user, string $password, string $method, string $path, array $body = null): array
+{
+	$client = new \Bitrix\Main\Web\HttpClient([
+		'disableSslVerification' => true,
+	]);
+	$client->setAuthorization($user, $password);
+	$client->setHeader('Content-Type', 'application/json', true);
+
+	$payload = $body === null ? '' : \Bitrix\Main\Web\Json::encode($body);
+	$client->query($method, rtrim($connection, '/') . $path, $payload);
+	$status = $client->getStatus();
+	$result = $client->getResult();
+
+	if ($status < 200 || $status >= 300)
+	{
+		throw new \RuntimeException("OpenSearch {$method} {$path} failed [{$status}]: {$result}");
+	}
+
+	return (array)json_decode($result, true);
+}
+
+function endebxOpenSearchIndexTemplate(string $index, string $siteId, string $analyzer): array
+{
+	$template = [
+		'index_patterns' => [
+			$index . '-' . $siteId,
+		],
+		'version' => 27,
+		'template' => [
+			'mappings' => [
+				'properties' => [
+					'id' => [
+						'type' => 'integer',
+					],
+					'date_change' => [
+						'type' => 'date',
+						'format' => 'date_time_no_millis',
+					],
+					'date_change_ts' => [
+						'type' => 'integer',
+					],
+					'module_id' => [
+						'type' => 'keyword',
+					],
+					'item_id' => [
+						'type' => 'keyword',
+					],
+					'custom_rank' => [
+						'type' => 'integer',
+					],
+					'title' => [
+						'type' => 'text',
+					],
+					'body' => [
+						'type' => 'text',
+					],
+					'param1' => [
+						'type' => 'keyword',
+					],
+					'param2' => [
+						'type' => 'keyword',
+					],
+					'date_from' => [
+						'type' => 'date',
+						'format' => 'date_time_no_millis',
+					],
+					'date_from_ts' => [
+						'type' => 'integer',
+					],
+					'date_to' => [
+						'type' => 'date',
+						'format' => 'date_time_no_millis',
+					],
+					'date_to_ts' => [
+						'type' => 'integer',
+					],
+					'tag' => [
+						'type' => 'keyword',
+					],
+					'xright' => [
+						'type' => 'keyword',
+					],
+					'param' => [
+						'properties' => (object)[],
+						'dynamic' => true,
+					],
+				],
+			],
+		],
+	];
+
+	if ($analyzer !== '')
+	{
+		$template['template']['mappings']['properties']['body']['analyzer'] = $analyzer;
+	}
+
+	return $template;
+}
+
+function endebxEnsureOpenSearchIndexTemplates(string $connection, string $user, string $password, string $index, array $siteAnalyzerMap): void
+{
+	foreach ($siteAnalyzerMap as $siteId => $analyzer)
+	{
+		endebxOpenSearchRequest(
+			$connection,
+			$user,
+			$password,
+			'PUT',
+			'/_index_template/' . rawurlencode($index . '-' . $siteId . '-template'),
+			endebxOpenSearchIndexTemplate($index, $siteId, (string)$analyzer)
+		);
+	}
+}
+
+if ($action === 'INSTALL')
+{
+	if (!class_exists('CSearchOpenSearch'))
+	{
+		fwrite(STDERR, "CSearchOpenSearch is not available in this Bitrix version\n");
+		exit(4);
+	}
+
+	if (!class_exists('CPasswordStorage'))
+	{
+		fwrite(STDERR, "CPasswordStorage is not available in this Bitrix version\n");
+		exit(5);
+	}
+
+	$siteAnalyzerMap = endebxOpenSearchSiteAnalyzerMap();
+	endebxEnsureOpenSearchIndexTemplates($connection, $user, $password, $index, $siteAnalyzerMap);
+
+	$search = new CSearchOpenSearch();
+
+	if (!$search->connect($connection, $user, $password, $index, true, $siteAnalyzerMap))
+	{
+		$error = 'OpenSearch connection error';
+		if (isset($APPLICATION) && is_object($APPLICATION))
+		{
+			$exception = $APPLICATION->GetException();
+			if (is_object($exception))
+			{
+				$error = $exception->GetString();
+			}
+		}
+
+		fwrite(STDERR, $error . "\n");
+		exit(6);
+	}
+
+	COption::SetOptionString('search', 'full_text_engine', 'opensearch');
+	COption::SetOptionString('search', 'opensearch_connection', $connection);
+	COption::SetOptionString('search', 'opensearch_user', $user);
+	COption::SetOptionString('search', 'opensearch_index', $index);
+	CPasswordStorage::Set('search@opensearch_password', $password);
+
+	foreach ($siteAnalyzerMap as $siteId => $analyzer)
+	{
+		COption::SetOptionString('search', 'opensearch_analyzer_' . $siteId, $analyzer);
+	}
+
+	endebxClearOptionCache('search');
+	echo json_encode(['result' => 'OpenSearch configured for Bitrix search module'], JSON_UNESCAPED_SLASHES) . PHP_EOL;
+	exit(0);
+}
+
+if ($action === 'DELETE')
+{
+	COption::SetOptionString('search', 'full_text_engine', 'bitrix');
+	COption::SetOptionString('search', 'opensearch_connection', '');
+	COption::SetOptionString('search', 'opensearch_user', '');
+	COption::SetOptionString('search', 'opensearch_index', '');
+
+	if (class_exists('CPasswordStorage'))
+	{
+		CPasswordStorage::Set('search@opensearch_password', '');
+	}
+
+	foreach (array_keys(endebxOpenSearchSiteAnalyzerMap()) as $siteId)
+	{
+		COption::SetOptionString('search', 'opensearch_analyzer_' . $siteId, '');
+	}
+
+	endebxClearOptionCache('search');
+	echo json_encode(['result' => 'Bitrix search module switched to bitrix engine'], JSON_UNESCAPED_SLASHES) . PHP_EOL;
+	exit(0);
+}
+
+fwrite(STDERR, "Unsupported action: {$action}\n");
+exit(7);

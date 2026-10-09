@@ -48,11 +48,12 @@
 - [Memcached](menu/8-extensions/services.md) - install/delete.
 - [Push server](menu/8-extensions/services.md) - install/delete, при удалении можно отдельно решить судьбу `Redis`.
 - [Sphinx](menu/8-extensions/services.md) - install/delete полнотекстового поиска.
+- [OpenSearch](menu/8-extensions/services.md) - install/delete полнотекстового поиска Bitrix с настройкой модуля поиска сайта.
 - [File Conversion Server](menu/8-extensions/services.md) - install/delete локального transformer-сервера для Bitrix.
 - [Netdata](menu/8-extensions/services.md) - install/delete мониторинга с генерацией учетных данных.
 - [Docker](menu/8-extensions/services.md) - install/delete Docker и добавление default-пользователя сайтов в группу Docker.
-- [mydumper](menu/8-extensions/services.md) - install/delete утилиты для дампов MySQL.
 - [Snapd](menu/8-extensions/system-tools.md) - install/delete.
+- [mydumper](menu/8-extensions/services.md) - install/delete утилиты для дампов MySQL.
 - [Deadsnakes PPA](menu/8-extensions/system-tools.md) - install/delete только на Ubuntu.
 - [Debian repo on Astra Linux](menu/8-extensions/system-tools.md) - подключение стандартного Debian-репозитория только на Astra Linux.
 

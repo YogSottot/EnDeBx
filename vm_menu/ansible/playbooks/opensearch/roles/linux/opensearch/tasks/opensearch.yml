@@ -1,0 +1,260 @@
+---
+- name: Check existing OpenSearch credentials file
+  ansible.builtin.stat:
+    path: "{{ opensearch_credentials_file }}"
+  register: opensearch_credentials_file_stat
+
+- name: Read existing OpenSearch admin password
+  ansible.builtin.shell: |
+    awk -F= '$1 == "OPENSEARCH_ADMIN_PASSWORD" {print substr($0, index($0, $2)); exit}' {{ opensearch_credentials_file | quote }}
+  register: opensearch_existing_admin_password
+  changed_when: false
+  when: opensearch_credentials_file_stat.stat.exists
+
+- name: Read existing OpenSearch Bitrix password
+  ansible.builtin.shell: |
+    awk -F= '$1 == "OPENSEARCH_BITRIX_PASSWORD" {print substr($0, index($0, $2)); exit}' {{ opensearch_credentials_file | quote }}
+  register: opensearch_existing_bitrix_password
+  changed_when: false
+  when: opensearch_credentials_file_stat.stat.exists
+
+- name: Generate OpenSearch passwords
+  ansible.builtin.set_fact:
+    opensearch_generated_admin_password: "EnDeBx!{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digits') }}9"
+    opensearch_generated_bitrix_password: "Bitrix!{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digits') }}9"
+
+- name: Read existing OpenSearch Dashboards password
+  ansible.builtin.shell: |
+    awk -F= '$1 == "OPENSEARCH_DASHBOARDS_PASSWORD" {print substr($0, index($0, $2)); exit}' {{ opensearch_credentials_file | quote }}
+  register: opensearch_existing_dashboards_password
+  changed_when: false
+  when: opensearch_credentials_file_stat.stat.exists
+
+- name: Set OpenSearch Dashboards password
+  ansible.builtin.set_fact:
+    opensearch_dashboards_password: >-
+      {{ opensearch_existing_dashboards_password.stdout
+         if (opensearch_existing_dashboards_password.stdout | default('') | length > 0)
+         else 'Dashboard!' + lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digits') + '9' }}
+  when: opensearch_install_dashboards | bool or opensearch_existing_dashboards_password.stdout | default('') | length > 0
+
+- name: Set OpenSearch passwords
+  ansible.builtin.set_fact:
+    opensearch_admin_password: >-
+      {{ opensearch_existing_admin_password.stdout
+         if (opensearch_existing_admin_password is defined and opensearch_existing_admin_password.stdout | default('') | length > 0)
+         else opensearch_generated_admin_password }}
+    opensearch_bitrix_password: >-
+      {{ opensearch_existing_bitrix_password.stdout
+         if (opensearch_existing_bitrix_password is defined and opensearch_existing_bitrix_password.stdout | default('') | length > 0)
+         else opensearch_generated_bitrix_password }}
+
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install OpenSearch apt repository dependencies
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: true
+
+- name: Download OpenSearch repository key
+  ansible.builtin.get_url:
+    url: "{{ opensearch_repo_key_url }}"
+    dest: "{{ opensearch_keyring_source_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: opensearch_repo_key
+
+- name: Dearmor OpenSearch repository key
+  ansible.builtin.command:
+    cmd: "gpg --batch --yes --dearmor -o {{ opensearch_keyring_path }} {{ opensearch_keyring_source_path }}"
+  changed_when: opensearch_repo_key.changed
+
+- name: Set OpenSearch repository key permissions
+  ansible.builtin.file:
+    path: "{{ opensearch_keyring_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add OpenSearch apt repository
+  ansible.builtin.copy:
+    dest: "{{ opensearch_repo_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ opensearch_repo_url }}
+      Suites: stable
+      Components: main
+      Architectures: amd64
+      Signed-By: {{ opensearch_keyring_path }}
+
+- name: Install OpenSearch package
+  ansible.builtin.apt:
+    name: "{{ 'opensearch=' + opensearch_version if opensearch_version | length > 0 else 'opensearch' }}"
+    state: present
+    update_cache: true
+  environment:
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: "{{ opensearch_admin_password }}"
+
+- name: Configure OpenSearch single-node settings
+  ansible.builtin.blockinfile:
+    path: "{{ os_conf_dir }}/opensearch.yml"
+    marker: "## {mark} EnDeBx OpenSearch configuration ##"
+    create: true
+    owner: root
+    group: opensearch
+    mode: "0660"
+    block: |
+      cluster.name: "{{ os_cluster_name }}"
+      node.name: "{{ ansible_hostname | default('localhost') }}"
+      network.host: "{{ opensearch_bind_host }}"
+      http.port: {{ os_api_port }}
+      discovery.type: single-node
+      plugins.security.unsupported.restapi.allow_securityconfig_modification: {{ opensearch_install_dashboards | bool | lower }}
+
+- name: Configure OpenSearch heap
+  ansible.builtin.copy:
+    dest: "{{ os_conf_dir }}/jvm.options.d/endebx.options"
+    owner: root
+    group: opensearch
+    mode: "0660"
+    content: |
+      -Xms{{ xms_value }}g
+      -Xmx{{ xmx_value }}g
+
+- name: Restart OpenSearch
+  ansible.builtin.systemd:
+    name: opensearch
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for OpenSearch API
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_cluster/health"
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  register: opensearch_health
+  retries: 36
+  delay: 5
+  until: opensearch_health.status == 200
+
+- name: Create OpenSearch role for Bitrix
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/roles/{{ opensearch_bitrix_role }}"
+    method: PUT
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code:
+      - 200
+      - 201
+    body:
+      cluster_permissions:
+        - cluster_all
+        - cluster_composite_ops
+        - cluster_manage_index_templates
+        - indices:admin/index_template/get
+        - indices:admin/index_template/put
+        - indices:admin/index_template/delete
+      index_permissions:
+        - index_patterns:
+            - "{{ opensearch_bitrix_index }}*"
+          allowed_actions:
+            - indices_all
+      tenant_permissions: []
+
+- name: Create OpenSearch user for Bitrix
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/internalusers/{{ opensearch_bitrix_user }}"
+    method: PUT
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code:
+      - 200
+      - 201
+    body:
+      password: "{{ opensearch_bitrix_password }}"
+      backend_roles:
+        - "{{ opensearch_bitrix_role }}"
+      attributes: {}
+      description: "Bitrix full-text search user"
+
+- name: Map OpenSearch role to Bitrix user
+  ansible.builtin.uri:
+    url: "{{ opensearch_connection }}/_plugins/_security/api/rolesmapping/{{ opensearch_bitrix_role }}"
+    method: PUT
+    user: "{{ opensearch_admin_user }}"
+    password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    status_code:
+      - 200
+      - 201
+    body:
+      backend_roles:
+        - "{{ opensearch_bitrix_role }}"
+      hosts: []
+      users:
+        - "{{ opensearch_bitrix_user }}"
+
+- name: Save OpenSearch credentials
+  ansible.builtin.copy:
+    dest: "{{ opensearch_credentials_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+    content: |
+      OPENSEARCH_CONNECTION={{ opensearch_connection }}
+      OPENSEARCH_ADMIN_USER={{ opensearch_admin_user }}
+      OPENSEARCH_ADMIN_PASSWORD={{ opensearch_admin_password }}
+      OPENSEARCH_BITRIX_USER={{ opensearch_bitrix_user }}
+      OPENSEARCH_BITRIX_PASSWORD={{ opensearch_bitrix_password }}
+      OPENSEARCH_BITRIX_INDEX={{ opensearch_bitrix_index }}
+      OPENSEARCH_BITRIX_SITE_PATH={{ opensearch_bitrix_site_path }}
+      {% if opensearch_dashboards_password is defined %}
+      OPENSEARCH_DASHBOARDS_USER={{ opensearch_dashboards_user }}
+      OPENSEARCH_DASHBOARDS_PASSWORD={{ opensearch_dashboards_password }}
+      OPENSEARCH_DASHBOARDS_PATH=/opensearch/
+      {% endif %}
+
+- name: Configure Bitrix search module
+  ansible.builtin.import_tasks: configure_bitrix.yml
+
+- name: Install OpenSearch Dashboards
+  ansible.builtin.import_tasks: dashboards.yml
+  when: opensearch_install_dashboards | bool
+
+- name: Show OpenSearch credentials
+  ansible.builtin.debug:
+    msg:
+      - "OpenSearch connection: {{ opensearch_connection }}"
+      - "OpenSearch admin user: {{ opensearch_admin_user }}"
+      - "OpenSearch admin password: {{ opensearch_admin_password }}"
+      - "OpenSearch Bitrix user: {{ opensearch_bitrix_user }}"
+      - "OpenSearch Bitrix password: {{ opensearch_bitrix_password }}"
+      - "OpenSearch Bitrix index: {{ opensearch_bitrix_index }}"
+      - "Credentials file: {{ opensearch_credentials_file }}"

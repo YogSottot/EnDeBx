@@ -1,6 +1,15 @@
 # Test Scaffolding
 
+Use `make check-push-archive` to test the Push server archive tasks locally:
+download timeout, HTTP error, successful download, forced upgrade, an already
+installed server, missing archive and invalid checksum. Requires Python 3, PyYAML and
+`ansible-playbook`; uses a local HTTP fixture and temporary directories, no VM.
+
 This directory contains a local `OpenTofu + SSH` scaffold for EnDeBx test stands in VMmanager.
+
+Use `make check-update-fzf` to check the updater's fzf guards locally.
+It requires Python 3 and Bash, uses temporary files, and checks root/skel/user
+bashrc files, a custom home prefix, missing files and repeated execution.
 
 Most test targets automatically call `make upload-repo` first so the remote
 host uses the current local repository contents. The full `make e2e` flow does
@@ -49,7 +58,42 @@ installs File Conversion Server (`transformer`) on the default Bitrix site and
 leaves it in place for manual verification. Run `make menu-transformer` a
 second time to delete it and validate cleanup.
 Use `make menu-extensions` to test menu-driven install and delete of
-Memcached, Push server, Sphinx, Netdata, Docker and mydumper.
+Memcached, Push server, Sphinx, OpenSearch, Netdata, Docker and mydumper.
+The Netdata check requires installed chartsd and pythond plugins with the
+same package version as Netdata.
+The OpenSearch check validates bulk document indexing and updating, search,
+and temporary index cleanup using the Bitrix user's credentials. It also
+checks individual bulk results, since HTTP 200 can contain document errors,
+and validates Bitrix search module options when the default site is installed.
+By default, this flow also installs Dashboards, checks the matching package
+version, service account, authenticated API and anonymous browser login page
+at `/opensearch/app/login` through nginx, then verifies
+that deletion removes Dashboards and its nginx configuration. Set
+`TEST_MENU_OPENSEARCH_DASHBOARDS=N` in `.env.test` to test installation without
+Dashboards. An explicit environment value, for example
+`TEST_MENU_OPENSEARCH_DASHBOARDS=N make menu-extensions`, takes precedence over
+the file. The resolved value is used for both the menu answer and the
+installed-state checks. A failed check reports the feature, expected state,
+line and command without enabling password-bearing remote shell traces.
+Use `make check-menu-extensions-config` for local regression tests of file
+settings, defaults, CLI overrides, lowercase/invalid values and failed-check
+diagnostics. This target requires Python 3 and Bash, not SSH or a VM.
+Use `make check-opensearch-menu` for local tests of the confirmation order,
+Dashboards selection and defaults, cancellation, and deletion without the
+Dashboards question. This target does not require a VM.
+Use `make check-opensearch-dashboards` to execute the role's REST security
+and readiness tasks against a local HTTP fixture with a reserved
+`kibana_server` mapping. It checks copied service permissions, preservation
+of the built-in role and security configuration, and repeated execution.
+It also checks index creation blocks in default, persistent and transient
+settings, their precedence, disk usage diagnostics without settings changes,
+a block appearing during migration, and journal diagnostics for other `503`
+startup failures. Only the fixture's readiness retries are shortened; the
+role's timeout is unchanged. It also executes the runner's anonymous login
+page probe against the fixture: HTTP 200 succeeds, while HTTP 401 and 503
+still fail. The `/auth/login` session API is not treated as a browser page.
+This target requires `ansible-playbook`, curl, Bash, Python 3 and PyYAML,
+but does not require a VM or installed OpenSearch.
 Use `make menu-snapd` to test menu-driven install and delete of Snapd.
 Use `make menu-security-settings` to apply and validate `Security settings ->
 SSH/Updates`.

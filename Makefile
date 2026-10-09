@@ -2,7 +2,18 @@
 	wait-ssh bootstrap-host upload-repo install-env smoke menu-sites menu-certs \
 	menu-php-version menu-site-options menu-ftp menu-smtp prepare-bitrix bitrix-install menu-transformer \
 	menu-extensions menu-snapd menu-ntlm menu-security-settings menu-security-tools \
-	menu-firewall menu-security menu-timezone collect-logs e2e ensure-upload-repo
+	menu-firewall menu-security menu-timezone collect-logs e2e ensure-upload-repo check-opensearch-menu check-opensearch-dashboards \
+	check-menu-extensions-config
+
+.PHONY: check-update-fzf
+
+.PHONY: check-push-archive
+
+check-push-archive:
+	python3 tests/runner/check_push_archive.py
+
+check-update-fzf:
+	python3 tests/runner/check_update_fzf.py
 
 TOFU ?= tofu
 TOFU_DIR := tests/opentofu
@@ -13,6 +24,8 @@ RUN_ID ?= $(shell date +%Y%m%d-%H%M%S)
 help:
 	@printf '%s\n' \
 	'Targets:' \
+	'  check-push-archive - check Push server archive download and local fallback' \
+	'  check-update-fzf - check bashrc fzf guards locally' \
 	'  tofu-init       - initialize OpenTofu in tests/opentofu' \
 	'  tofu-plan       - show plan for DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)' \
 	'  tofu-apply      - create VM and DNS record' \
@@ -32,7 +45,10 @@ help:
 	'  prepare-bitrix  - download Bitrix Enterprise files to the default site' \
 	'  bitrix-install  - run Bitrix24 Enterprise install plus post-install nginx accel option' \
 	'  menu-transformer - first run installs transformer, second run deletes it' \
-	'  menu-extensions - install and delete Memcached, Push server, Sphinx, Netdata, Docker and mydumper through menu.sh' \
+	'  menu-extensions - install and delete Memcached, Push server, Sphinx, OpenSearch, Netdata, Docker and mydumper through menu.sh' \
+	'  check-opensearch-menu - check OpenSearch and optional Dashboards prompts locally' \
+	'  check-opensearch-dashboards - check Dashboards permissions, index blocks, readiness and login page locally' \
+	'  check-menu-extensions-config - check Dashboards test configuration and validation diagnostics locally' \
 	'  menu-snapd      - install and delete Snapd through menu.sh' \
 	'  menu-security-settings - apply SSH/Updates security settings through menu.sh and validate them' \
 	'  menu-security-tools - install and delete Crowdsec, Rkhunter, Maldet and AIDE through menu.sh' \
@@ -108,6 +124,15 @@ menu-transformer:
 
 menu-extensions:
 	$(RUNNER_DIR)/run_menu_extensions.sh
+
+check-opensearch-menu:
+	bash $(RUNNER_DIR)/check_opensearch_menu.sh
+
+check-opensearch-dashboards:
+	python3 $(RUNNER_DIR)/check_opensearch_dashboards.py
+
+check-menu-extensions-config:
+	python3 $(RUNNER_DIR)/check_menu_extensions_config.py
 
 menu-snapd:
 	$(RUNNER_DIR)/run_menu_snapd.sh

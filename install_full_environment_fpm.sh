@@ -118,7 +118,7 @@ if is_astra_linux; then
     ln -fs "$PIPX_BOOTSTRAP_VENV/bin/pipx" "$HOME/.local/bin/pipx"
     "$PIPX_BOOTSTRAP_VENV/bin/pipx" ensurepath
 else
-    apt-get install -y pipx git locales-all python3-debian
+    apt-get install -y pipx git locales-all python3-debian python3-requests
 fi
 
 site_user_password=$(generate_password 24)

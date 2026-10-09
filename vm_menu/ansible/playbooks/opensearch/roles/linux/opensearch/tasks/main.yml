@@ -1,0 +1,13 @@
+---
+
+- name: Tune the system settings
+  ansible.builtin.import_tasks: tune.yml
+  when: opensearch_action == 'INSTALL'
+
+- name: Include opensearch installation
+  ansible.builtin.import_tasks: opensearch.yml
+  when: opensearch_action == 'INSTALL'
+
+- name: Include opensearch deletion
+  ansible.builtin.import_tasks: delete.yml
+  when: opensearch_action == 'DELETE'

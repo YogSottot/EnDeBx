@@ -39,7 +39,7 @@ proc open_snapd_menu {} {
     wait_for {Enter command: *}
     send_line "8"
     wait_for {Enter command: *}
-    send_line "7"
+    send_line "8"
 }
 
 proc finish_action {} {

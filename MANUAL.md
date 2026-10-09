@@ -130,17 +130,21 @@
 
    `3) Install/Delete Sphinx` — установка sphinx.  
 
-   `4) Install/Delete File Conversion Server (transformer)` — модуль конвертации файлов. Только для лицензии Энтерпрайз. Меню самостоятельно произведёт все настройки битрикса для использования локального модуля.  
+   `4) Install/Delete OpenSearch` — установка или удаление OpenSearch из APT-репозитория 3.x. При установке меню спросит путь к Bitrix-сайту, создаст учетные данные, сохранит их в `/root/opensearch.txt` и настроит модуль поиска сайта.
 
-   `5) Install/Delete Netdata` — установка системы мониторинга [Netdata](https://www.netdata.cloud/)  
+   `5) Install/Delete File Conversion Server (transformer)` — модуль конвертации файлов. Только для лицензии Энтерпрайз. Меню самостоятельно произведёт все настройки битрикса для использования локального модуля.
 
-   `6) Install/Delete Docker` — установка свежей версии докера из официальных репозиториев. Роль меняет log-driver c json на local, так как json очень сильно забивает место на диске.  
+   `6) Install/Delete Netdata` — установка системы мониторинга [Netdata](https://www.netdata.cloud/)
 
-   `7) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
+   `7) Install/Delete Docker` — установка свежей версии докера из официальных репозиториев. Роль меняет log-driver c json на local, так как json очень сильно забивает место на диске.
 
-   `8) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Пункт отображается только на Ubuntu. Не рекомендуется использовать ppa в debian.  
+   `8) Install/Delete Snapd` — Удаление/Установка snap. Используйте только, если вы понимаете, что делаете. Все данные установленных из snap приложений будут удалены
 
-   `8) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
+   `9) Install/Delete mydumper` — установка или удаление mydumper.
+
+   `10) Install/Delete Deadsnakes PPA` — подключение [Deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) содержащего более свежие версии python. Пункт отображается только на Ubuntu. Не рекомендуется использовать ppa в debian.
+
+   `10) Install/Delete Debian repo on Astra Linux` — пункт отображается только на Astra Linux. Позволяет временно подключить или удалить стандартные debian-репозитории для Astra Linux.
 
 9) `Security settings` — отдельное меню для security-настроек.  
    `1) SSH/Updates` — повторная настройка параметров безопасности без полной переустановки окружения. Пункт запускает тот же playbook, что и настройка безопасности при первичной установке через `.env.menu`, и сохраняет выбранные значения в `/root/.env.menu`.  

@@ -1,0 +1,59 @@
+---
+- name: Check Bitrix core for OpenSearch configuration
+  ansible.builtin.stat:
+    path: "{{ opensearch_bitrix_site_path }}/bitrix/modules/main/include/prolog_before.php"
+  register: opensearch_bitrix_core
+
+- name: Fail when Bitrix core is missing during OpenSearch installation
+  ansible.builtin.fail:
+    msg: "Bitrix core not found in {{ opensearch_bitrix_site_path }}"
+  when:
+    - opensearch_action == 'INSTALL'
+    - not opensearch_bitrix_core.stat.exists
+
+- name: Configure Bitrix OpenSearch options
+  when: opensearch_bitrix_core.stat.exists
+  block:
+    - name: Create temporary directory for Bitrix OpenSearch script
+      ansible.builtin.tempfile:
+        state: directory
+        path: /tmp
+        suffix: opensearch
+      register: opensearch_bitrix_tempdir
+
+    - name: Set Bitrix OpenSearch script directory permissions
+      ansible.builtin.file:
+        path: "{{ opensearch_bitrix_tempdir.path }}"
+        state: directory
+        owner: "{{ opensearch_bitrix_php_user }}"
+        group: root
+        mode: "0700"
+
+    - name: Create Bitrix OpenSearch script
+      ansible.builtin.template:
+        src: configure_bitrix_opensearch.php.j2
+        dest: "{{ opensearch_bitrix_tempdir.path }}/configure_bitrix_opensearch.php"
+        owner: "{{ opensearch_bitrix_php_user }}"
+        group: root
+        mode: "0600"
+
+    - name: Run Bitrix OpenSearch script
+      ansible.builtin.command:
+        cmd: "php -f {{ opensearch_bitrix_tempdir.path }}/configure_bitrix_opensearch.php"
+      become: true
+      become_method: ansible.builtin.su
+      become_user: "{{ opensearch_bitrix_php_user }}"
+      changed_when: true
+  always:
+    - name: Delete temporary Bitrix OpenSearch script directory
+      ansible.builtin.file:
+        path: "{{ opensearch_bitrix_tempdir.path }}"
+        state: absent
+      when: opensearch_bitrix_tempdir.path is defined
+
+- name: Skip Bitrix OpenSearch cleanup when Bitrix core is missing
+  ansible.builtin.debug:
+    msg: "Bitrix core not found in {{ opensearch_bitrix_site_path }}, OpenSearch package cleanup continues."
+  when:
+    - opensearch_action == 'DELETE'
+    - not opensearch_bitrix_core.stat.exists

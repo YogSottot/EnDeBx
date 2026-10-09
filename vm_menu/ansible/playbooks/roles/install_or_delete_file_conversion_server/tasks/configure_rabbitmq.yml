@@ -1,12 +1,12 @@
 ---
 # install rabbitmq
 - name: Install rabbitmq-server
-  apt:
+  ansible.builtin.apt:
     name: rabbitmq-server
     state: present
 
 - name: Configure rabbitmq service
-  template:
+  ansible.builtin.template:
     src: rabbitmq.conf.j2
     dest: /etc/rabbitmq/rabbitmq.conf
     mode: '0644'
@@ -14,7 +14,7 @@
     group: rabbitmq
 
 - name: Configure rabbitmq environment
-  template:
+  ansible.builtin.template:
     src: rabbitmq-env.conf.j2
     dest: /etc/rabbitmq/rabbitmq-env.conf
     mode: '0644'
@@ -22,13 +22,13 @@
     group: rabbitmq
 
 - name: Enabled rabbitmq-server
-  service:
+  ansible.builtin.service:
     name: rabbitmq-server
     state: started
     enabled: true
 
 - name: Restart rabbitmq-server
-  service:
+  ansible.builtin.service:
     name: rabbitmq-server
     state: restarted
 
@@ -51,6 +51,11 @@
 #    login_user: guest
 #    login_password: guest
 
+- name: Install dependencies for rabbitmq
+  ansible.builtin.apt:
+    name: python3-requests
+    state: present
+
 - name: Create user for bitrix
   community.rabbitmq.rabbitmq_user:
     user: "{{ bx_transformer_rabbitmq_user }}"
@@ -72,7 +77,7 @@
 #    state: absent
 
 - name: Determine PHP version
-  command: php -r "echo PHP_VERSION;"
+  ansible.builtin.command: php -r "echo PHP_VERSION;"
   register: php_version_output
 
 - name: Set PHP version fact
@@ -80,12 +85,12 @@
     php_version: "{{ php_version_output.stdout.split('.')[0] }}.{{ php_version_output.stdout.split('.')[1] }}"
 
 - name: Install php package
-  apt:
+  ansible.builtin.apt:
     name: "php{{ php_version }}-amqp"
     state: present
 
 - name: Restart apache service
-  service:
+  ansible.builtin.service:
     name: "{{ service_apache_name }}"
     state: restarted
 
