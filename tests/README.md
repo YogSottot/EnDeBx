@@ -41,6 +41,9 @@ default site directory through menu.sh.
 Use `make menu-smtp` to configure SMTP for the default site through menu.sh
 and verify `mail()` delivery under the `bitrix` user by checking a new
 `msmtp_default.log` entry.
+TLS and STARTTLS checks follow `TEST_MENU_SMTP_TLS` and
+`TEST_MENU_SMTP_STARTTLS` in `.env.test`: use `Y`/`N` with port `465`
+for implicit TLS, or `Y`/`Y` with port `587` for STARTTLS.
 Use `make menu-ntlm` for a manual two-step NTLM flow. The first run points
 `/etc/resolv.conf` to the configured AD DNS server, configures NTLM for the
 selected site through menu.sh, and intentionally leaves the resolver on the AD
@@ -61,6 +64,11 @@ Use `make menu-extensions` to test menu-driven install and delete of
 Memcached, Push server, Sphinx, OpenSearch, Netdata, Docker and mydumper.
 The Netdata check requires installed chartsd and pythond plugins with the
 same package version as Netdata.
+Use `make check-netdata-versions` for local Ansible regression checks of
+repository version mismatches, Debian version ordering, missing common
+versions and the exact package specifications passed to APT. This requires
+Python 3 with PyYAML, ansible-playbook and dpkg; it does not install packages
+or require a VM.
 The OpenSearch check validates bulk document indexing and updating, search,
 and temporary index cleanup using the Bitrix user's credentials. It also
 checks individual bulk results, since HTTP 200 can contain document errors,

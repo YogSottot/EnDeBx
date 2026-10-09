@@ -55,10 +55,18 @@ grep -Fx "host ${TEST_MENU_SMTP_HOST}" "${BS_SMTP_FILE_SITES_CONFIG}"
 grep -Fx "port ${TEST_MENU_SMTP_PORT}" "${BS_SMTP_FILE_SITES_CONFIG}"
 grep -Fx "from ${TEST_MENU_SMTP_FROM}" "${BS_SMTP_FILE_SITES_CONFIG}"
 grep -Fx "user ${TEST_MENU_SMTP_LOGIN}" "${BS_SMTP_FILE_SITES_CONFIG}"
-grep -Fx "password ${TEST_MENU_SMTP_PASSWORD}" "${BS_SMTP_FILE_SITES_CONFIG}"
+grep -Fxq "password ${TEST_MENU_SMTP_PASSWORD}" "${BS_SMTP_FILE_SITES_CONFIG}"
 grep -Fx "auth on" "${BS_SMTP_FILE_SITES_CONFIG}"
-grep -Fx "tls on" "${BS_SMTP_FILE_SITES_CONFIG}"
-grep -Fx "tls_starttls on" "${BS_SMTP_FILE_SITES_CONFIG}"
+tls=off
+starttls=off
+if [ "${TEST_MENU_SMTP_TLS^^}" = Y ]; then
+  tls=on
+  if [ "${TEST_MENU_SMTP_STARTTLS^^}" = Y ]; then
+    starttls=on
+  fi
+fi
+grep -Fx "tls ${tls}" "${BS_SMTP_FILE_SITES_CONFIG}"
+grep -Fx "tls_starttls ${starttls}" "${BS_SMTP_FILE_SITES_CONFIG}"
 REMOTE
 
 echo "Sending a test message through mail()"
@@ -92,7 +100,11 @@ done
 [ "$current_lines" -gt "$existing_lines" ]
 tail -n +"$((existing_lines + 1))" "${TEST_MENU_SMTP_LOG_PATH}" > /tmp/endebx-smtp-log-new.txt
 grep -Fq "host=${TEST_MENU_SMTP_HOST}" /tmp/endebx-smtp-log-new.txt
-grep -Fq "tls=on" /tmp/endebx-smtp-log-new.txt
+tls=off
+if [ "${TEST_MENU_SMTP_TLS^^}" = Y ]; then
+  tls=on
+fi
+grep -Fq "tls=${tls}" /tmp/endebx-smtp-log-new.txt
 grep -Fq "auth=on" /tmp/endebx-smtp-log-new.txt
 grep -Fq "user=${TEST_MENU_SMTP_LOGIN}" /tmp/endebx-smtp-log-new.txt
 grep -Fq "from=${TEST_MENU_SMTP_FROM}" /tmp/endebx-smtp-log-new.txt

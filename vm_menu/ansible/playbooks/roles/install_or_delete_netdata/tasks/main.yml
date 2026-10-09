@@ -56,11 +56,11 @@
       ansible.builtin.set_fact:
         netdata_common_versions: >-
           {{ netdata_available_versions.results[0].stdout.splitlines()
-             | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1')
+             | map('split', '|') | map(attribute=1) | map('trim')
              | intersect(netdata_available_versions.results[1].stdout.splitlines()
-                         | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1'))
+                         | map('split', '|') | map(attribute=1) | map('trim'))
              | intersect(netdata_available_versions.results[2].stdout.splitlines()
-                         | map('regex_replace', '^[^|]*\|\s*([^|]*?)\s*\|.*$', '\\1')) }}
+                         | map('split', '|') | map(attribute=1) | map('trim')) }}
 
     - name: Ensure a common Netdata package version is available
       ansible.builtin.assert:

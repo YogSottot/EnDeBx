@@ -5,7 +5,10 @@
 	menu-firewall menu-security menu-timezone collect-logs e2e ensure-upload-repo check-opensearch-menu check-opensearch-dashboards \
 	check-menu-extensions-config
 
-.PHONY: check-update-fzf
+.PHONY: check-update-fzf check-netdata-versions
+
+check-netdata-versions:
+	python3 tests/runner/check_netdata_versions.py
 
 .PHONY: check-push-archive
 
@@ -24,6 +27,7 @@ RUN_ID ?= $(shell date +%Y%m%d-%H%M%S)
 help:
 	@printf '%s\n' \
 	'Targets:' \
+	'  check-netdata-versions - check Netdata version selection locally with Ansible' \
 	'  check-push-archive - check Push server archive download and local fallback' \
 	'  check-update-fzf - check bashrc fzf guards locally' \
 	'  tofu-init       - initialize OpenTofu in tests/opentofu' \

@@ -2,15 +2,6 @@
 
 Ниже приведен практический сценарий обновления сервера с Ubuntu 24.04 до Ubuntu 26.04 поверх установленного окружения EnDeBx.
 
-!!! warning "Перед началом"
-    Рекомендуется дождаться выхода 26.04.1
-
-!!! warning "PHP missing"
-    [PPA for PHP](https://launchpad.net/~ondrej/+archive/ubuntu/php) пока что не имеет пакетов для resolute
-
-!!! warning "Percona MySQL"
-    Если у вас используется Percona MySQL, для Ubuntu 26.04 пока что нет пакетов в репозитории
-
 ## Подготовка
 
 - изучите [Ubuntu 26.04 LTS summary](https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/)
@@ -22,16 +13,24 @@
 - если у вас подключены дополнительные внешние репозитории, заранее убедитесь, что у них есть пакеты под новый релиз.
 
 ```bash
-apt update && apt -y upgrade && apt -y autoremove
+apt update && apt -o APT::Get::Always-Include-Phased-Updates=true full-upgrade && apt -y autoremove
 apt install apt-forktracer apt-listchanges
 ```
 
 - если у вас установлен rabbitmq, то следуйте [инструкции по ссылке](https://discourse.ubuntu.com/t/ubuntu-server-gazette-issue-12-upgrading-rabbitmq-across-ubuntu-releases/77271#p-199978-h-2404-lts-noble-to-2604-lts-resolute-6) или просто удалите `File Conversion Server (transformer)` через меню, после обновления его можно установить обратно
 
+Копия инструкции:
+
+```bash
+apt-add-repository ppa:canonical-server/rabbitmq-3.13-noble
+apt update && apt upgrade
+rabbitmqctl enable_feature_flag all
+```
+
 ## Первый этап обновления
 
   ```bash
-  do-release-upgrade -d
+  do-release-upgrade --allow-third-party
   ```
 
 Во время процесса полезно читать changelog и вопросы maintainer scripts, а не подтверждать их автоматически.
@@ -63,29 +62,50 @@ reboot
 find /etc/apt/sources.list* -type f -print0 | xargs -0 sed -i 's/noble/resolute/g'
 ```
 
-### Включаем обратно sury ppa
-
-```bash
-mv /etc/apt/sources.list.d/ppa_launchpad_net_ondrej_php_ubuntu.list.disabled /etc/apt/sources.list.d/ppa_launchpad_net_ondrej_php_ubuntu.list
-```
-
-### Включаем остальные репозитории:
+### Включаем репозитории
 
 ```bash
 find /etc/apt/sources.list* -type f -print0 | xargs -0 sed -i 's/Enabled\:\ no/Enabled\:\ yes/g'
 ```
 
-### Установка удалённого при обновлении
+```bash
+#!/bin/bash
+
+dir=/etc/apt/sources.list.d
+
+for file in "$dir"/*.list.disabled; do
+    [[ -f "$file" ]] || continue
+
+    base="${file%.list.disabled}"
+
+    if [[ ! -e "${base}.sources" && ! -e "${base}.list" ]]; then
+        echo "Enabling: $file"
+
+        # Uncomment deb lines, but not deb-src
+        sed -i -E 's/^[[:space:]]*#[[:space:]]*(deb[[:space:]]+)/\1/' "$file"
+
+        mv -- "$file" "${base}.list"
+    else
+        echo "Skipping: $file"
+    fi
+done
+```
+
+### Удаляем canonical-server-ubuntu-rabbitmq
+
+Если подключали перед обновлением, то удаляем
 
 ```bash
-apt install -y libnginx-mod-http-zip
+rm -f /etc/apt/sources.list.d/canonical-server-ubuntu-rabbitmq-3_13-noble-noble.sources
 ```
 
 ### Чистим остатки
 
-Пока не обновился ppa php этот шаг можно пропустить
+!!! warning Перед удалением
+    Внимательно смотрим, что предлагается удалить, чтобы не снести что-то нужное
 
 ```bash
+apt update
 apt list '~o'
 apt purge '~o'
 ```
