@@ -5,6 +5,7 @@
 - Debian 12
 - Debian 13
 - Ubuntu 24.04
+- Ubuntu 26.04
 - Astra Linux 1.8 (с подключением репозиториев из Debian)
 
 ## Базовое окружение
