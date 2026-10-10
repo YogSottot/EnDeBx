@@ -50,6 +50,8 @@ reboot
 
 ```bash
 find /etc/apt/sources.list* -type f -print0 | xargs -0 sed -i 's/noble/resolute/g'
+# временно, пока репозиторий не готов.
+find /etc/apt/sources.list.d/rabbitmq-* -type f -print0 | xargs -0 sed -i 's/resolute/noble/g'
 ```
 
 ### Включаем репозитории
@@ -79,14 +81,6 @@ for file in "$dir"/*.list.disabled; do
         echo "Skipping: $file"
     fi
 done
-```
-
-### Удаляем canonical-server-ubuntu-rabbitmq
-
-Если подключали перед обновлением, то удаляем
-
-```bash
-rm -f /etc/apt/sources.list.d/canonical-server-ubuntu-rabbitmq-3_13-noble-noble.sources
 ```
 
 ### Чистим остатки

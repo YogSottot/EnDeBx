@@ -17,6 +17,18 @@
     - { name: rabbitmq-erlang, path: rabbitmq-erlang }
     - { name: rabbitmq-server, path: rabbitmq-server }
 
+- name: Temporarily replace resolute with noble in RabbitMQ repositories
+  ansible.builtin.replace:
+    path: "/etc/apt/sources.list.d/{{ item }}.sources"
+    regexp: 'resolute'
+    replace: 'noble'
+  loop:
+    - rabbitmq-erlang
+    - rabbitmq-server
+  when:
+    - ansible_distribution == 'Ubuntu'
+    - ansible_distribution_release == 'resolute'
+
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true

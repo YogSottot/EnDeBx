@@ -175,8 +175,8 @@ menu-snapd menu-security-settings menu-security-tools menu-firewall \
 menu-security menu-timezone: ensure-upload-repo
 
 e2e:
-#	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
-#	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
 	$(MAKE) wait-ssh
 	$(MAKE) bootstrap-host
 	$(MAKE) upload-repo
