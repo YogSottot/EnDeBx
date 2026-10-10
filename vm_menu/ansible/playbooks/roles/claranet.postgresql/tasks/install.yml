@@ -36,7 +36,60 @@
   ansible.builtin.set_fact:
     _postgresql_user_home_dir: "{{ ansible_facts.getent_passwd[postgresql_user][4] }}"
 
-- name: Create a dedicated virtual env for postgresql related libraries
+- name: Ensure PostgreSQL virtual env is owned by PostgreSQL user
+  ansible.builtin.file:
+    path: "{{ _postgresql_virtualenv_path }}"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    recurse: true
+    follow: false
+  become: true
+  become_user: root
+
+- name: Get system Python version
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - "import sys; print('%s.%s' % sys.version_info[:2])"
+  register: _postgresql_system_python_version
+  changed_when: false
+  check_mode: false
+  become_user: "{{ postgresql_user }}"
+  become_method: su
+  environment: "{{ _postgresql_general_proxy_env | ansible.builtin.combine({'PATH': _postgresql_pythonized_path}) }}"
+
+- name: Check PostgreSQL virtual env Python and pip
+  ansible.builtin.command:
+    argv:
+      - "{{ _postgresql_virtualenv_path }}/bin/python"
+      - -c
+      - "import sys; from pip._internal.cli.main import main; print('%s.%s' % sys.version_info[:2])"
+  register: _postgresql_virtualenv_python_version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  become_user: "{{ postgresql_user }}"
+  become_method: su
+  environment: "{{ _postgresql_general_proxy_env | ansible.builtin.combine({'PATH': _postgresql_pythonized_path}) }}"
+
+- name: Create or upgrade PostgreSQL virtual env
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -m
+      - venv
+      - --upgrade
+      - "{{ _postgresql_virtualenv_path }}"
+  changed_when: true
+  when: >-
+    _postgresql_virtualenv_python_version.rc != 0 or
+    _postgresql_virtualenv_python_version.stdout != _postgresql_system_python_version.stdout
+  become_user: "{{ postgresql_user }}"
+  become_method: su
+  environment: "{{ _postgresql_general_proxy_env | ansible.builtin.combine({'PATH': _postgresql_pythonized_path}) }}"
+
+- name: Upgrade pip in PostgreSQL virtual env
   ansible.builtin.pip:
     name: pip
     extra_args: --upgrade

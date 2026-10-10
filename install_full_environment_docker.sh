@@ -181,9 +181,8 @@ fi
 DEBIAN_MAJOR_VERSION=$(get_debian_major_version)
 UBUNTU_MAJOR_VERSION=$(get_ubuntu_major_version)
 
-if [ -n "${DEBIAN_MAJOR_VERSION}" ] && [ "${DEBIAN_MAJOR_VERSION}" -ge 13 ]; then
-      systemctl mask tmp.mount
-fi
+# Disable tmp.mount to avoid issues with Bitrix environment
+systemctl mask tmp.mount || true
 
 if [ "${BS_ADD_MENU_IN_BASH_PROFILE}" == 'Y' ]; then
     # Check script in .profile and add to .profile if not exist

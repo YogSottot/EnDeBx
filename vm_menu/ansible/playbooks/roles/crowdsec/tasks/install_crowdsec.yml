@@ -20,12 +20,20 @@
     update_cache: true
     name: crowdsec
     state: present
+  register: crowdsec_install_result
+  until: crowdsec_install_result is succeeded
+  retries: 5
+  delay: 5
 
 - name: Crowdsec-firewall-bouncer-nftables
   ansible.builtin.package:
     update_cache: false
     name: crowdsec-firewall-bouncer-nftables
     state: present
+  register: crowdsec_nftables_install_result
+  until: crowdsec_nftables_install_result is succeeded
+  retries: 5
+  delay: 5
   when:
     - crowdsec_install_firewall_bouncer | bool
     - ansible_os_family | lower == "debian"
@@ -35,6 +43,10 @@
     update_cache: false
     name: crowdsec-firewall-bouncer-iptables
     state: present
+  register: crowdsec_iptables_install_result
+  until: crowdsec_iptables_install_result is succeeded
+  retries: 5
+  delay: 5
   when:
     - ansible_os_family | lower == "redhat"
     - ansible_distribution_major_version == '7'
@@ -44,12 +56,19 @@
 - name: Cscli hub update
   ansible.builtin.command:
     cmd: cscli hub update
+  register: hub_update_result
+  until: hub_update_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: false
 
 - name: Cscli hub upgrade
   ansible.builtin.command:
     cmd: cscli hub upgrade
   register: hub_upgrade_result
+  until: hub_upgrade_result.rc == 0
+  retries: 5
+  delay: 5
   changed_when: false
 
 # collections

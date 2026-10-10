@@ -13,7 +13,9 @@
 
 - name: Include task for astra
   ansible.builtin.include_tasks: "install_Astra Linux.yml"
-  when: not certbot_symlink.stat.exists
+  when: >-
+    not certbot_symlink.stat.exists or
+    (certbot_symlink.stat.lnk_source | default('')) == '/opt/certbot/bin/certbot'
 
 - name: Ensure letsencrypt dir exists
   ansible.builtin.file:

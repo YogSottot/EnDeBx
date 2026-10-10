@@ -17,16 +17,6 @@ apt update && apt -o APT::Get::Always-Include-Phased-Updates=true full-upgrade &
 apt install apt-forktracer apt-listchanges
 ```
 
-- если у вас установлен rabbitmq, то следуйте [инструкции по ссылке](https://discourse.ubuntu.com/t/ubuntu-server-gazette-issue-12-upgrading-rabbitmq-across-ubuntu-releases/77271#p-199978-h-2404-lts-noble-to-2604-lts-resolute-6) или просто удалите `File Conversion Server (transformer)` через меню, после обновления его можно установить обратно
-
-Копия инструкции:
-
-```bash
-apt-add-repository ppa:canonical-server/rabbitmq-3.13-noble
-apt update && apt upgrade
-rabbitmqctl enable_feature_flag all
-```
-
 ## Первый этап обновления
 
   ```bash
@@ -156,6 +146,12 @@ systemctl restart mysql
 ```php
 $charset = 'utf8mb4';
 $collate = 'utf8mb4_unicode_ci';
+```
+
+### Отключить новое tmpfs-поведение для `/tmp`
+
+```bash
+systemctl mask tmp.mount
 ```
 
 ## После завершения

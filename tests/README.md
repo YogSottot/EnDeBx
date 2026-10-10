@@ -1,5 +1,15 @@
 # Test Scaffolding
 
+Use `make check-postgresql-virtualenv` to check PostgreSQL virtualenv creation,
+repeated execution, ownership tasks with nested files, missing pip, a broken interpreter and a Python version
+mismatch locally. Requires Python 3 with venv/ensurepip, PyYAML and
+`ansible-playbook`; uses temporary directories without network access or a VM.
+
+Use `make check-certbot-virtualenv` for the same local virtualenv checks on the
+Certbot installation tasks, plus selection of the virtualenv installation branch
+for missing Certbot, an existing `/opt/certbot` symlink, system Certbot and an
+unrelated symlink. Requirements are the same; no certificates are issued.
+
 Use `make check-push-archive` to test the Push server archive tasks locally:
 download timeout, HTTP error, successful download, forced upgrade, an already
 installed server, missing archive and invalid checksum. Requires Python 3, PyYAML and

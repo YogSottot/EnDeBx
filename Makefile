@@ -5,7 +5,15 @@
 	menu-firewall menu-security menu-timezone collect-logs e2e ensure-upload-repo check-opensearch-menu check-opensearch-dashboards \
 	check-menu-extensions-config
 
-.PHONY: check-update-fzf check-netdata-versions
+.PHONY: check-update-fzf check-netdata-versions check-postgresql-virtualenv
+
+.PHONY: check-certbot-virtualenv
+
+check-certbot-virtualenv:
+	python3 tests/runner/check_postgresql_virtualenv.py --certbot
+
+check-postgresql-virtualenv:
+	python3 tests/runner/check_postgresql_virtualenv.py
 
 check-netdata-versions:
 	python3 tests/runner/check_netdata_versions.py
@@ -27,6 +35,8 @@ RUN_ID ?= $(shell date +%Y%m%d-%H%M%S)
 help:
 	@printf '%s\n' \
 	'Targets:' \
+	'  check-certbot-virtualenv - check Certbot virtualenv creation and repair locally' \
+	'  check-postgresql-virtualenv - check PostgreSQL virtualenv creation and repair locally' \
 	'  check-netdata-versions - check Netdata version selection locally with Ansible' \
 	'  check-push-archive - check Push server archive download and local fallback' \
 	'  check-update-fzf - check bashrc fzf guards locally' \
@@ -165,8 +175,8 @@ menu-snapd menu-security-settings menu-security-tools menu-firewall \
 menu-security menu-timezone: ensure-upload-repo
 
 e2e:
-	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
-	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+#	$(MAKE) tofu-init DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
+#	$(MAKE) tofu-apply DISTRO=$(DISTRO) RUN_ID=$(RUN_ID)
 	$(MAKE) wait-ssh
 	$(MAKE) bootstrap-host
 	$(MAKE) upload-repo

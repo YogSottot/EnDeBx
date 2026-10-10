@@ -59,19 +59,12 @@ reboot
 После перезагрузки:
 
 ```bash
+apt update
 apt list '~o'
 apt purge '~o'
 ```
 
 ## Дополнительные действия после upgrade
-
-### Обновить источники в deb822
-
-Опционально:
-
-```bash
-apt modernize-sources
-```
 
 ### Поставить `eza` для стандартных alias
 

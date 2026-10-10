@@ -1,5 +1,26 @@
 ---
 # Generate passwords
+- name: Add RabbitMQ repositories
+  ansible.builtin.deb822_repository:
+    name: "{{ item.name }}"
+    types: [deb]
+    uris:
+      - "https://deb1.rabbitmq.com/{{ item.path }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_release }}"
+      - "https://deb2.rabbitmq.com/{{ item.path }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_release }}"
+    suites:
+      - "{{ ansible_distribution_release }}"
+    components: [main]
+    architectures: [amd64]
+    signed_by: https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA
+    state: present
+  loop:
+    - { name: rabbitmq-erlang, path: rabbitmq-erlang }
+    - { name: rabbitmq-server, path: rabbitmq-server }
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
 - name: Generate passwords
   include_tasks: configure_passwords.yml
 
