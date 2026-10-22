@@ -90,6 +90,7 @@ fi
 
 systemctl stop unattended-upgrades.service || true
 export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 systemctl stop unattended-upgrades.service || true

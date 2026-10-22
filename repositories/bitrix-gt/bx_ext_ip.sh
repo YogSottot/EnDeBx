@@ -11,8 +11,8 @@ cat <<EOT > /etc/nginx/bx/site_avaliable/bx_ext_ip.conf
 server {
     listen 80;
     listen [::]:80;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     
     server_name ${ip};
     

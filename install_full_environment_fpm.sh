@@ -107,6 +107,7 @@ if [ -e "$DEST_DIR_MENU/.env.menu" ]; then
 fi
 
 export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 

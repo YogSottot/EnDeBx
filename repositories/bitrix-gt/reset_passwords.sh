@@ -133,104 +133,349 @@ DOCUMENT_ROOT="${BS_PATH_DEFAULT_SITE}"
     php_force_install='true' \
     server_timezone=${BS_SERVER_TIMEZONE}"
 
-if [ "$BS_PUSH_SERVER_STOPPED" == Y  ]; then
-    systemctl stop push-server.service
-    systemctl disable push-server.service
-    systemctl stop redis-server.service
-    systemctl disable redis-server.service
-else
-    systemctl restart push-server.service
-    systemctl restart redis-server.service
-fi
-
 echo "Password for the user ${BS_USER_SERVER_SITES}:" > /root/passwords.txt;
 echo "${site_user_password}" >> /root/passwords.txt;
 
-apt update -y
-apt upgrade -y --enable-upgrade
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+apt-get update -y
+apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-# update menu to latest version
-BRANCH="main"
-REPO_URL="https://github.com/YogSottot/EnDeBx.git"
+readonly BRANCH="main"
+readonly REPO_URL="https://github.com/YogSottot/EnDeBx.git"
 
-DIR_NAME_MENU="vm_menu"
-DEST_DIR_MENU="/root"
+readonly DIR_NAME="vm_menu"
+readonly DEST_DIR="/root"
+readonly BACKUP_DIR="${DEST_DIR}/backup_vm_menu"
+readonly TMP_CLONE_DIR="${DEST_DIR}/EnDeBx"
 
-FULL_PATH_MENU_FILE="$DEST_DIR_MENU/$DIR_NAME_MENU/menu.sh"
+readonly FULL_MENU_PATH="${DEST_DIR}/${DIR_NAME}/menu.sh"
 
-DEST_DIR_BACKUP_MENU="$DEST_DIR_MENU/backup_vm_menu"
+log() {
+    echo "[INFO] $*"
+}
 
-# Backup vm_menu
-current_date=$(date "+%d.%m.%Y %H:%M:%S")
-full_path_backup_menu="$DEST_DIR_BACKUP_MENU/$current_date"
+die() {
+    echo "[ERROR] $*" >&2
+    exit 1
+}
 
-mkdir -p "${full_path_backup_menu}"
-mkdir -p "${DEST_DIR_MENU}/${DIR_NAME_MENU}"
-mv -f "${DEST_DIR_MENU}/${DIR_NAME_MENU}" "${full_path_backup_menu}"
+require_root() {
+    [[ $EUID -eq 0 ]] || die "Run as root"
+}
 
-# Clone directory vm_menu with repositories
-rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
-git clone --branch=$BRANCH --depth 1 --filter=blob:none --sparse $REPO_URL "$DEST_DIR_MENU/EnDeBx"
-cd "$DEST_DIR_MENU/EnDeBx"
-git sparse-checkout set $DIR_NAME_MENU
+timestamp() {
+    date "+%Y-%m-%d_%H-%M-%S"
+}
 
-# Move vm_menu in /root and clean
-rm -rf "${DEST_DIR_MENU:?}/${DIR_NAME_MENU:?}"
-mv -f $DIR_NAME_MENU $DEST_DIR_MENU
-cd "$DEST_DIR_MENU"
-rm -rf "${DEST_DIR_MENU:?}/EnDeBx"
-chmod -R +x $DEST_DIR_MENU/$DIR_NAME_MENU
-
-rm -f "/tmp/configs.tmp"
-rm -f "/tmp/new_version_menu.tmp"
-
-ln -sf $FULL_PATH_MENU_FILE "$DEST_DIR_MENU/menu.sh"
-
-# update nginx bitrix_general.conf
-# shellcheck source=/dev/null
-source $DEST_DIR_MENU/$DIR_NAME_MENU/bash_scripts/config.sh
-
-# shellcheck source=/dev/null
-if [ -e $DEST_DIR_MENU/.env.menu ]; then
-    source $DEST_DIR_MENU/.env.menu
-fi
-
-cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" "$BS_PATH_NGINX/conf/bitrix_general.conf"
-cp -f "$DEST_DIR_MENU/$DIR_NAME_MENU/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" "$BS_PATH_NGINX/conf_fpm/bitrix_general.conf"
-nginx -t && systemctl reload "$BS_SERVICE_NGINX_NAME.service"
-
-# check ansible installation
-# --- remove ansible if installed via apt ---
-if dpkg -s ansible >/dev/null 2>&1; then
-    echo "Purging system ansible package..."
-    apt purge -y ansible
-    apt autoremove -y
-else
-    echo "No apt ansible package installed."
-fi
-
-# make sure apache modules disabled
-a2dismod --force deflate filter negotiation ssl
-
-# Make sure pipx itself exists
-if ! command -v pipx >/dev/null 2>&1; then
-    apt update && apt install -y pipx
-    python3 -m pipx ensurepath
-fi
-if pipx list | grep -q "package ansible "; then
-    ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
-    if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
-        echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $BS_ANSIBLE_REQUIRED_VERSION)..."
-        pipx uninstall ansible
-        pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-        pipx inject ansible jmespath passlib python-debian
+backup_menu() {
+    if [[ -d "${DEST_DIR}/${DIR_NAME}" ]]; then
+        backup_path="${BACKUP_DIR}/$(timestamp)"
+        mkdir -p "${backup_path}"
+        mv "${DEST_DIR}/${DIR_NAME}" "${backup_path}/"
+        log "Backup created: ${backup_path}"
     else
-        echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed."
+        log "No existing menu to backup"
     fi
-else
-    echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
-    pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
-    pipx inject ansible jmespath passlib python-debian
-fi
+}
+
+clone_repo() {
+    rm -rf "${TMP_CLONE_DIR}"
+
+    git clone \
+        --branch="${BRANCH}" \
+        --depth=1 \
+        --filter=blob:none \
+        --sparse \
+        "${REPO_URL}" \
+        "${TMP_CLONE_DIR}"
+
+    cd "${TMP_CLONE_DIR}"
+    git sparse-checkout set "${DIR_NAME}"
+}
+
+deploy_menu() {
+    rm -rf "${DEST_DIR:?}/${DIR_NAME:?}"
+    mv "${TMP_CLONE_DIR}/${DIR_NAME}" "${DEST_DIR}/"
+    chmod -R +x "${DEST_DIR}/${DIR_NAME}"
+    rm -rf "${TMP_CLONE_DIR}"
+
+    ln -sf "${FULL_MENU_PATH}" "${DEST_DIR}/menu.sh"
+    cd "$DEST_DIR"
+}
+
+load_config() {
+    # shellcheck source=/dev/null
+    source "${DEST_DIR}/${DIR_NAME}/bash_scripts/config.sh"
+
+    if [[ -f "${DEST_DIR}/.env.menu" ]]; then
+        # shellcheck source=/dev/null
+        source "${DEST_DIR}/.env.menu"
+    fi
+}
+
+update_nginx() {
+    cp -f \
+        "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf/bitrix_general.conf" \
+        "${BS_PATH_NGINX}/conf/bitrix_general.conf"
+
+    cp -f \
+        "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/conf_fpm/bitrix_general.conf" \
+        "${BS_PATH_NGINX}/conf_fpm/bitrix_general.conf"
+
+    cp -f \
+        "${DEST_DIR}/${DIR_NAME}/ansible/playbooks/roles/geerlingguy.nginx_config/files/nginx/bx/maps/resize_cache.conf" \
+        "${BS_PATH_NGINX}/maps/resize_cache.conf"
+
+
+    touch "${BS_PATH_NGINX}/custom_ip.conf"
+
+    "${BS_SERVICE_NGINX_NAME}" -t
+    systemctl reload "${BS_SERVICE_NGINX_NAME}.service"
+}
+
+remove_zstd() {
+    rm -f "/etc/${BS_SERVICE_NGINX_NAME}/custom_conf.d/section_http/zstd.conf"
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" purge libnginx-mod-http-zstd || true
+}
+
+setup_ansible() {
+    export DEBIAN_FRONTEND=noninteractive
+    export APT_LISTCHANGES_FRONTEND=none
+    # check ansible installation
+    # --- remove ansible if installed via apt ---
+    if dpkg -s ansible >/dev/null 2>&1; then
+        echo "Purging system ansible package..."
+        apt-get -y \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            purge ansible
+        apt-get -y autoremove
+    else
+        echo "No apt ansible package installed."
+    fi
+
+    # Make sure pipx itself exists
+    export PATH="$PATH:/root/.local/bin"
+    if ! command -v pipx >/dev/null 2>&1; then
+        apt-get update && apt-get -y -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" install pipx
+        pipx ensurepath >/dev/null 2>&1 || true
+    fi
+    # check ansible installation
+    REQUIRED_INJECTS=(
+        jmespath
+        passlib
+        python-debian
+        psycopg2-binary
+        ipaddress
+    )
+
+    if pipx list | grep -q "package ansible "; then
+        ANSIBLE_INSTALLED_VERSION=$(pipx list | grep "package ansible " | awk '{print $3}' | tr -d ',')
+
+        if [ "$ANSIBLE_INSTALLED_VERSION" != "$BS_ANSIBLE_REQUIRED_VERSION" ]; then
+            echo "Reinstalling ansible $BS_ANSIBLE_REQUIRED_VERSION (found $ANSIBLE_INSTALLED_VERSION)..."
+            pipx uninstall ansible
+            pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+            pipx inject ansible "${REQUIRED_INJECTS[@]}"
+        else
+            MISSING_PACKAGES=()
+
+            for pkg in "${REQUIRED_INJECTS[@]}"; do
+                if ! pipx runpip ansible show "$pkg" >/dev/null 2>&1; then
+                    MISSING_PACKAGES+=("$pkg")
+                fi
+            done
+
+            if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+                echo "Injecting missing packages: ${MISSING_PACKAGES[*]}"
+                pipx inject ansible "${MISSING_PACKAGES[@]}"
+            else
+                echo "Ansible $BS_ANSIBLE_REQUIRED_VERSION already installed with all required packages."
+            fi
+        fi
+    else
+        echo "Installing ansible $BS_ANSIBLE_REQUIRED_VERSION..."
+        pipx install --include-deps "ansible==$BS_ANSIBLE_REQUIRED_VERSION"
+        pipx inject ansible "${REQUIRED_INJECTS[@]}"
+    fi
+}
+
+reload_php_fpm_services() {
+    local php_version="$1"
+    local service_name=""
+
+    for service_name in "php${php_version}-fpm.service" "php${php_version}-fpm-xdebug.service"; do
+        if systemctl list-unit-files "${service_name}" --no-legend 2>/dev/null | grep -q "^${service_name}[[:space:]]"; then
+            systemctl try-reload-or-restart "${service_name}"
+        fi
+    done
+}
+
+disable_xdebug_for_installed_php_versions() {
+    local xdebug_found=0
+    local php_version=""
+    local php_version_dir=""
+    local php_sapi=""
+    local php_sapi_dir=""
+
+    if [[ ! -d /etc/php ]]; then
+        log "Directory /etc/php not found, skipping xdebug disable"
+        return 0
+    fi
+    command -v phpdismod >/dev/null 2>&1 || die "phpdismod not found"
+
+    while IFS= read -r php_version_dir; do
+        php_version="${php_version_dir##*/}"
+
+        while IFS= read -r php_sapi_dir; do
+            [[ -d "${php_sapi_dir}/conf.d" ]] || continue
+
+            php_sapi="${php_sapi_dir##*/}"
+            if compgen -G "${php_sapi_dir}/conf.d/*-xdebug.ini" >/dev/null; then
+                phpdismod -v "${php_version}" -s "${php_sapi}" xdebug
+                log "Disabled xdebug for PHP ${php_version} (${php_sapi})"
+                xdebug_found=1
+
+                if [[ "${php_sapi}" == "fpm" ]]; then
+                    reload_php_fpm_services "${php_version}"
+                fi
+            fi
+        done < <(find "${php_version_dir}" -mindepth 1 -maxdepth 1 -type d | sort)
+    done < <(find /etc/php -mindepth 1 -maxdepth 1 -type d | sort)
+
+    if [[ "${xdebug_found}" -eq 0 ]]; then
+        log "No enabled xdebug configs found for installed PHP versions"
+    fi
+}
+
+run_a2dismod() {
+    # make sure apache modules disabled
+    a2dismod --force deflate filter negotiation
+}
+
+apache_fix_site() {
+    local APACHE_SITE="/etc/apache2/sites-available/${BS_DEFAULT_SITE_NAME}.conf"
+
+    [ -f "$APACHE_SITE" ] || return 0
+    # Удалить ServerName * и ServerAlias *
+    sed -i -E '/^[[:space:]]*Server(Name|Alias)[[:space:]]+\*/d' "$APACHE_SITE"
+
+    # Заменить *:8090 на 127.0.0.1:8091
+    sed -i 's|\*:8090|127.0.0.1:8091|g' "$APACHE_SITE"
+}
+
+apache_fix_ports() {
+    local APACHE_PORTS="/etc/apache2/ports.conf"
+    [ -f "$APACHE_PORTS" ] || return 0
+    # Удалить Listen 127.0.0.1:*
+    sed -i -E '/^[[:space:]]*Listen[[:space:]]+127\.0\.0\.1:.*/d' "$APACHE_PORTS"
+
+    # Добавить Listen 127.0.0.1:8090 если нет
+    grep -q '^Listen 127\.0\.0\.1:8090$' "$APACHE_PORTS" || \
+        echo 'Listen 127.0.0.1:8090' >> "$APACHE_PORTS"
+
+    # Добавить Listen 127.0.0.1:8091 если нет
+    grep -q '^Listen 127\.0\.0\.1:8091$' "$APACHE_PORTS" || \
+        echo 'Listen 127.0.0.1:8091' >> "$APACHE_PORTS"
+}
+
+apache_restart() {
+    apache2ctl -t
+    systemctl restart apache2.service
+}
+
+nginx_fix_site() {
+    local NGINX_SITE="${BS_PATH_NGINX_SITES_CONF}/${BS_DEFAULT_SITE_NAME}.conf"
+    [ -f "$NGINX_SITE" ] || return 0
+    # Заменить 127.0.0.1:8090 на 127.0.0.1:8091
+    sed -i 's|127\.0\.0\.1:8090|127.0.0.1:8091|g' "$NGINX_SITE"
+}
+
+nginx_reload() {
+    "${BS_SERVICE_NGINX_NAME}" -t
+    systemctl reload "${BS_SERVICE_NGINX_NAME}.service"
+}
+
+logrotate_fix_owner() {
+    chown root: /etc/logrotate.d/*
+}
+
+fix_push_logrotate() {
+    local file="/etc/logrotate.d/push-server"
+
+    [ -f "$file" ] || return 0
+
+    sed -i '/systemctl/s/\brestart\b/try-restart/' "$file"
+}
+
+fix_fzf_key_bindings() {
+    local file
+
+    for file in /root/.bashrc /etc/skel/.bashrc "${BS_PATH_USER_HOME_PREFIX}"/*/.bashrc; do
+        [ -f "$file" ] || continue
+
+        sed -i 's|^\([[:space:]]*\)source /usr/share/doc/fzf/examples/key-bindings\.bash[[:space:]]*$|\1[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] \&\& source /usr/share/doc/fzf/examples/key-bindings.bash|' "$file"
+    done
+}
+
+fix_php_fpm_override() {
+    local changed=0
+    local file
+
+    shopt -s nullglob
+
+    for file in \
+        /etc/systemd/system/php*-fpm.service.d/z_override.conf \
+        /etc/systemd/system/php*-fpm-xdebug.service.d/z_override.conf
+    do
+        [ -f "$file" ] || continue
+
+        if ! grep -Fxq 'ReadWritePaths=/etc/alternatives' "$file"; then
+            echo 'ReadWritePaths=/etc/alternatives' >> "$file"
+            echo "Updated: $file"
+            changed=1
+        fi
+    done
+
+    shopt -u nullglob
+
+    if [ "$changed" -eq 1 ]; then
+        systemctl daemon-reload
+        echo "systemctl daemon-reload executed"
+    fi
+}
+
+main() {
+    require_root
+    backup_menu
+    clone_repo
+    deploy_menu
+    load_config
+    fix_fzf_key_bindings
+    if [ -d ${BS_PATH_NGINX} ] ; then
+    update_nginx
+    fi
+    remove_zstd
+    setup_ansible
+    if [ -d ${BS_PATH_NGINX} ] ; then
+    disable_xdebug_for_installed_php_versions
+    run_a2dismod
+    apache_fix_site
+    apache_fix_ports
+    apache_restart
+    nginx_fix_site
+    nginx_reload
+    fix_php_fpm_override
+    fi
+    logrotate_fix_owner
+    fix_push_logrotate
+
+    log "Menu updated! Backup directory old menu: $backup_path";
+}
+
+main "$@"
 
 echo "Reset passwords is completed successfully!" >> /root/passwords.txt;
