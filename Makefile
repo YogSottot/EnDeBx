@@ -9,6 +9,11 @@
 
 .PHONY: check-certbot-virtualenv
 
+.PHONY: check-percona-versions
+
+check-percona-versions:
+	python3 tests/runner/check_percona_versions.py
+
 check-certbot-virtualenv:
 	python3 tests/runner/check_postgresql_virtualenv.py --certbot
 
@@ -35,6 +40,7 @@ RUN_ID ?= $(shell date +%Y%m%d-%H%M%S)
 help:
 	@printf '%s\n' \
 	'Targets:' \
+	'  check-percona-versions - check installer and MySQL menu version restrictions locally' \
 	'  check-certbot-virtualenv - check Certbot virtualenv creation and repair locally' \
 	'  check-postgresql-virtualenv - check PostgreSQL virtualenv creation and repair locally' \
 	'  check-netdata-versions - check Netdata version selection locally with Ansible' \

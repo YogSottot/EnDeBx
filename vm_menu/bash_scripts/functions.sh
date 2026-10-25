@@ -3815,6 +3815,12 @@ function install_mysql() {
                         continue
                     fi
                     if [ -n "${ubuntu_major_version}" ] &&
+                       [ "${ubuntu_major_version}" -ge 26 ] &&
+                       { [ "${input_version}" = "5.7" ] || [ "${input_version}" = "8.0" ]; }; then
+                        echo "   Percona ${input_version} is not available on Ubuntu ${ubuntu_major_version}.04+. Enter Percona 8.4 or choose MariaDB."
+                        continue
+                    fi
+                    if [ -n "${ubuntu_major_version}" ] &&
                        [ "${ubuntu_major_version}" -ge 24 ] &&
                        [ "${input_version}" = "5.7" ]; then
                         echo "   Percona ${input_version} is not available on Ubuntu ${ubuntu_major_version}.04+. Enter another version."

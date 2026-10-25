@@ -99,7 +99,7 @@ server {
 
     set $docroot "{{ path_sites }}/{{ domain }}";
 
-    index index.php;
+    index index.php index.html;
     root "{{ path_sites }}/{{ domain }}";
 
 {% if nginx_composite | bool %}
@@ -230,7 +230,7 @@ server {
 
     set $docroot "{{ path_sites }}/{{ domain }}";
 
-    index index.php;
+    index index.php index.html;
     root "{{ path_sites }}/{{ domain }}";
 
 {% if nginx_composite | bool %}

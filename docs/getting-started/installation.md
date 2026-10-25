@@ -39,6 +39,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/YogSottot/EnDeBx/main/install
 
 - на Debian 13 `Percona 5.7` и `Percona 8.0` недоступны;
 - на Ubuntu 24.04+ `Percona 5.7` недоступна;
+- на Ubuntu 26.04+ из версий Percona доступна только `8.4`;
 - для PostgreSQL можно выбрать `distro`-репозиторий или `official`.
 
 Если выбрана PostgreSQL-установка, итоговая версия может определяться автоматически из репозитория дистрибутива.
