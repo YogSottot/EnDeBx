@@ -4,9 +4,17 @@
 
 ## unreleased
 
+## 1.4.3 - 2026.11.16
+
+### Добавлено
+
+- Percona 5.7 устанавливается из tarball на Debian 12+ и Ubuntu 24.04+; меню поддерживает конфигурацию и удаление такой установки, пакетное обновление до 8.0 заблокировано. Percona 8.0 по-прежнему недоступна на Debian 13+ и Ubuntu 26.04+.
+
 ### Исправлено
 
-- Первичная установка и меню MySQL отклоняют Percona 5.7/8.0 на Ubuntu 26.04+ и предлагают Percona 8.4 или MariaDB.
+- По умолчанию отключено добавление слеша (seo-редирект). Конфиг в `/etc/nginx/bx/site_settings/домен/seo.conf`. Включение ломает некоторые меню в Битрикс24.
+- Ошибка в логе nginx `using uninitialized "redirect_check" variable`.
+- Ошибка в логе nginx `using uninitialized "frame_options" variable`.
 
 ## 1.4.2 - 2026.10.10
 

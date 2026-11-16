@@ -1,8 +1,11 @@
 # Test Scaffolding
 
-Use `make check-percona-versions` to check Percona version restrictions in the
+Use `make check-percona-versions` to check Percona version restrictions (including
+allowed tarball 5.7 on Debian 13+ and Ubuntu 24.04+) in the
 installer and MySQL menu for Ubuntu 22/24/26/28 and Debian 12/13, including retry
 after an unavailable version. Requires Python 3 and Bash; no network or VM needed.
+The runner requires PyYAML and also checks minimal-client detection, tarball menu
+configuration/removal, hidden package upgrade, initialization guard and checksum.
 
 Use `make check-postgresql-virtualenv` to check PostgreSQL virtualenv creation,
 repeated execution, ownership tasks with nested files, missing pip, a broken interpreter and a Python version

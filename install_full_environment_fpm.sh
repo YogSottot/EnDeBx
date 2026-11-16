@@ -243,7 +243,7 @@ if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
    [ "${BS_DB_FLAVOR}" = "percona" ] &&
    [ -n "${DEBIAN_MAJOR_VERSION}" ] &&
    [ "${DEBIAN_MAJOR_VERSION}" -ge 13 ] &&
-   { [ "${BS_DB_VERSION}" = "5.7" ] || [ "${BS_DB_VERSION}" = "8.0" ]; }; then
+   [ "${BS_DB_VERSION}" = "8.0" ]; then
   echo "Percona ${BS_DB_VERSION} is not available on Debian ${DEBIAN_MAJOR_VERSION}. Use Percona 8.4 or MariaDB."
   exit 1
 fi
@@ -252,17 +252,8 @@ if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
    [ "${BS_DB_FLAVOR}" = "percona" ] &&
    [ -n "${UBUNTU_MAJOR_VERSION}" ] &&
    [ "${UBUNTU_MAJOR_VERSION}" -ge 26 ] &&
-   { [ "${BS_DB_VERSION}" = "5.7" ] || [ "${BS_DB_VERSION}" = "8.0" ]; }; then
+   [ "${BS_DB_VERSION}" = "8.0" ]; then
   echo "Percona ${BS_DB_VERSION} is not available on Ubuntu ${UBUNTU_MAJOR_VERSION}.04+. Use Percona 8.4 or MariaDB."
-  exit 1
-fi
-
-if [ "${BS_INSTALL_DATABASE}" = "mysql" ] &&
-   [ "${BS_DB_FLAVOR}" = "percona" ] &&
-   [ -n "${UBUNTU_MAJOR_VERSION}" ] &&
-   [ "${UBUNTU_MAJOR_VERSION}" -ge 24 ] &&
-   [ "${BS_DB_VERSION}" = "5.7" ]; then
-  echo "Percona ${BS_DB_VERSION} is not available on Ubuntu ${UBUNTU_MAJOR_VERSION}.04+. Use Percona 8.0/8.4 or MariaDB."
   exit 1
 fi
 

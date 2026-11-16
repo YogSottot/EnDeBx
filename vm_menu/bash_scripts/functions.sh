@@ -320,7 +320,8 @@ menu_mysql(){
       echo "          Installed: ${MYSQL_FLAVOR} ${MYSQL_VERSION}"
       echo "          1) Re-generate MySQL config";
       local next_option=2
-      if [ "$MYSQL_VERSION_MAJOR" == 5.7 ] ; then
+      if [ "$MYSQL_FLAVOR" == "Percona" ] && [ "$MYSQL_VERSION_MAJOR" == 5.7 ] &&
+         [ ! -f /usr/local/percona-5.7/mysql.tarball ]; then
         option_upgrade_57="$next_option"
         echo "          ${option_upgrade_57}) Upgrade percona 5.7 to 8.0";
         next_option=$((next_option + 1))
@@ -3733,7 +3734,7 @@ detect_mysql_version() {
     # Detect flavor
     if [[ $output == *MariaDB* ]]; then
         flavor="MariaDB"
-    elif [[ $output == *Percona* ]]; then
+    elif [[ $output == *Percona* ]] || [ -f /usr/local/percona-5.7/mysql.tarball ]; then
         flavor="Percona"
     else
         flavor="MySQL"
@@ -3810,20 +3811,14 @@ function install_mysql() {
                 5.7|8.0|8.4)
                     if [ -n "${debian_major_version}" ] &&
                        [ "${debian_major_version}" -ge 13 ] &&
-                       { [ "${input_version}" = "5.7" ] || [ "${input_version}" = "8.0" ]; }; then
+                       [ "${input_version}" = "8.0" ]; then
                         echo "   Percona ${input_version} is not available on Debian ${debian_major_version}. Enter another version."
                         continue
                     fi
                     if [ -n "${ubuntu_major_version}" ] &&
                        [ "${ubuntu_major_version}" -ge 26 ] &&
-                       { [ "${input_version}" = "5.7" ] || [ "${input_version}" = "8.0" ]; }; then
+                       [ "${input_version}" = "8.0" ]; then
                         echo "   Percona ${input_version} is not available on Ubuntu ${ubuntu_major_version}.04+. Enter Percona 8.4 or choose MariaDB."
-                        continue
-                    fi
-                    if [ -n "${ubuntu_major_version}" ] &&
-                       [ "${ubuntu_major_version}" -ge 24 ] &&
-                       [ "${input_version}" = "5.7" ]; then
-                        echo "   Percona ${input_version} is not available on Ubuntu ${ubuntu_major_version}.04+. Enter another version."
                         continue
                     fi
                     BS_DB_VERSION="${input_version}"

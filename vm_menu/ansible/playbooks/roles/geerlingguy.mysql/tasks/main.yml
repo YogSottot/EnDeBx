@@ -13,6 +13,10 @@
       or deb_percona_install_packages is defined and deb_percona_install_packages.changed }}"
 
 # Configure MySQL.
+- name: Install Percona 5.7 binary tarball
+  ansible.builtin.include_tasks: percona-5.7.yml
+  when: mysql_percona_tarball | bool
+
 - ansible.builtin.include_tasks: configure.yml # noqa name[missing]
 - ansible.builtin.include_tasks: secure-installation.yml # noqa name[missing]
 - ansible.builtin.include_tasks: databases.yml # noqa name[missing]

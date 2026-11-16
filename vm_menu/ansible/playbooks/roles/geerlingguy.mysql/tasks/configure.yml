@@ -27,11 +27,13 @@
     mysql_normalized:
       flavor: >-
         {% if 'MariaDB' in mysql_cli_version.stdout %}MariaDB
-        {% elif 'Percona' in mysql_cli_version.stdout %}Percona
+        {% elif 'Percona' in mysql_cli_version.stdout or mysql_percona_tarball | default(false) | bool %}Percona
         {% else %}MySQL{% endif %}
       is_mariadb: "{{ 'MariaDB' in mysql_cli_version.stdout }}"
-      is_percona: "{{ 'Percona' in mysql_cli_version.stdout }}"
-      is_mysql: "{{ 'MariaDB' not in mysql_cli_version.stdout and 'Percona' not in mysql_cli_version.stdout }}"
+      is_percona: "{{ 'Percona' in mysql_cli_version.stdout or mysql_percona_tarball | default(false) | bool }}"
+      is_mysql: >-
+        {{ 'MariaDB' not in mysql_cli_version.stdout and 'Percona' not in mysql_cli_version.stdout
+           and not mysql_percona_tarball | default(false) | bool }}
       version: "{{ mysql_version_detected }}"  # Now a string, not a list
 
 - name: Compute version_major
@@ -147,6 +149,7 @@
 - name: Temporarily set AppArmor to complain mode for MariaDB (Ubuntu 26.04+)
   ansible.builtin.command: aa-complain /usr/sbin/mariadbd
   when:
+    - mysql_flavor == 'mariadb'
     - ansible_distribution == "Ubuntu"
     - ansible_distribution_version is version('26.04', '>=')
 
@@ -171,6 +174,7 @@
 - name: Restore AppArmor to enforce mode for MariaDB (Ubuntu 26.04+)
   ansible.builtin.command: aa-enforce /usr/sbin/mariadbd
   when:
+    - mysql_flavor == 'mariadb'
     - ansible_distribution == "Ubuntu"
     - ansible_distribution_version is version('26.04', '>=')
 

@@ -23,6 +23,12 @@
       when: mysql_action == "INSTALL"
 
   tasks:
+    - name: Detect binary Percona installation
+      ansible.builtin.stat:
+        path: /usr/local/percona-5.7/mysql.tarball
+      register: percona_tarball
+      when: mysql_action == "DELETE"
+
     - name: Stop MySQL service before removal
       ansible.builtin.service:
         name: mysql
@@ -38,6 +44,27 @@
         enabled: false
       when: mysql_action == "DELETE"
       failed_when: false
+
+    - name: Remove Percona binary installation
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/bin/mysql
+        - /usr/bin/mysqladmin
+        - /usr/bin/mysqldump
+        - /usr/bin/mysql_upgrade
+        - /usr/bin/mysqlcheck
+        - /usr/bin/mysqlbinlog
+        - /etc/systemd/system/mysql.service
+        - /etc/logrotate.d/percona-tarball
+        - /usr/local/percona-5.7
+      when: mysql_action == "DELETE" and percona_tarball.stat.exists
+
+    - name: Reload systemd after binary removal
+      ansible.builtin.systemd:
+        daemon_reload: true
+      when: mysql_action == "DELETE" and percona_tarball.stat.exists
 
     - name: Purge MySQL and MariaDB packages
       ansible.builtin.apt:

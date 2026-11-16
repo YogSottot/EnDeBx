@@ -12,6 +12,16 @@
       tags: always
 
   tasks:
+    - name: Detect binary Percona installation
+      ansible.builtin.stat:
+        path: /usr/local/percona-5.7/mysql.tarball
+      register: percona_tarball
+
+    - name: Reject package upgrade for binary installation
+      ansible.builtin.assert:
+        that: not percona_tarball.stat.exists
+        fail_msg: Tarball Percona requires a manual migration to Percona 8.0
+
     - name: Ensure MySQL is running before upgrade
       ansible.builtin.systemd:
         name: mysql

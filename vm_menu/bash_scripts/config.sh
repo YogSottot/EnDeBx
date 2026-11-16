@@ -4,7 +4,7 @@
 export ANSIBLE_CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/ansible.cfg"
 
 # General configs
-BS_VERSION_MENU="1.4.2"
+BS_VERSION_MENU="1.4.3"
 BS_ANSIBLE_REQUIRED_VERSION="11.9.0"
 BS_PATH_USER_HOME_PREFIX="/var/www"
 BS_PATH_USER_HOME="html"
@@ -135,6 +135,7 @@ BS_INSTALL_DATABASE=mysql
 BS_DB_FLAVOR=mariadb
 # percona version (5.7 / 8.0 / 8.4)
 # mariadb version (5.5 / 10.11)
+# Percona 5.7 uses a binary tarball on Debian 12+ and Ubuntu 24.04+ (x86_64).
 BS_DB_VERSION=10.11
 BS_DB_CHARACTER_SET_SERVER=utf8mb4
 BS_DB_COLLATION=utf8mb4_unicode_ci

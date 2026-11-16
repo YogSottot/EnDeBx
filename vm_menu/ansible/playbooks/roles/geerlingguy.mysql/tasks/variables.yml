@@ -1,5 +1,12 @@
 ---
 # Variable configuration.
+- name: Select Percona 5.7 binary installation
+  ansible.builtin.set_fact:
+    mysql_percona_tarball: >-
+      {{ mysql_flavor == 'percona' and mysql_percona_version == '5.7' and
+         ((ansible_distribution == 'Debian' and ansible_distribution_major_version | int >= 12) or
+          (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 24)) }}
+
 - name: Include OS-specific variables.
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:

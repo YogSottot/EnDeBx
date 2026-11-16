@@ -4,10 +4,25 @@
     path: "{{ mysql_config_file }}"
   register: mysql_installed
 
+- name: Detect existing Percona binary installation
+  ansible.builtin.stat:
+    path: /usr/local/percona-5.7/mysql.tarball
+  register: percona_tarball
+  when: mysql_percona_tarball | bool
+
+- name: Preserve existing package installation
+  ansible.builtin.set_fact:
+    mysql_percona_tarball: false
+  when:
+    - mysql_percona_tarball | bool
+    - mysql_installed.stat.exists
+    - not percona_tarball.stat.exists
+
 - name: Setup Percona repo on Astra Linux
   when:
     - ansible_facts_lsb_id is defined and ansible_facts_lsb_id == 'Astra' and mysql_flavor == 'percona'
     - not mysql_installed.stat.exists
+    - not mysql_percona_tarball | bool
   block:
     - name: Backup Astra /etc/os-release
       ansible.builtin.copy:
@@ -55,6 +70,7 @@
     deb: "{{ mysql_percona_repo_baseurl }}/{{ mysql_percona_repo_release }}.{{ ansible_distribution_release }}_all.deb"
     state: present
   when:
+    - not mysql_percona_tarball | bool
     - (ansible_facts_lsb_id is not defined or ansible_facts_lsb_id != 'Astra') and mysql_flavor == 'percona'
     - not mysql_installed.stat.exists
 
@@ -62,6 +78,7 @@
   ansible.builtin.command: percona-release setup ps{{ mysql_percona_version | regex_replace('[.~]', '') }}
   changed_when: false
   when:
+    - not mysql_percona_tarball | bool
     - (ansible_facts_lsb_id is not defined or ansible_facts_lsb_id != 'Astra') and mysql_flavor == 'percona'
     - not mysql_installed.stat.exists
 
@@ -76,7 +93,7 @@
     name: "{{ mysql_percona_packages }}"
     state: present
     policy_rc_d: 101
-  when: mysql_flavor == 'percona' and not mysql_installed.stat.exists
+  when: mysql_flavor == 'percona' and not mysql_installed.stat.exists and not mysql_percona_tarball | bool
   environment:
     DEBIAN_FRONTEND: noninteractive
     TMPDIR: /tmp
@@ -110,6 +127,7 @@
   community.general.alternatives:
     name: my.cnf
     path: "{{ mysql_config_file }}"
+  when: not mysql_percona_tarball | bool
 
 - name: Make sure that /etc/mysql/conf.d/ exist
   ansible.builtin.file:
@@ -123,4 +141,4 @@
   ansible.builtin.service:
     name: "{{ mysql_daemon }}"
     state: stopped
-  when: not mysql_installed.stat.exists
+  when: not mysql_installed.stat.exists and not mysql_percona_tarball | bool

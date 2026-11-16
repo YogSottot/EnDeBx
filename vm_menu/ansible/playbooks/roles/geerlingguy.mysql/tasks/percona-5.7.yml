@@ -1,0 +1,137 @@
+---
+- name: Check binary architecture
+  ansible.builtin.assert:
+    that: ansible_architecture == 'x86_64'
+    fail_msg: Percona 5.7 tarball requires x86_64
+
+- name: Install binary dependencies
+  ansible.builtin.apt:
+    name:
+      - "{{ 'libaio1' if ansible_distribution == 'Debian' and ansible_distribution_major_version | int == 12 else 'libaio1t64' }}"
+      - libnuma1
+    state: present
+
+- name: Create mysql group
+  ansible.builtin.group:
+    name: mysql
+
+- name: Create mysql user
+  ansible.builtin.user:
+    name: mysql
+    group: mysql
+    shell: /bin/false
+    home: /var/lib/mysql
+    create_home: false
+
+- name: Create Percona installation directory
+  ansible.builtin.file:
+    path: /usr/local/percona-5.7
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download Percona 5.7 archive
+  ansible.builtin.get_url:
+    url: >-
+      https://downloads.percona.com/downloads/Percona-Server-5.7/Percona-Server-5.7.44-48/binary/tarball/Percona-Server-5.7.44-48-Linux.x86_64.glibc2.17-minimal.tar.gz
+    dest: /tmp/percona-5.7.tar.gz
+    checksum: sha256:2aec67e7d23cf0cf54ebc2603d38359982967536bec5750842665641feec10d0
+    mode: '0644'
+
+- name: Extract Percona archive
+  ansible.builtin.unarchive:
+    src: /tmp/percona-5.7.tar.gz
+    dest: /usr/local/percona-5.7
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    creates: /usr/local/percona-5.7/bin/mysqld
+
+- name: Provide legacy libaio soname for Percona
+  ansible.builtin.file:
+    src: /usr/lib/x86_64-linux-gnu/libaio.so.1t64
+    path: /usr/local/percona-5.7/lib/private/libaio.so.1
+    state: link
+  when: not (ansible_distribution == 'Debian' and ansible_distribution_major_version | int == 12)
+
+- name: Install MySQL command links
+  ansible.builtin.file:
+    src: "/usr/local/percona-5.7/bin/{{ item }}"
+    path: "/usr/bin/{{ item }}"
+    state: link
+  loop: [mysql, mysqladmin, mysqldump, mysql_upgrade, mysqlcheck, mysqlbinlog]
+
+- name: Create MySQL configuration directory
+  ansible.builtin.file:
+    path: "{{ mysql_config_include_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create MySQL entry configuration
+  ansible.builtin.copy:
+    dest: "{{ mysql_config_file }}"
+    content: "!includedir {{ mysql_config_include_dir }}\n"
+    mode: '0644'
+
+- name: Link MySQL entry configuration
+  ansible.builtin.file:
+    src: "{{ mysql_config_file }}"
+    path: /etc/mysql/my.cnf
+    state: link
+    force: true
+
+- name: Create MySQL datadir
+  ansible.builtin.file:
+    path: "{{ mysql_datadir }}"
+    state: directory
+    owner: mysql
+    group: mysql
+    mode: '0750'
+
+- name: Initialize Percona system tables
+  ansible.builtin.command: >-
+    /usr/local/percona-5.7/bin/mysqld --no-defaults --initialize-insecure
+    --user=mysql --basedir=/usr/local/percona-5.7 --datadir={{ mysql_datadir }}
+  args:
+    creates: "{{ mysql_datadir }}/mysql"
+  register: percona_initialize
+
+- name: Record initial binary installation
+  ansible.builtin.set_fact:
+    mysql_install_packages: "{{ mysql_install_packages | bool or percona_initialize.changed }}"
+
+- name: Install Percona systemd service
+  ansible.builtin.copy:
+    src: percona.service
+    dest: /etc/systemd/system/mysql.service
+    mode: '0644'
+
+- name: Reload systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Install Percona log rotation
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/percona-tarball
+    mode: '0644'
+    content: |
+      /var/log/mysql/*.log {
+          daily
+          rotate 3
+          missingok
+          notifempty
+          compress
+          delaycompress
+          sharedscripts
+          postrotate
+              if /usr/bin/mysqladmin ping >/dev/null 2>&1; then
+                  /usr/bin/mysqladmin flush-logs
+              fi
+          endscript
+      }
+
+- name: Mark binary installation
+  ansible.builtin.copy:
+    dest: /usr/local/percona-5.7/mysql.tarball
+    content: "5.7.44-48\n"
+    mode: '0644'

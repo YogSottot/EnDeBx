@@ -1,4 +1,9 @@
 ---
+- name: Detect binary Percona installation
+  ansible.builtin.stat:
+    path: /usr/local/percona-5.7/mysql.tarball
+  register: percona_tarball
+
 - name: Get MySQL version
   ansible.builtin.command: 'mysql --version'
   register: mysql_cli_version
@@ -18,11 +23,11 @@
     mysql_normalized:
       flavor: >-
         {% if 'MariaDB' in mysql_cli_version.stdout %}MariaDB
-        {% elif 'Percona' in mysql_cli_version.stdout %}Percona
+        {% elif 'Percona' in mysql_cli_version.stdout or percona_tarball.stat.exists %}Percona
         {% else %}MySQL{% endif %}
       is_mariadb: "{{ 'MariaDB' in mysql_cli_version.stdout }}"
-      is_percona: "{{ 'Percona' in mysql_cli_version.stdout }}"
-      is_mysql: "{{ 'MariaDB' not in mysql_cli_version.stdout and 'Percona' not in mysql_cli_version.stdout }}"
+      is_percona: "{{ 'Percona' in mysql_cli_version.stdout or percona_tarball.stat.exists }}"
+      is_mysql: "{{ 'MariaDB' not in mysql_cli_version.stdout and 'Percona' not in mysql_cli_version.stdout and not percona_tarball.stat.exists }}"
       version: "{{ mysql_version_detected }}"  # Now a string, not a list
 
 - name: Compute version_major

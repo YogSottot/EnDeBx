@@ -1,0 +1,16 @@
+[Unit]
+Description=Percona Server 5.7
+After=network.target
+
+[Service]
+User=mysql
+Group=mysql
+Type=simple
+ExecStart=/usr/local/percona-5.7/bin/mysqld --defaults-file=/etc/mysql/my.cnf --basedir=/usr/local/percona-5.7
+RuntimeDirectory=mysqld
+RuntimeDirectoryMode=755
+Restart=on-failure
+TimeoutStopSec=600
+
+[Install]
+WantedBy=multi-user.target
