@@ -32,11 +32,20 @@ timestamp() {
 }
 
 backup_menu() {
-    if [[ -d "${DEST_DIR}/${DIR_NAME}" ]]; then
-        backup_path="${BACKUP_DIR}/$(timestamp)"
-        mkdir -p "${backup_path}"
-        mv "${DEST_DIR}/${DIR_NAME}" "${backup_path}/"
-        log "Backup created: ${backup_path}"
+    local source="${DEST_DIR}/${DIR_NAME}"
+    local archive="${BACKUP_DIR}/${DIR_NAME}_$(timestamp).tar.gz"
+
+    if [[ -d "${source}" ]]; then
+        mkdir -p "${BACKUP_DIR}" || return 1
+
+        if tar -czf "${archive}" -C "${DEST_DIR}" "${DIR_NAME}"; then
+            rm -rf -- "${source}"
+            log "Backup created: ${archive}"
+        else
+            rm -f -- "${archive}"
+            log "ERROR: Failed to create backup"
+            return 1
+        fi
     else
         log "No existing menu to backup"
     fi
