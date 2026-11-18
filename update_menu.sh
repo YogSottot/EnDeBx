@@ -33,7 +33,7 @@ timestamp() {
 
 backup_menu() {
     local source="${DEST_DIR}/${DIR_NAME}"
-    local archive="${BACKUP_DIR}/${DIR_NAME}_$(timestamp).tar.gz"
+    archive="${BACKUP_DIR}/${DIR_NAME}_$(timestamp).tar.gz"
 
     if [[ -d "${source}" ]]; then
         mkdir -p "${BACKUP_DIR}" || return 1
@@ -345,7 +345,7 @@ main() {
     logrotate_fix_owner
     fix_push_logrotate
 
-    log "Menu updated! Backup directory old menu: $backup_path";
+    log "Menu updated! Backup directory old menu: ${archive}";
 }
 
 main "$@"
