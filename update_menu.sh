@@ -345,7 +345,7 @@ main() {
     logrotate_fix_owner
     fix_push_logrotate
 
-    log "Menu updated! Backup directory old menu: ${archive}";
+    log "Menu updated! Backup archive old menu: ${archive}";
 }
 
 main "$@"
