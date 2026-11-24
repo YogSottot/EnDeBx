@@ -20,6 +20,21 @@
     state: absent
   when: ufw_service.rc == 0
 
+- name: Check if nftables service is present # noqa command-instead-of-module
+  ansible.builtin.command:
+    cmd: systemctl cat nftables.service
+  failed_when: false
+  changed_when: false
+  register: nftables_service
+
+- name: Disable nftables
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: false
+    state: stopped
+    masked: true
+  when: nftables_service.rc == 0
+
 # Ubuntu doesn't have /etc/protocols by default in Docker
 - name: Install firewalld dependencies
   ansible.builtin.package:
